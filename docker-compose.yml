@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: point
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      # 3307 no host porque a 3306 já estava ocupada por outro serviço nesta
+      # máquina — a comunicação interna (api -> db) usa a porta 3306 normal.
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+    environment:
+      DATABASE_URL: mysql+pymysql://root:${DB_ROOT_PASSWORD:-root}@db/point
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-.env}
+    ports:
+      # 8001 no host: outro projeto local já usa a 8000.
+      - "8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    command: npm run dev -- --host
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:8001
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  db_data:

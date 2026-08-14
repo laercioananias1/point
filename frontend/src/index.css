@@ -1,0 +1,134 @@
+:root {
+  --bg: #f0efe8;
+  --surface: #ffffff;
+  --text: #17221f;
+  --text-muted: #55655f;
+  --accent: #0b7285;
+  --line: #d7d3c6;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+input {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Auth screen */
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-card h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+}
+
+.auth-subtitle {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.auth-card label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-card button {
+  margin-top: 10px;
+}
+
+.auth-error {
+  color: #b3372a;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* App shell */
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.app-brand {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.app-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.app-user-role {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.app-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
