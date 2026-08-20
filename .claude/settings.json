@@ -61,7 +61,8 @@
       "Bash(python -c ' *)",
       "Bash(python -c \"import sys,json; a=json.load\\(sys.stdin\\); print\\('status:',a['status'],'turmas:',[\\(t['dia_semana'],t['horario']\\) for t in a['turmas']]\\)\")",
       "Bash(python -c \"import sys,json; ts=json.load\\(sys.stdin\\); print\\([t['id'] for t in ts if t['periodo_fim'] is None]\\)\")",
-      "Bash(git commit -m 'Turma recorrente: periodo_fim vira opcional \\(null = sem data de termino\\) *)"
+      "Bash(git commit -m 'Turma recorrente: periodo_fim vira opcional \\(null = sem data de termino\\) *)",
+      "Bash(git commit -m 'Remover turma pelo calendario: so este dia, ou este dia em diante *)"
     ],
     "ask": [
       "Bash(git push*)",

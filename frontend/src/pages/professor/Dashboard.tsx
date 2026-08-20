@@ -25,12 +25,14 @@ export default function ProfessorDashboard() {
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
   const [points, setPoints] = useState<PointResumo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
-  const [loading, setLoading] = useState(true);
+  // "pronto" só liga uma vez, no primeiro carregamento — recarregar depois
+  // (ex.: após remover uma aula) não pode desmontar o calendário, senão ele
+  // perde a visão/posição que o professor tinha escolhido.
+  const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<{ item: CalendarItem; data: Date } | null>(null);
 
   const carregar = useCallback(async () => {
-    setLoading(true);
     setErro(null);
     try {
       const [turmasRes, vinculosRes, pointsRes, matriculasRes] = await Promise.all([
@@ -43,10 +45,9 @@ export default function ProfessorDashboard() {
       setVinculos(vinculosRes);
       setPoints(pointsRes);
       setMatriculas(matriculasRes);
+      setPronto(true);
     } catch {
       setErro("Não foi possível carregar seus dados. Tente novamente.");
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -64,9 +65,20 @@ export default function ProfessorDashboard() {
       <h1>Minhas turmas</h1>
 
       {erro && <p className="form-error">{erro}</p>}
-      {loading && <p className="empty-state">Carregando...</p>}
+      {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
-      {!loading && !erro && (
+      {selecionado && (
+        <RemoverAulaModal
+          selecionado={selecionado}
+          onFechar={() => setSelecionado(null)}
+          onRemovido={() => {
+            setSelecionado(null);
+            carregar();
+          }}
+        />
+      )}
+
+      {pronto && (
         <>
           <section className="section">
             <h2>Turmas ({turmas.length})</h2>
@@ -76,16 +88,6 @@ export default function ProfessorDashboard() {
               </p>
             ) : (
               <>
-                {selecionado && (
-                  <RemoverAulaPainel
-                    selecionado={selecionado}
-                    onFechar={() => setSelecionado(null)}
-                    onRemovido={() => {
-                      setSelecionado(null);
-                      carregar();
-                    }}
-                  />
-                )}
                 <p className="empty-state" style={{ paddingTop: 0 }}>
                   Clique numa aula no calendário pra remover só aquele dia ou encerrar a série a
                   partir dali.
@@ -169,7 +171,7 @@ export default function ProfessorDashboard() {
   );
 }
 
-function RemoverAulaPainel({
+function RemoverAulaModal({
   selecionado,
   onFechar,
   onRemovido,
@@ -181,6 +183,14 @@ function RemoverAulaPainel({
   const { item, data } = selecionado;
   const [enviando, setEnviando] = useState<"unica_data" | "a_partir_desta_data" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") onFechar();
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [onFechar]);
 
   const rotuloData = data.toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -202,32 +212,32 @@ function RemoverAulaPainel({
   }
 
   return (
-    <div className="form-card" style={{ marginBottom: "16px", maxWidth: "none" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+    <div className="modal-backdrop" onClick={onFechar}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="item-card-info">
           <span className="item-card-title">{item.titulo}</span>
           <span className="item-card-subtitle">
             {rotuloData} · {item.horario} · {item.subtitulo}
           </span>
         </div>
-        <button className="secondary" onClick={onFechar}>
-          Fechar
-        </button>
-      </div>
 
-      {erro && <p className="form-error">{erro}</p>}
+        {erro && <p className="form-error">{erro}</p>}
 
-      <div className="item-card-actions">
-        <button disabled={enviando !== null} onClick={() => remover("unica_data")}>
-          {enviando === "unica_data" ? "Removendo..." : "Remover só este dia"}
-        </button>
-        <button
-          className="secondary"
-          disabled={enviando !== null}
-          onClick={() => remover("a_partir_desta_data")}
-        >
-          {enviando === "a_partir_desta_data" ? "Removendo..." : "Remover este dia em diante"}
-        </button>
+        <div className="modal-actions">
+          <button disabled={enviando !== null} onClick={() => remover("unica_data")}>
+            {enviando === "unica_data" ? "Removendo..." : "Remover só este dia"}
+          </button>
+          <button
+            className="secondary"
+            disabled={enviando !== null}
+            onClick={() => remover("a_partir_desta_data")}
+          >
+            {enviando === "a_partir_desta_data" ? "Removendo..." : "Remover este dia em diante"}
+          </button>
+          <button className="secondary" disabled={enviando !== null} onClick={onFechar}>
+            Cancelar
+          </button>
+        </div>
       </div>
     </div>
   );
