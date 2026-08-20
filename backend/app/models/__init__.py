@@ -2,6 +2,7 @@ from app.models.aluno import Aluno
 from app.models.checkin import Checkin
 from app.models.configuracao import ConfiguracaoPlataforma
 from app.models.credito_reposicao import CreditoReposicao
+from app.models.fechamento import Fechamento, RepasseFechamento
 from app.models.matricula import Matricula
 from app.models.pagamento import Pagamento
 from app.models.point import Point
@@ -15,10 +16,12 @@ __all__ = [
     "Checkin",
     "ConfiguracaoPlataforma",
     "CreditoReposicao",
+    "Fechamento",
     "Matricula",
     "Pagamento",
     "Point",
     "Professor",
+    "RepasseFechamento",
     "Turma",
     "User",
     "Vinculo",

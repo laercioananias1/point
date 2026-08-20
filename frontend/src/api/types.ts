@@ -78,6 +78,23 @@ export interface Credito {
   nova_matricula_id: number | null;
 }
 
+export interface RepasseFechamento {
+  professor_id: number;
+  professor_nome: string;
+  valor: number;
+}
+
+export interface Fechamento {
+  id: number;
+  point_id: number;
+  periodo_inicio: string;
+  periodo_fim: string;
+  taxa_servico_unitaria: number;
+  quantidade_pagamentos: number;
+  total_taxa_servico: number;
+  repasses: RepasseFechamento[];
+}
+
 export interface Matricula {
   id: number;
   aluno_id: number;

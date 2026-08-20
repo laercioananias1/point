@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Matricula, Pagamento, TurmaResumo, Vinculo } from "../../api/types";
+import type { Fechamento, Matricula, Pagamento, TurmaResumo, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 
@@ -218,6 +218,15 @@ export default function AdminPointDashboard() {
           </section>
 
           <section className="section">
+            <h2>Fechamento mensal</h2>
+            {user?.point_id ? (
+              <FechamentoSection pointId={user.point_id} />
+            ) : (
+              <p className="empty-state">Não foi possível identificar o seu Point.</p>
+            )}
+          </section>
+
+          <section className="section">
             <h2>Vínculos do Point ({vinculosDecididos.length})</h2>
             {vinculosDecididos.length === 0 ? (
               <p className="empty-state">Nenhum outro vínculo por aqui ainda.</p>
@@ -336,5 +345,123 @@ function CancelarAulaForm({ pointId }: { pointId: number }) {
         {enviando ? "Cancelando..." : "Cancelar aula"}
       </button>
     </form>
+  );
+}
+
+function primeiroDiaDoMes(): string {
+  const hoje = new Date();
+  return new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10);
+}
+
+function ultimoDiaDoMes(): string {
+  const hoje = new Date();
+  return new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().slice(0, 10);
+}
+
+function FechamentoSection({ pointId }: { pointId: number }) {
+  const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
+  const [periodoInicio, setPeriodoInicio] = useState(primeiroDiaDoMes());
+  const [periodoFim, setPeriodoFim] = useState(ultimoDiaDoMes());
+  const [loading, setLoading] = useState(true);
+  const [gerando, setGerando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    try {
+      setFechamentos(await api.get<Fechamento[]>(`/points/${pointId}/fechamentos`));
+    } finally {
+      setLoading(false);
+    }
+  }, [pointId]);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setGerando(true);
+    setErro(null);
+    try {
+      await api.post(`/points/${pointId}/fechamentos`, {
+        periodo_inicio: periodoInicio,
+        periodo_fim: periodoFim,
+      });
+      await carregar();
+    } catch {
+      setErro("Não foi possível gerar o fechamento. Tente de novo.");
+    } finally {
+      setGerando(false);
+    }
+  }
+
+  return (
+    <div>
+      <form
+        className="form-card"
+        onSubmit={handleSubmit}
+        style={{ marginBottom: "20px" }}
+      >
+        <div className="form-row">
+          <label>
+            Início do período
+            <input
+              type="date"
+              value={periodoInicio}
+              onChange={(e) => setPeriodoInicio(e.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Fim do período
+            <input
+              type="date"
+              value={periodoFim}
+              onChange={(e) => setPeriodoFim(e.target.value)}
+              required
+            />
+          </label>
+        </div>
+        <p className="empty-state" style={{ padding: 0 }}>
+          Soma a taxa de serviço sobre os pagamentos confirmados do período e calcula o repasse de
+          cada professor. Na prática isso roda sozinho no 5º dia útil — aqui dá pra disparar na mão.
+        </p>
+        {erro && <p className="form-error">{erro}</p>}
+        <button type="submit" disabled={gerando}>
+          {gerando ? "Gerando..." : "Gerar fechamento"}
+        </button>
+      </form>
+
+      {loading ? (
+        <p className="empty-state">Carregando...</p>
+      ) : fechamentos.length === 0 ? (
+        <p className="empty-state">Nenhum fechamento gerado ainda.</p>
+      ) : (
+        <div className="card-list">
+          {fechamentos.map((f) => (
+            <div className="item-card" key={f.id} style={{ alignItems: "flex-start" }}>
+              <div className="item-card-info">
+                <span className="item-card-title">
+                  {f.periodo_inicio} a {f.periodo_fim}
+                </span>
+                <span className="item-card-subtitle">
+                  {f.quantidade_pagamentos} pagamento(s) · taxa de R$ {f.taxa_servico_unitaria.toFixed(2)}{" "}
+                  cada · total R$ {f.total_taxa_servico.toFixed(2)} pro SaaS
+                </span>
+                {f.repasses.length > 0 && (
+                  <span className="item-card-subtitle">
+                    Repasse:{" "}
+                    {f.repasses
+                      .map((r) => `${r.professor_nome} R$ ${r.valor.toFixed(2)}`)
+                      .join(" · ")}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
