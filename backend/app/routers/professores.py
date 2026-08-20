@@ -9,7 +9,9 @@ from app.core.security import hash_password
 from app.models.enums import Role
 from app.models.professor import Professor
 from app.models.user import User
+from app.models.vinculo import Vinculo
 from app.schemas.professor import ProfessorCreate, ProfessorOut
+from app.schemas.vinculo import VinculoOut
 
 router = APIRouter(prefix="/professores", tags=["professores"])
 
@@ -50,3 +52,13 @@ def meu_perfil(
     user: Annotated[User, Depends(require_role(Role.PROFESSOR))],
 ) -> Professor:
     return db.get(Professor, user.professor_id)
+
+
+@router.get("/me/vinculos", response_model=list[VinculoOut])
+def meus_vinculos(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR))],
+) -> list[Vinculo]:
+    """Todos os vínculos do professor, em qualquer status e em qualquer Point
+    (seção 3.1 — visão consolidada, não fica restrita a um Point selecionado)."""
+    return db.query(Vinculo).filter(Vinculo.professor_id == user.professor_id).all()

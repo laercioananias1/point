@@ -1,13 +1,198 @@
+import { useCallback, useEffect, useState } from "react";
+import { api } from "../../api/client";
+import type { Matricula, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
+import { StatusPill } from "../../components/StatusPill";
 
 export default function AdminPointDashboard() {
+  const [vinculos, setVinculos] = useState<Vinculo[]>([]);
+  const [matriculas, setMatriculas] = useState<Matricula[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [processando, setProcessando] = useState<Set<string>>(new Set());
+
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    setErro(null);
+    try {
+      const [vinculosRes, matriculasRes] = await Promise.all([
+        api.get<Vinculo[]>("/vinculos"),
+        api.get<Matricula[]>("/matriculas"),
+      ]);
+      setVinculos(vinculosRes);
+      setMatriculas(matriculasRes);
+    } catch {
+      setErro("Não foi possível carregar os dados do Point. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  async function decidirVinculo(id: number, decisao: "aprovar" | "recusar") {
+    const chave = `vinculo-${id}`;
+    setProcessando((atual) => new Set(atual).add(chave));
+    try {
+      await api.patch(`/vinculos/${id}/${decisao}`, {});
+      await carregar();
+    } finally {
+      setProcessando((atual) => {
+        const proximo = new Set(atual);
+        proximo.delete(chave);
+        return proximo;
+      });
+    }
+  }
+
+  async function decidirMatricula(id: number, decisao: "aprovar" | "recusar") {
+    const chave = `matricula-${id}`;
+    setProcessando((atual) => new Set(atual).add(chave));
+    try {
+      await api.patch(`/matriculas/${id}/${decisao}`);
+      await carregar();
+    } finally {
+      setProcessando((atual) => {
+        const proximo = new Set(atual);
+        proximo.delete(chave);
+        return proximo;
+      });
+    }
+  }
+
+  const vinculosPendentes = vinculos.filter((v) => v.status === "pendente");
+  const vinculosDecididos = vinculos.filter((v) => v.status !== "pendente");
+  const matriculasPendentes = matriculas.filter((m) => m.status === "em_analise");
+  const matriculasDecididas = matriculas.filter((m) => m.status !== "em_analise");
+
   return (
     <Layout>
       <h1>Painel do Point</h1>
-      <p>
-        Faturamento, professores vinculados e matrículas em análise aparecem aqui —
-        próxima etapa do roadmap (§9.2 e §9.3 do plano de arquitetura).
-      </p>
+
+      {erro && <p className="form-error">{erro}</p>}
+      {loading && <p className="empty-state">Carregando...</p>}
+
+      {!loading && !erro && (
+        <>
+          <section className="section">
+            <h2>Vínculos pendentes ({vinculosPendentes.length})</h2>
+            {vinculosPendentes.length === 0 ? (
+              <p className="empty-state">Nenhum vínculo aguardando aprovação.</p>
+            ) : (
+              <div className="card-list">
+                {vinculosPendentes.map((v) => (
+                  <div className="item-card" key={v.id}>
+                    <div className="item-card-info">
+                      <span className="item-card-title">{v.professor.nome}</span>
+                      <span className="item-card-subtitle">
+                        {v.professor.modalidades.join(", ") || "sem modalidade informada"} · avulsa
+                        R$ {v.preco_avulso.toFixed(2)} · plano R$ {v.preco_plano.toFixed(2)} ·
+                        repasse {v.modelo_repasse.replaceAll("_", " ")} ({v.valor_repasse})
+                      </span>
+                    </div>
+                    <div className="item-card-actions">
+                      <button
+                        disabled={processando.has(`vinculo-${v.id}`)}
+                        onClick={() => decidirVinculo(v.id, "aprovar")}
+                      >
+                        Aprovar
+                      </button>
+                      <button
+                        className="secondary"
+                        disabled={processando.has(`vinculo-${v.id}`)}
+                        onClick={() => decidirVinculo(v.id, "recusar")}
+                      >
+                        Recusar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Matrículas pendentes ({matriculasPendentes.length})</h2>
+            {matriculasPendentes.length === 0 ? (
+              <p className="empty-state">Nenhuma matrícula aguardando aprovação.</p>
+            ) : (
+              <div className="card-list">
+                {matriculasPendentes.map((m) => (
+                  <div className="item-card" key={m.id}>
+                    <div className="item-card-info">
+                      <span className="item-card-title">{m.aluno.nome}</span>
+                      <span className="item-card-subtitle">
+                        {m.turma.modalidade} · {m.turma.dia_semana} {m.turma.horario} ·{" "}
+                        {m.tipo === "mensal" ? "plano mensal" : "aula avulsa"} · pagamento{" "}
+                        {m.fonte_pagamento}
+                      </span>
+                    </div>
+                    <div className="item-card-actions">
+                      <button
+                        disabled={processando.has(`matricula-${m.id}`)}
+                        onClick={() => decidirMatricula(m.id, "aprovar")}
+                      >
+                        Aprovar
+                      </button>
+                      <button
+                        className="secondary"
+                        disabled={processando.has(`matricula-${m.id}`)}
+                        onClick={() => decidirMatricula(m.id, "recusar")}
+                      >
+                        Recusar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Vínculos do Point ({vinculosDecididos.length})</h2>
+            {vinculosDecididos.length === 0 ? (
+              <p className="empty-state">Nenhum outro vínculo por aqui ainda.</p>
+            ) : (
+              <div className="card-list">
+                {vinculosDecididos.map((v) => (
+                  <div className="item-card" key={v.id}>
+                    <div className="item-card-info">
+                      <span className="item-card-title">{v.professor.nome}</span>
+                      <span className="item-card-subtitle">
+                        {v.professor.modalidades.join(", ") || "sem modalidade informada"}
+                      </span>
+                    </div>
+                    <StatusPill status={v.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Matrículas do Point ({matriculasDecididas.length})</h2>
+            {matriculasDecididas.length === 0 ? (
+              <p className="empty-state">Nenhuma outra matrícula por aqui ainda.</p>
+            ) : (
+              <div className="card-list">
+                {matriculasDecididas.map((m) => (
+                  <div className="item-card" key={m.id}>
+                    <div className="item-card-info">
+                      <span className="item-card-title">{m.aluno.nome}</span>
+                      <span className="item-card-subtitle">
+                        {m.turma.modalidade} · {m.turma.dia_semana} {m.turma.horario}
+                      </span>
+                    </div>
+                    <StatusPill status={m.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </Layout>
   );
 }

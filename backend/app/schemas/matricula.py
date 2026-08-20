@@ -1,5 +1,7 @@
 from app.models.enums import MatriculaStatus, MatriculaTipo, PagamentoMeio
+from app.schemas.aluno import AlunoOut
 from app.schemas.common import ORMModel
+from app.schemas.turma import TurmaOut
 
 
 class MatriculaCreate(ORMModel):
@@ -15,3 +17,5 @@ class MatriculaOut(ORMModel):
     tipo: MatriculaTipo
     status: MatriculaStatus
     fonte_pagamento: PagamentoMeio
+    aluno: AlunoOut
+    turma: TurmaOut

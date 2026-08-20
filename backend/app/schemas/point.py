@@ -17,6 +17,16 @@ class PointOut(ORMModel):
     prazo_credito_dias: int
 
 
+class PointResumo(ORMModel):
+    """Versão enxuta para o professor escolher um Point ao solicitar vínculo —
+    sem expor formas_pagamento_habilitadas/prazo_credito_dias, que são dados
+    de gestão do Point."""
+
+    id: int
+    nome: str
+    endereco: str
+
+
 class AdminPointCreate(ORMModel):
     """Convite do dono do app para o admin de um Point específico."""
 

@@ -4,15 +4,26 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import require_role
+from app.core.deps import get_current_user, require_role
 from app.core.security import hash_password
 from app.models.enums import Role
 from app.models.point import Point
 from app.models.user import User
-from app.schemas.point import AdminPointCreate, PointCreate, PointOut
+from app.schemas.point import AdminPointCreate, PointCreate, PointOut, PointResumo
 from app.schemas.auth import UserOut
 
 router = APIRouter(prefix="/points", tags=["points"])
+
+
+@router.get("/directorio", response_model=list[PointResumo])
+def listar_points_para_vinculo(
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+) -> list[Point]:
+    """Lista enxuta, para o professor escolher um Point ao solicitar vínculo
+    (POST /vinculos). Qualquer usuário autenticado pode ver — não expõe dados
+    de gestão do Point, só o suficiente para identificá-lo."""
+    return db.query(Point).all()
 
 
 @router.post("", response_model=PointOut, status_code=201)

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import require_role
+from app.core.deps import get_current_user, require_role
 from app.models.enums import Role, VinculoStatus
 from app.models.turma import Turma
 from app.models.user import User
@@ -46,6 +46,22 @@ def minhas_turmas(
         .filter(Vinculo.professor_id == professor.professor_id)
         .all()
     )
+
+
+@router.get("/turmas", response_model=list[TurmaOut])
+def buscar_turmas(
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+    modalidade: str | None = None,
+) -> list[Turma]:
+    """Busca do aluno por modalidade/local (seção 4.2) — qualquer usuário
+    autenticado pode ver, em qualquer Point/professor. Só turmas de vínculos
+    ativos aparecem; a checagem de vaga disponível fica pra uma etapa futura
+    (controle de capacidade da Turma, ainda fora deste scaffold)."""
+    query = db.query(Turma).join(Vinculo).filter(Vinculo.status == VinculoStatus.ATIVO)
+    if modalidade:
+        query = query.filter(Turma.modalidade.ilike(f"%{modalidade}%"))
+    return query.all()
 
 
 @router.get("/vinculos/{vinculo_id}/turmas", response_model=list[TurmaOut])

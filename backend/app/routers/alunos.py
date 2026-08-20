@@ -8,8 +8,10 @@ from app.core.deps import require_role
 from app.core.security import hash_password
 from app.models.aluno import Aluno
 from app.models.enums import Role
+from app.models.matricula import Matricula
 from app.models.user import User
 from app.schemas.aluno import AlunoCreate, AlunoOut
+from app.schemas.matricula import MatriculaOut
 
 router = APIRouter(prefix="/alunos", tags=["alunos"])
 
@@ -48,3 +50,14 @@ def meu_perfil(
     user: Annotated[User, Depends(require_role(Role.ALUNO))],
 ) -> Aluno:
     return db.get(Aluno, user.aluno_id)
+
+
+@router.get("/me/matriculas", response_model=list[MatriculaOut])
+def minhas_matriculas(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.ALUNO))],
+) -> list[Matricula]:
+    """Agenda do aluno — em qualquer Point/professor (seção 2), independente
+    de status, pra ele acompanhar tanto o que já está ativo quanto o que
+    ainda está em análise."""
+    return db.query(Matricula).filter(Matricula.aluno_id == user.aluno_id).all()
