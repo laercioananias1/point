@@ -13,6 +13,11 @@ export interface User {
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  /** true só durante a rehidratação inicial da sessão (boot do app com um
+   * token salvo) — telas que decidem rota a partir de `user.role` (Home)
+   * devem esperar isso terminar antes de redirecionar, senão mandam de
+   * volta pro login à toa enquanto /auth/me ainda não respondeu. */
+  initializing: boolean;
   login: (identificador: string, senha: string) => Promise<void>;
   logout: () => void;
 }
@@ -22,12 +27,17 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(getToken() !== null);
 
   // Recarregar a página mantém o token (localStorage), mas perde o `user`
   // em memória — busca de novo no boot do app pra não voltar pro login à toa.
   useEffect(() => {
-    if (getToken() && !user) {
-      api.get<User>("/auth/me").then(setUser).catch(clearToken);
+    if (getToken()) {
+      api
+        .get<User>("/auth/me")
+        .then(setUser)
+        .catch(clearToken)
+        .finally(() => setInitializing(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -52,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, initializing, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -34,3 +34,14 @@ class AdminPointCreate(ORMModel):
     celular: str
     email: str | None = None
     senha: str
+
+
+class PointRankingOut(ORMModel):
+    """Dashboard comparativo entre Points, só pro dono do app (seção 6.5)."""
+
+    point_id: int
+    nome: str
+    professores_ativos: int
+    alunos_ativos: int
+    total_taxa_servico: float
+    total_repassado: float

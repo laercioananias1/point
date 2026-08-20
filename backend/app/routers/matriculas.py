@@ -12,7 +12,7 @@ from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.user import User
 from app.models.vinculo import Vinculo
-from app.schemas.matricula import MatriculaCreate, MatriculaOut
+from app.schemas.matricula import MatriculaCreate, MatriculaOut, RepasseOverrideUpdate
 
 router = APIRouter(prefix="/matriculas", tags=["matriculas"])
 
@@ -89,6 +89,25 @@ def recusar_matricula(
 ) -> Matricula:
     matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
     matricula.status = MatriculaStatus.RECUSADA
+    db.commit()
+    db.refresh(matricula)
+    return matricula
+
+
+@router.patch("/{matricula_id}/repasse", response_model=MatriculaOut)
+def definir_repasse_excecao(
+    matricula_id: int,
+    payload: RepasseOverrideUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> Matricula:
+    """Exceção de repasse por aluno (seção 3.2/4.2) — o admin do Point decide,
+    caso a caso; não existe regra automática de 'quem captou o aluno leva
+    100%'. Mandar os dois campos null remove a exceção (volta ao padrão do
+    Vínculo)."""
+    matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
+    matricula.repasse_override_modelo = payload.modelo
+    matricula.repasse_override_valor = payload.valor
     db.commit()
     db.refresh(matricula)
     return matricula

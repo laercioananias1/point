@@ -4,6 +4,7 @@
   --text: #17221f;
   --text-muted: #55655f;
   --accent: #0b7285;
+  --accent-soft: #d3e9e7;
   --line: #d7d3c6;
   --good: #2f9e44;
   --good-soft: #e1f3e3;
@@ -113,10 +114,39 @@ input {
   background: var(--surface);
 }
 
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
 .app-brand {
   font-weight: 700;
   font-size: 18px;
   color: var(--accent);
+}
+
+.app-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.app-nav-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 100px;
+}
+
+.app-nav-link:hover {
+  color: var(--text);
+}
+
+.app-nav-link.active {
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .app-user {
@@ -278,4 +308,32 @@ button.danger {
   color: var(--good);
   font-size: 13px;
   margin: 0;
+}
+
+/* Stat tiles */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.stat-tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.stat-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

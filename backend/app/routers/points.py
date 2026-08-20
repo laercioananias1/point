@@ -6,10 +6,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_role
 from app.core.security import hash_password
-from app.models.enums import Role
+from app.models.enums import MatriculaStatus, Role, VinculoStatus
+from app.models.fechamento import Fechamento
+from app.models.matricula import Matricula
 from app.models.point import Point
+from app.models.turma import Turma
 from app.models.user import User
-from app.schemas.point import AdminPointCreate, PointCreate, PointOut, PointResumo
+from app.models.vinculo import Vinculo
+from app.schemas.point import AdminPointCreate, PointCreate, PointOut, PointRankingOut, PointResumo
 from app.schemas.auth import UserOut
 
 router = APIRouter(prefix="/points", tags=["points"])
@@ -47,6 +51,46 @@ def listar_points(
     _user: Annotated[User, Depends(require_role(Role.SUPER_ADMIN))],
 ) -> list[Point]:
     return db.query(Point).all()
+
+
+@router.get("/ranking", response_model=list[PointRankingOut])
+def ranking_points(
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(require_role(Role.SUPER_ADMIN))],
+) -> list[PointRankingOut]:
+    """Dashboard comparativo entre Points (seção 6.5) — só o dono do app vê
+    isso; é a única exceção ao isolamento entre Points (seção 3.1)."""
+    resultado = []
+    for point in db.query(Point).all():
+        professores_ativos = (
+            db.query(Vinculo)
+            .filter(Vinculo.point_id == point.id, Vinculo.status == VinculoStatus.ATIVO)
+            .count()
+        )
+        alunos_ativos = (
+            db.query(Matricula.aluno_id)
+            .join(Turma, Matricula.turma_id == Turma.id)
+            .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+            .filter(Vinculo.point_id == point.id, Matricula.status == MatriculaStatus.ATIVA)
+            .distinct()
+            .count()
+        )
+        fechamentos = db.query(Fechamento).filter(Fechamento.point_id == point.id).all()
+        total_taxa = sum(float(f.total_taxa_servico) for f in fechamentos)
+        total_repassado = sum(float(r.valor) for f in fechamentos for r in f.repasses)
+
+        resultado.append(
+            PointRankingOut(
+                point_id=point.id,
+                nome=point.nome,
+                professores_ativos=professores_ativos,
+                alunos_ativos=alunos_ativos,
+                total_taxa_servico=total_taxa,
+                total_repassado=total_repassado,
+            )
+        )
+
+    return sorted(resultado, key=lambda r: r.total_taxa_servico, reverse=True)
 
 
 @router.patch("/{point_id}/formas-pagamento", response_model=PointOut)

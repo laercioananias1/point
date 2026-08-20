@@ -3,16 +3,21 @@ import { useAuth } from "./auth/AuthContext";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import Login from "./pages/Login";
 import AdminPointDashboard from "./pages/admin-point/Dashboard";
+import AdminPointFaturamento from "./pages/admin-point/Faturamento";
 import ProfessorDashboard from "./pages/professor/Dashboard";
 import AlunoDashboard from "./pages/aluno/Dashboard";
+import DonoAppDashboard from "./pages/dono-app/Dashboard";
 
 function Home() {
-  const { user } = useAuth();
+  const { user, initializing } = useAuth();
+
+  if (initializing) return null;
 
   switch (user?.role) {
     case "admin_point":
-    case "super_admin":
       return <Navigate to="/admin-point" replace />;
+    case "super_admin":
+      return <Navigate to="/dono-app" replace />;
     case "professor":
       return <Navigate to="/professor" replace />;
     case "aluno":
@@ -43,6 +48,14 @@ export default function App() {
         }
       />
       <Route
+        path="/admin-point/faturamento"
+        element={
+          <ProtectedRoute>
+            <AdminPointFaturamento />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/professor"
         element={
           <ProtectedRoute>
@@ -55,6 +68,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AlunoDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dono-app"
+        element={
+          <ProtectedRoute>
+            <DonoAppDashboard />
           </ProtectedRoute>
         }
       />

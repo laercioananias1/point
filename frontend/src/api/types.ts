@@ -95,6 +95,15 @@ export interface Fechamento {
   repasses: RepasseFechamento[];
 }
 
+export interface PointRanking {
+  point_id: number;
+  nome: string;
+  professores_ativos: number;
+  alunos_ativos: number;
+  total_taxa_servico: number;
+  total_repassado: number;
+}
+
 export interface Matricula {
   id: number;
   aluno_id: number;
@@ -105,4 +114,6 @@ export interface Matricula {
   aluno: AlunoResumo;
   turma: TurmaResumo;
   pagamentos: PagamentoResumo[];
+  repasse_override_modelo: ModeloRepasse | null;
+  repasse_override_valor: number | null;
 }
