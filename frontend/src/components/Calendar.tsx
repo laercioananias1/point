@@ -8,6 +8,7 @@ export interface CalendarItem {
   duracaoMinutos: number;
   periodoInicio: string; // "YYYY-MM-DD"
   periodoFim: string | null; // "YYYY-MM-DD" — null = recorrente, sem fim
+  excecoes?: string[]; // datas "YYYY-MM-DD" removidas dessa recorrência
   titulo: string;
   subtitulo?: string;
 }
@@ -17,7 +18,7 @@ type Modo = "dia" | "semana" | "mes";
 const HORA_INICIAL = 5;
 const HORA_FINAL = 23;
 
-function toISODate(date: Date): string {
+export function toISODate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
@@ -31,7 +32,8 @@ function diaSemanaDeData(date: Date): string {
 function ocorreNaData(item: CalendarItem, date: Date): boolean {
   const iso = toISODate(date);
   const dentroDoPeriodo = iso >= item.periodoInicio && (item.periodoFim === null || iso <= item.periodoFim);
-  return item.diaSemana === diaSemanaDeData(date) && dentroDoPeriodo;
+  const removida = item.excecoes?.includes(iso) ?? false;
+  return item.diaSemana === diaSemanaDeData(date) && dentroDoPeriodo && !removida;
 }
 
 function inicioDaSemana(ref: Date): Date {
@@ -74,8 +76,17 @@ function tituloPeriodo(ref: Date, modo: Modo): string {
 
 /** Agenda de turmas com navegação dia/semana/mês. As turmas são recorrências
  * semanais (dia_semana + horário, entre periodo_inicio e periodo_fim) — este
- * componente "expande" essa recorrência pras datas de calendário visíveis. */
-export function Calendar({ items }: { items: CalendarItem[] }) {
+ * componente "expande" essa recorrência pras datas de calendário visíveis.
+ * Passando onItemClick, cada ocorrência renderizada vira clicável — é o que
+ * a tela do Professor usa pra abrir a edição/remoção (pedido do usuário,
+ * 2026-08-20: "o melhor local pra remover seria dentro do calendário"). */
+export function Calendar({
+  items,
+  onItemClick,
+}: {
+  items: CalendarItem[];
+  onItemClick?: (item: CalendarItem, data: Date) => void;
+}) {
   const [modo, setModo] = useState<Modo>("semana");
   const [referencia, setReferencia] = useState(new Date());
 
@@ -110,9 +121,15 @@ export function Calendar({ items }: { items: CalendarItem[] }) {
         </div>
       </div>
 
-      {modo === "mes" && <MesView referencia={referencia} items={items} hoje={hoje} />}
-      {modo === "semana" && <DiasView datas={diasDaSemana(referencia)} items={items} hoje={hoje} />}
-      {modo === "dia" && <DiasView datas={[referencia]} items={items} hoje={hoje} />}
+      {modo === "mes" && (
+        <MesView referencia={referencia} items={items} hoje={hoje} onItemClick={onItemClick} />
+      )}
+      {modo === "semana" && (
+        <DiasView datas={diasDaSemana(referencia)} items={items} hoje={hoje} onItemClick={onItemClick} />
+      )}
+      {modo === "dia" && (
+        <DiasView datas={[referencia]} items={items} hoje={hoje} onItemClick={onItemClick} />
+      )}
     </div>
   );
 }
@@ -122,7 +139,17 @@ function diasDaSemana(ref: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => somarDias(inicio, i));
 }
 
-function DiasView({ datas, items, hoje }: { datas: Date[]; items: CalendarItem[]; hoje: Date }) {
+function DiasView({
+  datas,
+  items,
+  hoje,
+  onItemClick,
+}: {
+  datas: Date[];
+  items: CalendarItem[];
+  hoje: Date;
+  onItemClick?: (item: CalendarItem, data: Date) => void;
+}) {
   const horas = Array.from({ length: HORA_FINAL - HORA_INICIAL + 1 }, (_, i) => HORA_INICIAL + i);
   const colunas = datas.length;
 
@@ -175,10 +202,21 @@ function DiasView({ datas, items, hoje }: { datas: Date[]; items: CalendarItem[]
               if (hora < HORA_INICIAL || hora > HORA_FINAL) return null;
               const rowStart = hora - HORA_INICIAL + 2;
               const rowSpan = Math.max(1, Math.round(item.duracaoMinutos / 60));
+              const clicavel = Boolean(onItemClick);
               return (
                 <div
                   key={`${item.id}-${colIdx}`}
-                  className="calendar-item"
+                  className={clicavel ? "calendar-item calendar-item-clickable" : "calendar-item"}
+                  role={clicavel ? "button" : undefined}
+                  tabIndex={clicavel ? 0 : undefined}
+                  onClick={clicavel ? () => onItemClick?.(item, data) : undefined}
+                  onKeyDown={
+                    clicavel
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") onItemClick?.(item, data);
+                        }
+                      : undefined
+                  }
                   style={{ gridRow: `${rowStart} / span ${rowSpan}`, gridColumn: colIdx + 2 }}
                 >
                   <span className="calendar-item-title">{item.titulo}</span>
@@ -196,10 +234,12 @@ function MesView({
   referencia,
   items,
   hoje,
+  onItemClick,
 }: {
   referencia: Date;
   items: CalendarItem[];
   hoje: Date;
+  onItemClick?: (item: CalendarItem, data: Date) => void;
 }) {
   const dias = useMemo(() => {
     const primeiroDoMes = new Date(referencia.getFullYear(), referencia.getMonth(), 1);
@@ -234,11 +274,22 @@ function MesView({
               }
             >
               <span className="month-day-number">{data.getDate()}</span>
-              {visiveis.map((item) => (
-                <span className="month-event" key={item.id}>
-                  {item.horario} {item.titulo}
-                </span>
-              ))}
+              {visiveis.map((item) =>
+                onItemClick ? (
+                  <button
+                    type="button"
+                    className="month-event month-event-clickable"
+                    key={item.id}
+                    onClick={() => onItemClick(item, data)}
+                  >
+                    {item.horario} {item.titulo}
+                  </button>
+                ) : (
+                  <span className="month-event" key={item.id}>
+                    {item.horario} {item.titulo}
+                  </span>
+                ),
+              )}
               {restantes > 0 && <span className="month-more">+{restantes} mais</span>}
             </div>
           );

@@ -51,11 +51,18 @@ def gerar_aulas_do_mes(db: Session, matricula: Matricula, referencia: date | Non
             Aula.matricula_id == matricula.id, Aula.data >= inicio, Aula.data <= fim
         )
     }
+    # Datas removidas (pedido do usuário, 2026-08-20) — a série continua,
+    # essa(s) data(s) específica(s) só não geram aula.
+    excluidas = {e.data for e in turma.excecoes_rel}
 
     novas: list[Aula] = []
     dia_atual = inicio
     while dia_atual <= fim:
-        if _dia_semana_str(dia_atual) == turma.dia_semana and dia_atual not in existentes:
+        if (
+            _dia_semana_str(dia_atual) == turma.dia_semana
+            and dia_atual not in existentes
+            and dia_atual not in excluidas
+        ):
             novas.append(Aula(matricula_id=matricula.id, data=dia_atual))
         dia_atual += timedelta(days=1)
 

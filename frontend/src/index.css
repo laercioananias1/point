@@ -559,6 +559,23 @@ button.danger:hover:not(:disabled) {
   overflow: hidden;
 }
 
+.calendar-item-clickable {
+  cursor: pointer;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.calendar-item-clickable:hover,
+.calendar-item-clickable:focus-visible {
+  background: var(--accent);
+}
+
+.calendar-item-clickable:hover .calendar-item-title,
+.calendar-item-clickable:hover .calendar-item-subtitle,
+.calendar-item-clickable:focus-visible .calendar-item-title,
+.calendar-item-clickable:focus-visible .calendar-item-subtitle {
+  color: #fff;
+}
+
 .calendar-item-title {
   font-size: 12px;
   font-weight: 700;
@@ -697,6 +714,21 @@ button.danger:hover:not(:disabled) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.month-event-clickable {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.month-event-clickable:hover,
+.month-event-clickable:focus-visible {
+  background: var(--accent);
+  color: #fff;
 }
 
 .month-more {

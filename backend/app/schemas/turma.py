@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Literal
 
 from app.schemas.common import ORMModel
 from app.schemas.modalidade import ModalidadeOut
@@ -36,4 +37,20 @@ class TurmaOut(ORMModel):
     recorrencia: str
     periodo_inicio: date
     periodo_fim: date | None
+    excecoes: list[date]
     vinculo: VinculoOut
+
+
+class TurmaRemocao(ORMModel):
+    """Remover uma turma recorrente (pedido do usuário, 2026-08-20) — igual
+    editar um evento recorrente num calendário: só essa data, ou essa data
+    em diante (encerra a série ali)."""
+
+    escopo: Literal["unica_data", "a_partir_desta_data"]
+    data: date
+
+
+class RemocaoTurmaOut(ORMModel):
+    turma_removida: bool  # true = a linha da Turma foi apagada de vez
+    aulas_removidas: int
+    novo_periodo_fim: date | None

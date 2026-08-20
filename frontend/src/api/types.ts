@@ -69,6 +69,7 @@ export interface TurmaResumo {
   recorrencia: string;
   periodo_inicio: string;
   periodo_fim: string | null;
+  excecoes: string[];
   vinculo: Vinculo;
 }
 

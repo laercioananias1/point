@@ -43,3 +43,12 @@ class Turma(TimestampMixin, Base):
     modalidade: Mapped["Modalidade"] = relationship()  # noqa: F821
     quadra: Mapped["Quadra"] = relationship()  # noqa: F821
     matriculas: Mapped[list["Matricula"]] = relationship(back_populates="turma")  # noqa: F821
+    excecoes_rel: Mapped[list["TurmaExcecao"]] = relationship(  # noqa: F821
+        cascade="all, delete-orphan"
+    )
+
+    @property
+    def excecoes(self) -> list[date]:
+        """Só as datas, pra TurmaOut expor direto (seção pedido do usuário,
+        2026-08-20) sem precisar aninhar TurmaExcecao como schema."""
+        return [e.data for e in self.excecoes_rel]

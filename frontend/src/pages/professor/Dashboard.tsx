@@ -11,7 +11,7 @@ import type {
 } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
-import { Calendar } from "../../components/Calendar";
+import { Calendar, toISODate, type CalendarItem } from "../../components/Calendar";
 import { DIAS_SEMANA } from "../../lib/dias";
 
 const MODELOS_REPASSE: { value: ModeloRepasse; label: string }[] = [
@@ -27,6 +27,7 @@ export default function ProfessorDashboard() {
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [selecionado, setSelecionado] = useState<{ item: CalendarItem; data: Date } | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -74,18 +75,36 @@ export default function ProfessorDashboard() {
                 Nenhuma turma ainda — crie uma dentro de um vínculo ativo.
               </p>
             ) : (
-              <Calendar
-                items={turmas.map((t) => ({
-                  id: t.id,
-                  diaSemana: t.dia_semana,
-                  horario: t.horario,
-                  duracaoMinutos: t.duracao_minutos,
-                  periodoInicio: t.periodo_inicio,
-                  periodoFim: t.periodo_fim,
-                  titulo: t.modalidade.nome,
-                  subtitulo: `${t.quadra.nome} · ${t.vinculo.point.nome}`,
-                }))}
-              />
+              <>
+                {selecionado && (
+                  <RemoverAulaPainel
+                    selecionado={selecionado}
+                    onFechar={() => setSelecionado(null)}
+                    onRemovido={() => {
+                      setSelecionado(null);
+                      carregar();
+                    }}
+                  />
+                )}
+                <p className="empty-state" style={{ paddingTop: 0 }}>
+                  Clique numa aula no calendário pra remover só aquele dia ou encerrar a série a
+                  partir dali.
+                </p>
+                <Calendar
+                  items={turmas.map((t) => ({
+                    id: t.id,
+                    diaSemana: t.dia_semana,
+                    horario: t.horario,
+                    duracaoMinutos: t.duracao_minutos,
+                    periodoInicio: t.periodo_inicio,
+                    periodoFim: t.periodo_fim,
+                    excecoes: t.excecoes,
+                    titulo: t.modalidade.nome,
+                    subtitulo: `${t.quadra.nome} · ${t.vinculo.point.nome}`,
+                  }))}
+                  onItemClick={(item, data) => setSelecionado({ item, data })}
+                />
+              </>
             )}
           </section>
 
@@ -147,6 +166,70 @@ export default function ProfessorDashboard() {
         </>
       )}
     </Layout>
+  );
+}
+
+function RemoverAulaPainel({
+  selecionado,
+  onFechar,
+  onRemovido,
+}: {
+  selecionado: { item: CalendarItem; data: Date };
+  onFechar: () => void;
+  onRemovido: () => void;
+}) {
+  const { item, data } = selecionado;
+  const [enviando, setEnviando] = useState<"unica_data" | "a_partir_desta_data" | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const rotuloData = data.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+
+  async function remover(escopo: "unica_data" | "a_partir_desta_data") {
+    setEnviando(escopo);
+    setErro(null);
+    try {
+      await api.post(`/turmas/${item.id}/remocoes`, { escopo, data: toISODate(data) });
+      onRemovido();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível remover. Tente de novo.");
+    } finally {
+      setEnviando(null);
+    }
+  }
+
+  return (
+    <div className="form-card" style={{ marginBottom: "16px", maxWidth: "none" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+        <div className="item-card-info">
+          <span className="item-card-title">{item.titulo}</span>
+          <span className="item-card-subtitle">
+            {rotuloData} · {item.horario} · {item.subtitulo}
+          </span>
+        </div>
+        <button className="secondary" onClick={onFechar}>
+          Fechar
+        </button>
+      </div>
+
+      {erro && <p className="form-error">{erro}</p>}
+
+      <div className="item-card-actions">
+        <button disabled={enviando !== null} onClick={() => remover("unica_data")}>
+          {enviando === "unica_data" ? "Removendo..." : "Remover só este dia"}
+        </button>
+        <button
+          className="secondary"
+          disabled={enviando !== null}
+          onClick={() => remover("a_partir_desta_data")}
+        >
+          {enviando === "a_partir_desta_data" ? "Removendo..." : "Remover este dia em diante"}
+        </button>
+      </div>
+    </div>
   );
 }
 

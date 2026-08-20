@@ -16,14 +16,17 @@ from app.models.enums import (
     Role,
     VinculoStatus,
 )
+from app.models.aula import Aula
 from app.models.matricula import Matricula
 from app.models.modalidade import Modalidade
 from app.models.quadra import Quadra
 from app.models.turma import Turma
+from app.models.turma_excecao import TurmaExcecao
 from app.models.user import User
 from app.models.vinculo import Vinculo
 from app.schemas.credito import CancelamentoAula, CreditoOut
-from app.schemas.turma import TurmaCreate, TurmaOut
+from app.schemas.turma import RemocaoTurmaOut, TurmaCreate, TurmaOut, TurmaRemocao
+from app.services.aulas import DIAS_SEMANA
 
 router = APIRouter(tags=["turmas"])
 
@@ -107,6 +110,88 @@ def criar_turmas(
     for turma in turmas:
         db.refresh(turma)
     return turmas
+
+
+@router.post("/turmas/{turma_id}/remocoes", response_model=RemocaoTurmaOut)
+def remover_turma(
+    turma_id: int,
+    payload: TurmaRemocao,
+    db: Annotated[Session, Depends(get_db)],
+    professor: Annotated[User, Depends(require_role(Role.PROFESSOR))],
+) -> RemocaoTurmaOut:
+    """Remover uma turma recorrente, do jeito que se edita um evento
+    recorrente num calendário (pedido do usuário, 2026-08-20):
+
+    - 'unica_data': a série continua normal nas outras semanas; só essa data
+      vira uma TurmaExcecao (o gerador de aulas passa a pular ela) e qualquer
+      Aula já gerada pra essa data é removida.
+    - 'a_partir_desta_data': encerra a série dali pra frente (periodo_fim =
+      véspera da data escolhida). Se a turma nunca teve nenhuma matrícula, a
+      linha é apagada de vez em vez de sobrar um período fechado sem uso;
+      se já teve, só encurtamos o período — apagar quebraria a integridade
+      referencial de pagamentos/créditos/aulas já ligados a ela."""
+    turma = db.get(Turma, turma_id)
+    if turma is None or turma.vinculo.professor_id != professor.professor_id:
+        raise HTTPException(404, "Turma não encontrada")
+
+    if payload.data < date.today():
+        raise HTTPException(422, "Não dá pra remover uma data que já passou")
+    if DIAS_SEMANA[payload.data.weekday()] != turma.dia_semana:
+        raise HTTPException(422, f"Essa turma acontece às {turma.dia_semana}s, não nessa data")
+
+    if payload.escopo == "unica_data":
+        if payload.data < turma.periodo_inicio or (
+            turma.periodo_fim is not None and payload.data > turma.periodo_fim
+        ):
+            raise HTTPException(422, "Essa data está fora do período da turma")
+        ja_existe = (
+            db.query(TurmaExcecao)
+            .filter(TurmaExcecao.turma_id == turma.id, TurmaExcecao.data == payload.data)
+            .first()
+        )
+        if ja_existe:
+            raise HTTPException(409, "Essa data já tinha sido removida")
+
+        db.add(TurmaExcecao(turma_id=turma.id, data=payload.data))
+        aulas_removidas = (
+            db.query(Aula)
+            .filter(
+                Aula.matricula_id.in_(
+                    db.query(Matricula.id).filter(Matricula.turma_id == turma.id)
+                ),
+                Aula.data == payload.data,
+            )
+            .delete(synchronize_session=False)
+        )
+        db.commit()
+        return RemocaoTurmaOut(
+            turma_removida=False, aulas_removidas=aulas_removidas, novo_periodo_fim=turma.periodo_fim
+        )
+
+    # escopo == "a_partir_desta_data"
+    novo_fim = payload.data - timedelta(days=1)
+    aulas_removidas = (
+        db.query(Aula)
+        .filter(
+            Aula.matricula_id.in_(db.query(Matricula.id).filter(Matricula.turma_id == turma.id)),
+            Aula.data >= payload.data,
+        )
+        .delete(synchronize_session=False)
+    )
+
+    tem_historico = (
+        db.query(Matricula.id).filter(Matricula.turma_id == turma.id).first() is not None
+    )
+    if not tem_historico:
+        db.delete(turma)
+        db.commit()
+        return RemocaoTurmaOut(turma_removida=True, aulas_removidas=aulas_removidas, novo_periodo_fim=None)
+
+    turma.periodo_fim = novo_fim
+    db.commit()
+    return RemocaoTurmaOut(
+        turma_removida=False, aulas_removidas=aulas_removidas, novo_periodo_fim=novo_fim
+    )
 
 
 @router.get("/professores/me/turmas", response_model=list[TurmaOut])

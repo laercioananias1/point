@@ -13,6 +13,7 @@ from app.models.point import Point
 from app.models.professor import Professor
 from app.models.quadra import Quadra
 from app.models.turma import Turma
+from app.models.turma_excecao import TurmaExcecao
 from app.models.user import User
 from app.models.vinculo import Vinculo
 
@@ -33,6 +34,7 @@ __all__ = [
     "Quadra",
     "RepasseFechamento",
     "Turma",
+    "TurmaExcecao",
     "User",
     "Vinculo",
 ]
