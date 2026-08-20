@@ -44,7 +44,7 @@ export default function AlunoDashboard() {
             {ativas.length === 0 ? (
               <p className="empty-state">Nenhuma matrícula ativa ainda.</p>
             ) : (
-              <MatriculaLista matriculas={ativas} />
+              <MatriculaLista matriculas={ativas} onPago={carregar} />
             )}
           </section>
 
@@ -72,7 +72,13 @@ export default function AlunoDashboard() {
   );
 }
 
-function MatriculaLista({ matriculas }: { matriculas: Matricula[] }) {
+function MatriculaLista({
+  matriculas,
+  onPago,
+}: {
+  matriculas: Matricula[];
+  onPago?: () => void;
+}) {
   return (
     <div className="card-list">
       {matriculas.map((m) => (
@@ -84,10 +90,48 @@ function MatriculaLista({ matriculas }: { matriculas: Matricula[] }) {
               {m.turma.vinculo.professor.nome} · {m.tipo === "mensal" ? "plano mensal" : "avulsa"}
             </span>
           </div>
-          <StatusPill status={m.status} />
+          {onPago && m.status === "ativa" ? (
+            <PagamentoStatusOuBotao matricula={m} onPago={onPago} />
+          ) : (
+            <StatusPill status={m.status} />
+          )}
         </div>
       ))}
     </div>
+  );
+}
+
+function PagamentoStatusOuBotao({
+  matricula,
+  onPago,
+}: {
+  matricula: Matricula;
+  onPago: () => void;
+}) {
+  const jaConfirmado = matricula.pagamentos.some((p) => p.status === "confirmado");
+  const [enviando, setEnviando] = useState(false);
+
+  if (jaConfirmado) return <StatusPill status="confirmado" />;
+
+  const valor =
+    matricula.tipo === "mensal"
+      ? matricula.turma.vinculo.preco_plano
+      : matricula.turma.vinculo.preco_avulso;
+
+  async function pagar() {
+    setEnviando(true);
+    try {
+      await api.post("/pagamentos", { matricula_id: matricula.id, valor, meio: "pix" });
+      onPago();
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <button disabled={enviando} onClick={pagar}>
+      {enviando ? "Pagando..." : `Pagar R$ ${valor.toFixed(2)} com Pix`}
+    </button>
   );
 }
 

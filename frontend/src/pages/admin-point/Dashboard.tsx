@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
-import type { Matricula, Vinculo } from "../../api/types";
+import type { Matricula, Pagamento, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 
 export default function AdminPointDashboard() {
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [processando, setProcessando] = useState<Set<string>>(new Set());
@@ -15,12 +16,14 @@ export default function AdminPointDashboard() {
     setLoading(true);
     setErro(null);
     try {
-      const [vinculosRes, matriculasRes] = await Promise.all([
+      const [vinculosRes, matriculasRes, pagamentosRes] = await Promise.all([
         api.get<Vinculo[]>("/vinculos"),
         api.get<Matricula[]>("/matriculas"),
+        api.get<Pagamento[]>("/pagamentos"),
       ]);
       setVinculos(vinculosRes);
       setMatriculas(matriculasRes);
+      setPagamentos(pagamentosRes);
     } catch {
       setErro("Não foi possível carregar os dados do Point. Tente novamente.");
     } finally {
@@ -62,10 +65,28 @@ export default function AdminPointDashboard() {
     }
   }
 
+  async function decidirPagamento(id: number, decisao: "confirmar" | "estornar") {
+    const chave = `pagamento-${id}`;
+    setProcessando((atual) => new Set(atual).add(chave));
+    try {
+      await api.patch(`/pagamentos/${id}/${decisao}`);
+      await carregar();
+    } finally {
+      setProcessando((atual) => {
+        const proximo = new Set(atual);
+        proximo.delete(chave);
+        return proximo;
+      });
+    }
+  }
+
   const vinculosPendentes = vinculos.filter((v) => v.status === "pendente");
   const vinculosDecididos = vinculos.filter((v) => v.status !== "pendente");
   const matriculasPendentes = matriculas.filter((m) => m.status === "em_analise");
   const matriculasDecididas = matriculas.filter((m) => m.status !== "em_analise");
+  const pagamentosPendentes = pagamentos.filter(
+    (p) => p.meio === "dinheiro" && p.status === "pendente",
+  );
 
   return (
     <Layout>
@@ -142,6 +163,41 @@ export default function AdminPointDashboard() {
                         onClick={() => decidirMatricula(m.id, "recusar")}
                       >
                         Recusar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Pagamentos em dinheiro pendentes ({pagamentosPendentes.length})</h2>
+            {pagamentosPendentes.length === 0 ? (
+              <p className="empty-state">Nenhum lançamento aguardando validação.</p>
+            ) : (
+              <div className="card-list">
+                {pagamentosPendentes.map((p) => (
+                  <div className="item-card" key={p.id}>
+                    <div className="item-card-info">
+                      <span className="item-card-title">
+                        {p.aluno_nome} · R$ {p.valor.toFixed(2)}
+                      </span>
+                      <span className="item-card-subtitle">{p.turma_modalidade}</span>
+                    </div>
+                    <div className="item-card-actions">
+                      <button
+                        disabled={processando.has(`pagamento-${p.id}`)}
+                        onClick={() => decidirPagamento(p.id, "confirmar")}
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        className="secondary"
+                        disabled={processando.has(`pagamento-${p.id}`)}
+                        onClick={() => decidirPagamento(p.id, "estornar")}
+                      >
+                        Estornar
                       </button>
                     </div>
                   </div>

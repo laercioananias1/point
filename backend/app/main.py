@@ -3,7 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.core.database import SessionLocal
-from app.routers import alunos, auth, matriculas, points, professores, turmas, vinculos
+from app.routers import (
+    alunos,
+    auth,
+    configuracoes,
+    matriculas,
+    pagamentos,
+    points,
+    professores,
+    turmas,
+    vinculos,
+)
 
 app = FastAPI(title="Point API", version="0.1.0")
 
@@ -22,6 +32,8 @@ app.include_router(alunos.router)
 app.include_router(vinculos.router)
 app.include_router(turmas.router)
 app.include_router(matriculas.router)
+app.include_router(pagamentos.router)
+app.include_router(configuracoes.router)
 
 
 @app.get("/health")

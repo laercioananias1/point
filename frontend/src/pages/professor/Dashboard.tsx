@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api } from "../../api/client";
-import type { ModeloRepasse, PointResumo, TurmaResumo, Vinculo } from "../../api/types";
+import type { Matricula, ModeloRepasse, PointResumo, TurmaResumo, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 
@@ -14,6 +14,7 @@ export default function ProfessorDashboard() {
   const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
   const [points, setPoints] = useState<PointResumo[]>([]);
+  const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -21,14 +22,16 @@ export default function ProfessorDashboard() {
     setLoading(true);
     setErro(null);
     try {
-      const [turmasRes, vinculosRes, pointsRes] = await Promise.all([
+      const [turmasRes, vinculosRes, pointsRes, matriculasRes] = await Promise.all([
         api.get<TurmaResumo[]>("/professores/me/turmas"),
         api.get<Vinculo[]>("/professores/me/vinculos"),
         api.get<PointResumo[]>("/points/directorio"),
+        api.get<Matricula[]>("/professores/me/matriculas"),
       ]);
       setTurmas(turmasRes);
       setVinculos(vinculosRes);
       setPoints(pointsRes);
+      setMatriculas(matriculasRes);
     } catch {
       setErro("Não foi possível carregar seus dados. Tente novamente.");
     } finally {
@@ -76,6 +79,21 @@ export default function ProfessorDashboard() {
           </section>
 
           <section className="section">
+            <h2>Matrículas ativas ({matriculas.filter((m) => m.status === "ativa").length})</h2>
+            {matriculas.filter((m) => m.status === "ativa").length === 0 ? (
+              <p className="empty-state">Nenhuma matrícula ativa nas suas turmas ainda.</p>
+            ) : (
+              <div className="card-list">
+                {matriculas
+                  .filter((m) => m.status === "ativa")
+                  .map((m) => (
+                    <MatriculaPagamentoRow key={m.id} matricula={m} onPago={carregar} />
+                  ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
             <h2>Meus vínculos ({vinculos.length})</h2>
             {vinculos.length === 0 ? (
               <p className="empty-state">Você ainda não tem vínculo com nenhum Point.</p>
@@ -107,6 +125,67 @@ export default function ProfessorDashboard() {
         </>
       )}
     </Layout>
+  );
+}
+
+function MatriculaPagamentoRow({
+  matricula,
+  onPago,
+}: {
+  matricula: Matricula;
+  onPago: () => void;
+}) {
+  const jaConfirmado = matricula.pagamentos.some((p) => p.status === "confirmado");
+  const valorPadrao =
+    matricula.tipo === "mensal" ? matricula.turma.vinculo.preco_plano : matricula.turma.vinculo.preco_avulso;
+
+  const [valor, setValor] = useState(String(valorPadrao));
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function lancar() {
+    setEnviando(true);
+    setErro(null);
+    try {
+      await api.post("/pagamentos", { matricula_id: matricula.id, valor: Number(valor), meio: "dinheiro" });
+      onPago();
+    } catch {
+      setErro("Não foi possível lançar. Confira o valor e tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="item-card">
+      <div className="item-card-info">
+        <span className="item-card-title">{matricula.aluno.nome}</span>
+        <span className="item-card-subtitle">
+          {matricula.turma.modalidade} · {matricula.tipo === "mensal" ? "plano mensal" : "avulsa"}
+        </span>
+        {erro && <p className="form-error">{erro}</p>}
+      </div>
+
+      {jaConfirmado ? (
+        <StatusPill status="confirmado" />
+      ) : matricula.fonte_pagamento === "pix" ? (
+        <StatusPill status="pendente" />
+      ) : (
+        <div className="item-card-actions">
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            style={{ width: "90px" }}
+          />
+          <button disabled={enviando} onClick={lancar}>
+            {enviando ? "Lançando..." : "Lançar em dinheiro"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

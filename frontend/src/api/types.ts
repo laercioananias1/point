@@ -3,6 +3,7 @@ export type VinculoStatus = "pendente" | "ativo" | "inativo" | "recusado";
 export type MatriculaStatus = "em_analise" | "ativa" | "recusada" | "cancelada";
 export type MatriculaTipo = "avulsa" | "mensal";
 export type PagamentoMeio = "pix" | "dinheiro";
+export type PagamentoStatus = "pendente" | "confirmado" | "estornado";
 
 export interface PointResumo {
   id: number;
@@ -51,6 +52,20 @@ export interface TurmaResumo {
   vinculo: Vinculo;
 }
 
+export interface PagamentoResumo {
+  id: number;
+  valor: number;
+  meio: PagamentoMeio;
+  status: PagamentoStatus;
+  registrado_por_id: number | null;
+}
+
+export interface Pagamento extends PagamentoResumo {
+  matricula_id: number;
+  aluno_nome: string;
+  turma_modalidade: string;
+}
+
 export interface Matricula {
   id: number;
   aluno_id: number;
@@ -60,4 +75,5 @@ export interface Matricula {
   fonte_pagamento: PagamentoMeio;
   aluno: AlunoResumo;
   turma: TurmaResumo;
+  pagamentos: PagamentoResumo[];
 }

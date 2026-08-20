@@ -7,9 +7,12 @@ from app.core.database import get_db
 from app.core.deps import require_role
 from app.core.security import hash_password
 from app.models.enums import Role
+from app.models.matricula import Matricula
 from app.models.professor import Professor
+from app.models.turma import Turma
 from app.models.user import User
 from app.models.vinculo import Vinculo
+from app.schemas.matricula import MatriculaOut
 from app.schemas.professor import ProfessorCreate, ProfessorOut
 from app.schemas.vinculo import VinculoOut
 
@@ -62,3 +65,19 @@ def meus_vinculos(
     """Todos os vínculos do professor, em qualquer status e em qualquer Point
     (seção 3.1 — visão consolidada, não fica restrita a um Point selecionado)."""
     return db.query(Vinculo).filter(Vinculo.professor_id == user.professor_id).all()
+
+
+@router.get("/me/matriculas", response_model=list[MatriculaOut])
+def minhas_matriculas(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR))],
+) -> list[Matricula]:
+    """Matrículas de todas as turmas do professor, em qualquer Point — usado
+    pra lançar pagamento em dinheiro (seção 4.3)."""
+    return (
+        db.query(Matricula)
+        .join(Turma)
+        .join(Vinculo)
+        .filter(Vinculo.professor_id == user.professor_id)
+        .all()
+    )
