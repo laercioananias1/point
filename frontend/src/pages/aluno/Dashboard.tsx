@@ -1,12 +1,28 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api } from "../../api/client";
-import type { Credito, Matricula, MatriculaTipo, PagamentoMeio, TurmaResumo } from "../../api/types";
+import type {
+  Assinatura,
+  Credito,
+  Matricula,
+  Modalidade,
+  PagamentoMeio,
+  PeriodoDia,
+  PointResumo,
+  TurmaResumo,
+} from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+
+const PERIODOS_DIA: { value: PeriodoDia; label: string }[] = [
+  { value: "manha", label: "Manhã" },
+  { value: "tarde", label: "Tarde" },
+  { value: "noite", label: "Noite" },
+];
 
 export default function AlunoDashboard() {
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [creditos, setCreditos] = useState<Credito[]>([]);
+  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -14,12 +30,14 @@ export default function AlunoDashboard() {
     setLoading(true);
     setErro(null);
     try {
-      const [matriculasRes, creditosRes] = await Promise.all([
+      const [matriculasRes, creditosRes, assinaturasRes] = await Promise.all([
         api.get<Matricula[]>("/alunos/me/matriculas"),
         api.get<Credito[]>("/alunos/me/creditos"),
+        api.get<Assinatura[]>("/alunos/me/assinaturas"),
       ]);
       setMatriculas(matriculasRes);
       setCreditos(creditosRes);
+      setAssinaturas(assinaturasRes);
     } catch {
       setErro("Não foi possível carregar sua agenda. Tente novamente.");
     } finally {
@@ -70,6 +88,28 @@ export default function AlunoDashboard() {
           )}
 
           <section className="section">
+            <h2>Meus planos mensais ({assinaturas.length})</h2>
+            {assinaturas.length === 0 ? (
+              <p className="empty-state">Nenhum plano mensal solicitado ainda.</p>
+            ) : (
+              <div className="card-list">
+                {assinaturas.map((a) => (
+                  <AssinaturaRow key={a.id} assinatura={a} onMudanca={carregar} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Assinar plano mensal</h2>
+            <p className="empty-state" style={{ paddingTop: 0 }}>
+              Diga a modalidade, quantas vezes por semana e o período que prefere — o Point monta a
+              grade de dias e horários e ativa pra você.
+            </p>
+            <AssinarPlanoForm onSolicitado={carregar} />
+          </section>
+
+          <section className="section">
             <h2>Créditos de reposição ({creditosDisponiveis.length})</h2>
             {creditosDisponiveis.length === 0 ? (
               <p className="empty-state">Nenhum crédito disponível no momento.</p>
@@ -83,7 +123,10 @@ export default function AlunoDashboard() {
           </section>
 
           <section className="section">
-            <h2>Buscar turmas</h2>
+            <h2>Comprar aula avulsa</h2>
+            <p className="empty-state" style={{ paddingTop: 0 }}>
+              Pra uma aula só, sem compromisso mensal — escolha direto a turma que quiser.
+            </p>
             <BuscarTurmas jaMatriculadoEm={turmasJaMatriculadas} onMatricular={carregar} />
           </section>
         </>
@@ -296,7 +339,6 @@ function BuscarTurmas({
 }
 
 function TurmaCard({ turma, onMatricular }: { turma: TurmaResumo; onMatricular: () => void }) {
-  const [tipo, setTipo] = useState<MatriculaTipo>("mensal");
   const [fontePagamento, setFontePagamento] = useState<PagamentoMeio>("pix");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -306,7 +348,11 @@ function TurmaCard({ turma, onMatricular }: { turma: TurmaResumo; onMatricular: 
     setEnviando(true);
     setErro(null);
     try {
-      await api.post("/matriculas", { turma_id: turma.id, tipo, fonte_pagamento: fontePagamento });
+      await api.post("/matriculas", {
+        turma_id: turma.id,
+        tipo: "avulsa",
+        fonte_pagamento: fontePagamento,
+      });
       setEnviado(true);
       onMatricular();
     } catch {
@@ -325,10 +371,7 @@ function TurmaCard({ turma, onMatricular }: { turma: TurmaResumo; onMatricular: 
           {turma.vinculo.point.nome} · com{" "}
           {turma.vinculo.professor.nome}
         </span>
-        <span className="item-card-subtitle">
-          avulsa R$ {turma.vinculo.preco_avulso.toFixed(2)} · plano R${" "}
-          {turma.vinculo.preco_plano.toFixed(2)}
-        </span>
+        <span className="item-card-subtitle">avulsa R$ {turma.vinculo.preco_avulso.toFixed(2)}</span>
         {erro && <p className="form-error">{erro}</p>}
       </div>
 
@@ -336,10 +379,6 @@ function TurmaCard({ turma, onMatricular }: { turma: TurmaResumo; onMatricular: 
         <StatusPill status="em_analise" />
       ) : (
         <div className="item-card-actions">
-          <select value={tipo} onChange={(e) => setTipo(e.target.value as MatriculaTipo)}>
-            <option value="mensal">Plano mensal</option>
-            <option value="avulsa">Aula avulsa</option>
-          </select>
           <select
             value={fontePagamento}
             onChange={(e) => setFontePagamento(e.target.value as PagamentoMeio)}
@@ -353,5 +392,192 @@ function TurmaCard({ turma, onMatricular }: { turma: TurmaResumo; onMatricular: 
         </div>
       )}
     </div>
+  );
+}
+
+function AssinaturaRow({
+  assinatura,
+  onMudanca,
+}: {
+  assinatura: Assinatura;
+  onMudanca: () => void;
+}) {
+  const [enviando, setEnviando] = useState(false);
+
+  async function desistir() {
+    setEnviando(true);
+    try {
+      await api.patch(`/assinaturas/${assinatura.id}/cancelar`);
+      onMudanca();
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  const rotuloPeriodo = PERIODOS_DIA.find((p) => p.value === assinatura.periodo_dia_desejado)?.label;
+
+  return (
+    <div className="item-card" style={{ alignItems: "flex-start" }}>
+      <div className="item-card-info">
+        <span className="item-card-title">
+          {assinatura.modalidade.nome} · {assinatura.frequencia_semanal_desejada}x por semana
+        </span>
+        <span className="item-card-subtitle">Período preferido: {rotuloPeriodo}</span>
+        {assinatura.status === "ativa" && assinatura.turmas.length > 0 && (
+          <span className="item-card-subtitle">
+            {assinatura.turmas
+              .map((t) => `${t.dia_semana} ${t.horario}`)
+              .join(" · ")}{" "}
+            · desde {assinatura.data_inicio}
+          </span>
+        )}
+        {assinatura.plano && (
+          <span className="item-card-subtitle">R$ {assinatura.plano.preco.toFixed(2)} / mês</span>
+        )}
+      </div>
+      <div className="item-card-actions">
+        <StatusPill status={assinatura.status} />
+        {assinatura.status === "ativa" && (
+          <button className="secondary" disabled={enviando} onClick={desistir}>
+            {enviando ? "Cancelando..." : "Desistir"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AssinarPlanoForm({ onSolicitado }: { onSolicitado: () => void }) {
+  const [points, setPoints] = useState<PointResumo[]>([]);
+  const [pointId, setPointId] = useState<number | null>(null);
+  const [modalidades, setModalidades] = useState<Modalidade[]>([]);
+  const [modalidadeId, setModalidadeId] = useState<number | null>(null);
+  const [frequencia, setFrequencia] = useState(2);
+  const [periodo, setPeriodo] = useState<PeriodoDia>("noite");
+  const [fontePagamento, setFontePagamento] = useState<PagamentoMeio>("pix");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState(false);
+
+  useEffect(() => {
+    api.get<PointResumo[]>("/points/directorio").then((res) => {
+      setPoints(res);
+      setPointId(res[0]?.id ?? null);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (pointId === null) return;
+    api.get<Modalidade[]>(`/modalidades?point_id=${pointId}`).then((res) => {
+      setModalidades(res);
+      setModalidadeId(res[0]?.id ?? null);
+    });
+  }, [pointId]);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (pointId === null || modalidadeId === null) return;
+    setErro(null);
+    setSucesso(false);
+    setEnviando(true);
+    try {
+      await api.post("/assinaturas", {
+        point_id: pointId,
+        modalidade_id: modalidadeId,
+        frequencia_semanal_desejada: frequencia,
+        periodo_dia_desejado: periodo,
+        fonte_pagamento: fontePagamento,
+      });
+      setSucesso(true);
+      onSolicitado();
+    } catch {
+      setErro("Não foi possível enviar. Tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (points.length === 0) {
+    return <p className="empty-state">Nenhum Point disponível no momento.</p>;
+  }
+
+  return (
+    <form className="form-card" onSubmit={handleSubmit}>
+      <div className="form-row">
+        <label>
+          Point
+          <select value={pointId ?? ""} onChange={(e) => setPointId(Number(e.target.value))}>
+            {points.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Modalidade
+          <select
+            value={modalidadeId ?? ""}
+            onChange={(e) => setModalidadeId(Number(e.target.value))}
+            disabled={modalidades.length === 0}
+          >
+            {modalidades.length === 0 ? (
+              <option>Nenhuma modalidade nesse Point</option>
+            ) : (
+              modalidades.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
+                </option>
+              ))
+            )}
+          </select>
+        </label>
+      </div>
+
+      <div className="form-row">
+        <label>
+          Vezes por semana
+          <select value={frequencia} onChange={(e) => setFrequencia(Number(e.target.value))}>
+            {[1, 2, 3, 4, 5, 6].map((f) => (
+              <option key={f} value={f}>
+                {f}x
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Período preferido
+          <select value={periodo} onChange={(e) => setPeriodo(e.target.value as PeriodoDia)}>
+            {PERIODOS_DIA.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <label>
+        Forma de pagamento
+        <select
+          value={fontePagamento}
+          onChange={(e) => setFontePagamento(e.target.value as PagamentoMeio)}
+        >
+          <option value="pix">Pix</option>
+          <option value="dinheiro">Dinheiro</option>
+        </select>
+      </label>
+
+      {erro && <p className="form-error">{erro}</p>}
+      {sucesso && (
+        <p className="form-success">
+          Interesse enviado — o Point vai montar os dias e horários e ativar seu plano.
+        </p>
+      )}
+
+      <button type="submit" disabled={enviando || modalidadeId === null}>
+        {enviando ? "Enviando..." : "Enviar interesse"}
+      </button>
+    </form>
   );
 }

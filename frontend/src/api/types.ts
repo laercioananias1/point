@@ -6,6 +6,7 @@ export type PagamentoMeio = "pix" | "dinheiro";
 export type PagamentoStatus = "pendente" | "confirmado" | "estornado";
 export type CreditoMotivo = "forca_maior" | "cancelamento_aluno";
 export type CreditoStatus = "disponivel" | "usado" | "expirado";
+export type PeriodoDia = "manha" | "tarde" | "noite";
 
 export interface PointResumo {
   id: number;
@@ -119,6 +120,27 @@ export interface PointRanking {
   alunos_ativos: number;
   total_taxa_servico: number;
   total_repassado: number;
+}
+
+export interface Plano {
+  id: number;
+  point_id: number;
+  frequencia_semanal: number;
+  preco: number;
+}
+
+export interface Assinatura {
+  id: number;
+  aluno: AlunoResumo;
+  point_id: number;
+  modalidade: Modalidade;
+  frequencia_semanal_desejada: number;
+  periodo_dia_desejado: PeriodoDia;
+  fonte_pagamento: PagamentoMeio;
+  status: MatriculaStatus;
+  plano: Plano | null;
+  data_inicio: string | null;
+  turmas: TurmaResumo[];
 }
 
 export interface Matricula {

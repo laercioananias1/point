@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { api } from "../../api/client";
+import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Fechamento, Matricula, Pagamento, TurmaResumo, Vinculo } from "../../api/types";
+import type {
+  Assinatura,
+  Fechamento,
+  Matricula,
+  Pagamento,
+  Plano,
+  TurmaResumo,
+  Vinculo,
+} from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+
+const ROTULO_PERIODO: Record<string, string> = { manha: "Manhã", tarde: "Tarde", noite: "Noite" };
 
 export default function AdminPointDashboard() {
   const { user } = useAuth();
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
+  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [processando, setProcessando] = useState<Set<string>>(new Set());
@@ -18,14 +29,16 @@ export default function AdminPointDashboard() {
     setLoading(true);
     setErro(null);
     try {
-      const [vinculosRes, matriculasRes, pagamentosRes] = await Promise.all([
+      const [vinculosRes, matriculasRes, pagamentosRes, assinaturasRes] = await Promise.all([
         api.get<Vinculo[]>("/vinculos"),
         api.get<Matricula[]>("/matriculas"),
         api.get<Pagamento[]>("/pagamentos"),
+        api.get<Assinatura[]>("/assinaturas"),
       ]);
       setVinculos(vinculosRes);
       setMatriculas(matriculasRes);
       setPagamentos(pagamentosRes);
+      setAssinaturas(assinaturasRes);
     } catch {
       setErro("Não foi possível carregar os dados do Point. Tente novamente.");
     } finally {
@@ -89,6 +102,8 @@ export default function AdminPointDashboard() {
   const pagamentosPendentes = pagamentos.filter(
     (p) => p.meio === "dinheiro" && p.status === "pendente",
   );
+  const assinaturasPendentes = assinaturas.filter((a) => a.status === "em_analise");
+  const assinaturasAtivas = assinaturas.filter((a) => a.status === "ativa");
 
   return (
     <Layout>
@@ -166,6 +181,43 @@ export default function AdminPointDashboard() {
                       >
                         Recusar
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Assinaturas de plano mensal pendentes ({assinaturasPendentes.length})</h2>
+            {assinaturasPendentes.length === 0 ? (
+              <p className="empty-state">Nenhum interesse aguardando ativação.</p>
+            ) : (
+              <div className="card-list">
+                {assinaturasPendentes.map((a) => (
+                  <AtivarAssinaturaRow key={a.id} assinatura={a} onMudanca={carregar} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Assinaturas ativas ({assinaturasAtivas.length})</h2>
+            {user?.point_id && <GerarAulasButton pointId={user.point_id} />}
+            {assinaturasAtivas.length === 0 ? (
+              <p className="empty-state">Nenhuma assinatura ativa ainda.</p>
+            ) : (
+              <div className="card-list">
+                {assinaturasAtivas.map((a) => (
+                  <div className="item-card" key={a.id}>
+                    <div className="item-card-info">
+                      <span className="item-card-title">
+                        {a.aluno.nome} · {a.modalidade.nome} · {a.plano?.frequencia_semanal}x/semana
+                      </span>
+                      <span className="item-card-subtitle">
+                        {a.turmas.map((t) => `${t.dia_semana} ${t.horario}`).join(" · ")} · desde{" "}
+                        {a.data_inicio}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -270,6 +322,207 @@ export default function AdminPointDashboard() {
         </>
       )}
     </Layout>
+  );
+}
+
+function AtivarAssinaturaRow({
+  assinatura,
+  onMudanca,
+}: {
+  assinatura: Assinatura;
+  onMudanca: () => void;
+}) {
+  const [expandido, setExpandido] = useState(false);
+  const [recusando, setRecusando] = useState(false);
+
+  async function recusar() {
+    setRecusando(true);
+    try {
+      await api.patch(`/assinaturas/${assinatura.id}/recusar`);
+      onMudanca();
+    } finally {
+      setRecusando(false);
+    }
+  }
+
+  return (
+    <div className="item-card" style={{ flexDirection: "column", alignItems: "stretch" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+        <div className="item-card-info">
+          <span className="item-card-title">
+            {assinatura.aluno.nome} · {assinatura.modalidade.nome}
+          </span>
+          <span className="item-card-subtitle">
+            {assinatura.frequencia_semanal_desejada}x por semana · período{" "}
+            {ROTULO_PERIODO[assinatura.periodo_dia_desejado]} · pagamento {assinatura.fonte_pagamento}
+          </span>
+        </div>
+        <div className="item-card-actions">
+          <button onClick={() => setExpandido((v) => !v)}>{expandido ? "Fechar" : "Ativar"}</button>
+          <button className="secondary" disabled={recusando} onClick={recusar}>
+            {recusando ? "Recusando..." : "Recusar"}
+          </button>
+        </div>
+      </div>
+      {expandido && (
+        <AtivarForm
+          assinatura={assinatura}
+          onAtivado={() => {
+            setExpandido(false);
+            onMudanca();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function AtivarForm({ assinatura, onAtivado }: { assinatura: Assinatura; onAtivado: () => void }) {
+  const [planos, setPlanos] = useState<Plano[]>([]);
+  const [planoId, setPlanoId] = useState<number | null>(null);
+  const [turmasDisponiveis, setTurmasDisponiveis] = useState<TurmaResumo[]>([]);
+  const [turmaIds, setTurmaIds] = useState<number[]>([]);
+  const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<Plano[]>(`/planos?point_id=${assinatura.point_id}`).then((res) => {
+      setPlanos(res);
+      const sugerido = res.find((p) => p.frequencia_semanal === assinatura.frequencia_semanal_desejada);
+      setPlanoId((sugerido ?? res[0])?.id ?? null);
+    });
+    api
+      .get<TurmaResumo[]>(
+        `/turmas?point_id=${assinatura.point_id}&modalidade_id=${assinatura.modalidade.id}` +
+          `&periodo_dia=${assinatura.periodo_dia_desejado}`,
+      )
+      .then(setTurmasDisponiveis);
+  }, [assinatura]);
+
+  const frequenciaAlvo = planos.find((p) => p.id === planoId)?.frequencia_semanal ?? 0;
+
+  function alternarTurma(id: number) {
+    setTurmaIds((atual) => (atual.includes(id) ? atual.filter((i) => i !== id) : [...atual, id]));
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (planoId === null) return;
+    setErro(null);
+    setEnviando(true);
+    try {
+      await api.patch(`/assinaturas/${assinatura.id}/ativar`, {
+        plano_id: planoId,
+        turma_ids: turmaIds,
+        data_inicio: dataInicio,
+      });
+      onAtivado();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível ativar. Confira os dados.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (planos.length === 0) {
+    return <p className="empty-state">Cadastre um plano (aba Cadastro) antes de ativar.</p>;
+  }
+
+  return (
+    <form
+      className="form-card"
+      onSubmit={handleSubmit}
+      style={{ marginTop: "14px", maxWidth: "none" }}
+    >
+      <div className="form-row">
+        <label>
+          Plano
+          <select
+            value={planoId ?? ""}
+            onChange={(e) => {
+              setPlanoId(Number(e.target.value));
+              setTurmaIds([]);
+            }}
+          >
+            {planos.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.frequencia_semanal}x por semana — R$ {p.preco.toFixed(2)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Data de início
+          <input
+            type="date"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+            required
+          />
+        </label>
+      </div>
+
+      <label>
+        Turmas ({turmaIds.length} de {frequenciaAlvo} escolhidas)
+        {turmasDisponiveis.length === 0 ? (
+          <p className="empty-state" style={{ padding: "4px 0 0" }}>
+            Nenhuma turma dessa modalidade no período pedido — crie uma turma antes, ou peça pro
+            professor.
+          </p>
+        ) : (
+          <div className="toggle-grid">
+            {turmasDisponiveis.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={turmaIds.includes(t.id) ? "toggle-chip active" : "toggle-chip"}
+                onClick={() => alternarTurma(t.id)}
+              >
+                {t.dia_semana} {t.horario}
+              </button>
+            ))}
+          </div>
+        )}
+      </label>
+
+      {erro && <p className="form-error">{erro}</p>}
+
+      <button type="submit" disabled={enviando || turmaIds.length !== frequenciaAlvo}>
+        {enviando ? "Ativando..." : "Confirmar ativação"}
+      </button>
+    </form>
+  );
+}
+
+function GerarAulasButton({ pointId }: { pointId: number }) {
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState<number | null>(null);
+
+  async function gerar() {
+    setEnviando(true);
+    setResultado(null);
+    try {
+      const res = await api.post<{ aulas_geradas: number }>(
+        `/assinaturas/points/${pointId}/gerar-aulas-do-mes`,
+      );
+      setResultado(res.aulas_geradas);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+      <button className="secondary" disabled={enviando} onClick={gerar}>
+        {enviando ? "Gerando..." : "Gerar aulas do mês"}
+      </button>
+      {resultado !== null && (
+        <span className="empty-state" style={{ padding: 0 }}>
+          {resultado} aula(s) gerada(s).
+        </span>
+      )}
+    </div>
   );
 }
 

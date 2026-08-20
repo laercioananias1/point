@@ -7,7 +7,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_role
 from app.models.credito_reposicao import CreditoReposicao
-from app.models.enums import CreditoMotivo, CreditoStatus, MatriculaStatus, Role, VinculoStatus
+from app.models.enums import (
+    CreditoMotivo,
+    CreditoStatus,
+    MatriculaStatus,
+    PeriodoDia,
+    Role,
+    VinculoStatus,
+)
 from app.models.matricula import Matricula
 from app.models.modalidade import Modalidade
 from app.models.quadra import Quadra
@@ -109,19 +116,29 @@ def minhas_turmas(
     )
 
 
+PERIODO_DIA_HORAS = {
+    PeriodoDia.MANHA: range(5, 12),
+    PeriodoDia.TARDE: range(12, 18),
+    PeriodoDia.NOITE: range(18, 24),
+}
+
+
 @router.get("/turmas", response_model=list[TurmaOut])
 def buscar_turmas(
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
     modalidade: str | None = None,
+    modalidade_id: int | None = None,
     point_id: int | None = None,
+    periodo_dia: PeriodoDia | None = None,
 ) -> list[Turma]:
     """Busca do aluno por modalidade/local (seção 4.2) — qualquer usuário
     autenticado pode ver, em qualquer Point/professor. Só turmas de vínculos
     ativos aparecem; a checagem de vaga disponível fica pra uma etapa futura
     (controle de capacidade da Turma, ainda fora deste scaffold). point_id
     também serve pro admin do Point listar só as turmas do seu Point (ex.:
-    pra escolher qual cancelar por força maior)."""
+    pra escolher qual cancelar por força maior, ou quais oferecer na
+    ativação de uma assinatura — daí modalidade_id e periodo_dia)."""
     query = (
         db.query(Turma)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
@@ -131,9 +148,15 @@ def buscar_turmas(
         query = query.join(Modalidade, Turma.modalidade_id == Modalidade.id).filter(
             Modalidade.nome.ilike(f"%{modalidade}%")
         )
+    if modalidade_id:
+        query = query.filter(Turma.modalidade_id == modalidade_id)
     if point_id:
         query = query.filter(Vinculo.point_id == point_id)
-    return query.all()
+    turmas = query.all()
+    if periodo_dia:
+        horas_validas = PERIODO_DIA_HORAS[periodo_dia]
+        turmas = [t for t in turmas if int(t.horario.split(":")[0]) in horas_validas]
+    return turmas
 
 
 @router.post("/turmas/{turma_id}/cancelamentos", response_model=list[CreditoOut])

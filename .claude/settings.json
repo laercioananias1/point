@@ -54,7 +54,12 @@
       "Bash(python -m json.tool)",
       "Bash(bash \"C:/Users/laerc/AppData/Local/Temp/claude/c--Projetos-TaskHero-point/b46f5b0c-6e41-41b4-b679-8dc7f1b28117/scratchpad/reseed.sh\")",
       "Bash(git commit -m 'Periodo de vigencia, conflito de agenda do professor, calendario semanal *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(git commit -m 'Calendario com visao dia/semana/mes e navegacao *)",
+      "Bash(python -c \"import sys,json; ts=json.load\\(sys.stdin\\); print\\([\\(t['id'],t['modalidade']['nome'],t['dia_semana'],t['horario'],t['periodo_inicio'],t['periodo_fim']\\) for t in ts]\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import sys,json; a=json.load\\(sys.stdin\\); print\\('status:',a['status'],'turmas:',[\\(t['dia_semana'],t['horario']\\) for t in a['turmas']]\\)\")"
     ],
     "ask": [
       "Bash(git push*)",

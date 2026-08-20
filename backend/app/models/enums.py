@@ -81,3 +81,13 @@ class CheckinOrigem(str, enum.Enum):
 class CheckinStatus(str, enum.Enum):
     CONFIRMADO = "confirmado"
     PENDENTE_ATRIBUICAO = "pendente_atribuicao"
+
+
+class PeriodoDia(str, enum.Enum):
+    """Faixa de horário preferida pelo aluno ao declarar interesse numa
+    Assinatura — usada pelo admin pra filtrar quais Turmas oferecer na hora
+    de ativar (pedido do usuário, 2026-08-19)."""
+
+    MANHA = "manha"
+    TARDE = "tarde"
+    NOITE = "noite"

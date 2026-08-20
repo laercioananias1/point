@@ -7,11 +7,13 @@ from app.core.database import get_db
 from app.core.deps import require_role
 from app.core.security import hash_password
 from app.models.aluno import Aluno
+from app.models.assinatura import Assinatura
 from app.models.credito_reposicao import CreditoReposicao
 from app.models.enums import Role
 from app.models.matricula import Matricula
 from app.models.user import User
 from app.schemas.aluno import AlunoCreate, AlunoOut
+from app.schemas.assinatura import AssinaturaOut
 from app.schemas.credito import CreditoOut
 from app.schemas.matricula import MatriculaOut
 
@@ -81,3 +83,11 @@ def meus_creditos(
         .filter(Matricula.aluno_id == user.aluno_id)
         .all()
     )
+
+
+@router.get("/me/assinaturas", response_model=list[AssinaturaOut])
+def minhas_assinaturas(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.ALUNO))],
+) -> list[Assinatura]:
+    return db.query(Assinatura).filter(Assinatura.aluno_id == user.aluno_id).all()

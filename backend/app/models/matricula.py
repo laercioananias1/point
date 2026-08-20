@@ -21,6 +21,13 @@ class Matricula(TimestampMixin, Base):
     )
     fonte_pagamento: Mapped[PagamentoMeio] = mapped_column(Enum(PagamentoMeio))
 
+    # Preenchido só quando esta matrícula é uma das "fatias" (1 por turma) de
+    # uma Assinatura mensal ativada (pedido do usuário, 2026-08-19). Nula pra
+    # matrícula avulsa, que continua exatamente como antes.
+    assinatura_id: Mapped[int | None] = mapped_column(
+        ForeignKey("assinaturas.id"), nullable=True
+    )
+
     # Exceção de repasse por aluno (seção 3.2) — quando nulo, usa o padrão do Vínculo.
     repasse_override_modelo: Mapped[ModeloRepasse | None] = mapped_column(
         Enum(ModeloRepasse), nullable=True
@@ -29,6 +36,7 @@ class Matricula(TimestampMixin, Base):
 
     aluno: Mapped["Aluno"] = relationship(back_populates="matriculas")  # noqa: F821
     turma: Mapped["Turma"] = relationship(back_populates="matriculas")  # noqa: F821
+    assinatura: Mapped["Assinatura | None"] = relationship(back_populates="matriculas")  # noqa: F821
     pagamentos: Mapped[list["Pagamento"]] = relationship(back_populates="matricula")  # noqa: F821
     # foreign_keys explícito: CreditoReposicao tem uma segunda FK para
     # matriculas (nova_matricula_id, a matrícula de reposição) — sem isso o

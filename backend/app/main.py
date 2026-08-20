@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.routers import (
     alunos,
+    assinaturas,
     auth,
     configuracoes,
     creditos,
@@ -12,6 +13,7 @@ from app.routers import (
     matriculas,
     modalidades,
     pagamentos,
+    planos,
     points,
     professores,
     quadras,
@@ -42,6 +44,8 @@ app.include_router(pagamentos.router)
 app.include_router(configuracoes.router)
 app.include_router(creditos.router)
 app.include_router(fechamentos.router)
+app.include_router(planos.router)
+app.include_router(assinaturas.router)
 
 
 @app.get("/health")
