@@ -575,3 +575,131 @@ button.danger:hover:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.calendar-day-header.today {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+/* Toolbar: navegação + troca de visão (dia/semana/mês) */
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-nav button.secondary {
+  padding: 6px 12px;
+}
+
+.calendar-title {
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--navy);
+  margin-left: 4px;
+}
+
+.view-switch {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.view-switch-btn {
+  background: var(--surface);
+  color: var(--ink-muted);
+  border: none;
+  border-radius: 0;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.view-switch-btn + .view-switch-btn {
+  border-left: 1px solid var(--line);
+}
+
+.view-switch-btn:hover:not(:disabled) {
+  background: var(--surface-sunk);
+}
+
+.view-switch-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Visão de mês */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  min-width: 640px;
+}
+
+.month-weekday-header {
+  padding: 10px 6px;
+  text-align: center;
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--navy);
+  background: var(--surface-sunk);
+  border-bottom: 1px solid var(--line);
+}
+
+.month-cell {
+  min-height: 96px;
+  padding: 6px 7px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.month-cell.outside {
+  background: var(--surface-sunk);
+}
+
+.month-cell.outside .month-day-number {
+  color: var(--ink-muted);
+}
+
+.month-cell.today {
+  background: var(--accent-soft);
+}
+
+.month-day-number {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.month-event {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 2px 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.month-more {
+  font-size: 10px;
+  color: var(--ink-muted);
+}

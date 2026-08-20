@@ -11,7 +11,7 @@ import type {
 } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
-import { WeeklyCalendar } from "../../components/WeeklyCalendar";
+import { Calendar } from "../../components/Calendar";
 import { DIAS_SEMANA } from "../../lib/dias";
 
 const MODELOS_REPASSE: { value: ModeloRepasse; label: string }[] = [
@@ -74,12 +74,14 @@ export default function ProfessorDashboard() {
                 Nenhuma turma ainda — crie uma dentro de um vínculo ativo.
               </p>
             ) : (
-              <WeeklyCalendar
+              <Calendar
                 items={turmas.map((t) => ({
                   id: t.id,
                   diaSemana: t.dia_semana,
                   horario: t.horario,
                   duracaoMinutos: t.duracao_minutos,
+                  periodoInicio: t.periodo_inicio,
+                  periodoFim: t.periodo_fim,
                   titulo: t.modalidade.nome,
                   subtitulo: `${t.quadra.nome} · ${t.vinculo.point.nome}`,
                 }))}

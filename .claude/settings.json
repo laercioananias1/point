@@ -52,7 +52,9 @@
       "Bash(git commit -m 'Telas reais de Admin do Point, Professor e Aluno *)",
       "Bash(git commit --amend -m 'Cancelamento e credito de reposicao \\(etapa 5\\) *)",
       "Bash(python -m json.tool)",
-      "Bash(bash \"C:/Users/laerc/AppData/Local/Temp/claude/c--Projetos-TaskHero-point/b46f5b0c-6e41-41b4-b679-8dc7f1b28117/scratchpad/reseed.sh\")"
+      "Bash(bash \"C:/Users/laerc/AppData/Local/Temp/claude/c--Projetos-TaskHero-point/b46f5b0c-6e41-41b4-b679-8dc7f1b28117/scratchpad/reseed.sh\")",
+      "Bash(git commit -m 'Periodo de vigencia, conflito de agenda do professor, calendario semanal *)",
+      "Bash(node -e ' *)"
     ],
     "ask": [
       "Bash(git push*)",
