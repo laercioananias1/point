@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 import Login from "./pages/Login";
 import AdminPointDashboard from "./pages/admin-point/Dashboard";
 import AdminPointFaturamento from "./pages/admin-point/Faturamento";
+import AdminPointCadastro from "./pages/admin-point/Cadastro";
 import ProfessorDashboard from "./pages/professor/Dashboard";
 import AlunoDashboard from "./pages/aluno/Dashboard";
 import DonoAppDashboard from "./pages/dono-app/Dashboard";
@@ -52,6 +53,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointFaturamento />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/cadastro"
+        element={
+          <ProtectedRoute>
+            <AdminPointCadastro />
           </ProtectedRoute>
         }
       />

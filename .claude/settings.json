@@ -50,7 +50,8 @@
       "Grep",
       "Glob",
       "Bash(git commit -m 'Telas reais de Admin do Point, Professor e Aluno *)",
-      "Bash(git commit --amend -m 'Cancelamento e credito de reposicao \\(etapa 5\\) *)"
+      "Bash(git commit --amend -m 'Cancelamento e credito de reposicao \\(etapa 5\\) *)",
+      "Bash(python -m json.tool)"
     ],
     "ask": [
       "Bash(git push*)",

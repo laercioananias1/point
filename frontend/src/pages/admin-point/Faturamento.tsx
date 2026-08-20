@@ -129,7 +129,7 @@ export default function AdminPointFaturamento() {
                     <div className="item-card-info">
                       <span className="item-card-title">{m.aluno.nome}</span>
                       <span className="item-card-subtitle">
-                        {m.turma.modalidade} · {rotuloModelo(m.repasse_override_modelo!)} ·{" "}
+                        {m.turma.modalidade.nome} · {rotuloModelo(m.repasse_override_modelo!)} ·{" "}
                         {m.repasse_override_valor}
                         {m.repasse_override_modelo === "percentual" ? "%" : ""}
                       </span>
@@ -226,7 +226,7 @@ function NovaExcecaoForm({
         <select value={matriculaId} onChange={(e) => setMatriculaId(Number(e.target.value))}>
           {matriculas.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.aluno.nome} · {m.turma.modalidade}
+              {m.aluno.nome} · {m.turma.modalidade.nome}
             </option>
           ))}
         </select>

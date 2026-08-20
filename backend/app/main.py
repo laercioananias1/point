@@ -10,9 +10,11 @@ from app.routers import (
     creditos,
     fechamentos,
     matriculas,
+    modalidades,
     pagamentos,
     points,
     professores,
+    quadras,
     turmas,
     vinculos,
 )
@@ -32,6 +34,8 @@ app.include_router(points.router)
 app.include_router(professores.router)
 app.include_router(alunos.router)
 app.include_router(vinculos.router)
+app.include_router(modalidades.router)
+app.include_router(quadras.router)
 app.include_router(turmas.router)
 app.include_router(matriculas.router)
 app.include_router(pagamentos.router)

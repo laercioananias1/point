@@ -13,6 +13,7 @@ const NAV_LINKS: Record<string, { to: string; label: string }[]> = {
   admin_point: [
     { to: "/admin-point", label: "Aprovações" },
     { to: "/admin-point/faturamento", label: "Faturamento" },
+    { to: "/admin-point/cadastro", label: "Cadastro" },
   ],
 };
 

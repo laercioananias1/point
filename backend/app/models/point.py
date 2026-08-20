@@ -14,10 +14,8 @@ class Point(TimestampMixin, Base):
     nome: Mapped[str] = mapped_column(String(120))
     endereco: Mapped[str] = mapped_column(String(255))
 
-    # Lista simples de nomes de quadra (ex.: ["Quadra 1", "Quadra 2"]). Uma
-    # entidade Quadra própria (com fotos, tipo de piso etc.) pode substituir
-    # isso quando o cadastro do Point precisar de mais detalhe.
-    quadras: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # Quadras e modalidades viraram entidades próprias (app/models/quadra.py,
+    # app/models/modalidade.py) — antes eram só uma lista de nomes aqui.
 
     # Formas de pagamento habilitadas para este Point — controlado SÓ pelo
     # dono do app (seção 4.1), nunca pelo admin do Point.

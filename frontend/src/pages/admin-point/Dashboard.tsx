@@ -147,7 +147,7 @@ export default function AdminPointDashboard() {
                     <div className="item-card-info">
                       <span className="item-card-title">{m.aluno.nome}</span>
                       <span className="item-card-subtitle">
-                        {m.turma.modalidade} · {m.turma.dia_semana} {m.turma.horario} ·{" "}
+                        {m.turma.modalidade.nome} · {m.turma.dia_semana} {m.turma.horario} ·{" "}
                         {m.tipo === "mensal" ? "plano mensal" : "aula avulsa"} · pagamento{" "}
                         {m.fonte_pagamento}
                       </span>
@@ -258,7 +258,7 @@ export default function AdminPointDashboard() {
                     <div className="item-card-info">
                       <span className="item-card-title">{m.aluno.nome}</span>
                       <span className="item-card-subtitle">
-                        {m.turma.modalidade} · {m.turma.dia_semana} {m.turma.horario}
+                        {m.turma.modalidade.nome} · {m.turma.dia_semana} {m.turma.horario}
                       </span>
                     </div>
                     <StatusPill status={m.status} />
@@ -317,7 +317,7 @@ function CancelarAulaForm({ pointId }: { pointId: number }) {
         <select value={turmaId ?? ""} onChange={(e) => setTurmaId(Number(e.target.value))}>
           {turmas.map((t) => (
             <option key={t.id} value={t.id}>
-              {t.modalidade} · {t.dia_semana} {t.horario} · com {t.vinculo.professor.nome}
+              {t.modalidade.nome} · {t.dia_semana} {t.horario} · com {t.vinculo.professor.nome}
             </option>
           ))}
         </select>

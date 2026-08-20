@@ -25,7 +25,7 @@ def _to_out(pagamento: Pagamento) -> PagamentoOut:
         registrado_por_id=pagamento.registrado_por_id,
         matricula_id=pagamento.matricula_id,
         aluno_nome=pagamento.matricula.aluno.nome,
-        turma_modalidade=pagamento.matricula.turma.modalidade,
+        turma_modalidade=pagamento.matricula.turma.modalidade.nome,
     )
 
 

@@ -104,7 +104,7 @@ function MatriculaLista({
       {matriculas.map((m) => (
         <div className="item-card" key={m.id}>
           <div className="item-card-info">
-            <span className="item-card-title">{m.turma.modalidade}</span>
+            <span className="item-card-title">{m.turma.modalidade.nome}</span>
             <span className="item-card-subtitle">
               {m.turma.dia_semana} {m.turma.horario} · {m.turma.vinculo.point.nome} · com{" "}
               {m.turma.vinculo.professor.nome} · {m.tipo === "mensal" ? "plano mensal" : "avulsa"}
@@ -209,7 +209,7 @@ function CreditoRow({ credito, onReagendado }: { credito: Credito; onReagendado:
           <select value={turmaId ?? ""} onChange={(e) => setTurmaId(Number(e.target.value))}>
             {turmas.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.modalidade} · {t.dia_semana} {t.horario} · {t.vinculo.point.nome}
+                {t.modalidade.nome} · {t.dia_semana} {t.horario} · {t.vinculo.point.nome}
               </option>
             ))}
           </select>
@@ -319,9 +319,10 @@ function TurmaCard({ turma, onMatricular }: { turma: TurmaResumo; onMatricular: 
   return (
     <div className="item-card">
       <div className="item-card-info">
-        <span className="item-card-title">{turma.modalidade}</span>
+        <span className="item-card-title">{turma.modalidade.nome}</span>
         <span className="item-card-subtitle">
-          {turma.dia_semana} {turma.horario} · {turma.quadra} · {turma.vinculo.point.nome} · com{" "}
+          {turma.dia_semana} {turma.horario} ({turma.duracao_minutos} min) · {turma.quadra.nome} ·{" "}
+          {turma.vinculo.point.nome} · com{" "}
           {turma.vinculo.professor.nome}
         </span>
         <span className="item-card-subtitle">

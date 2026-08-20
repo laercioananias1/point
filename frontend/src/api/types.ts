@@ -13,6 +13,20 @@ export interface PointResumo {
   endereco: string;
 }
 
+export interface Modalidade {
+  id: number;
+  point_id: number;
+  nome: string;
+  duracao_padrao_minutos: number;
+}
+
+export interface Quadra {
+  id: number;
+  point_id: number;
+  nome: string;
+  modalidades: Modalidade[];
+}
+
 export interface ProfessorResumo {
   id: number;
   nome: string;
@@ -45,11 +59,12 @@ export interface Vinculo {
 export interface TurmaResumo {
   id: number;
   vinculo_id: number;
-  modalidade: string;
-  quadra: string;
+  modalidade: Modalidade;
+  quadra: Quadra;
   capacidade: number;
   dia_semana: string;
   horario: string;
+  duracao_minutos: number;
   recorrencia: string;
   vinculo: Vinculo;
 }

@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api } from "../../api/client";
-import type { Matricula, ModeloRepasse, PointResumo, TurmaResumo, Vinculo } from "../../api/types";
+import type {
+  Matricula,
+  Modalidade,
+  ModeloRepasse,
+  PointResumo,
+  Quadra,
+  TurmaResumo,
+  Vinculo,
+} from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 
@@ -68,9 +76,10 @@ export default function ProfessorDashboard() {
                 {turmas.map((t) => (
                   <div className="item-card" key={t.id}>
                     <div className="item-card-info">
-                      <span className="item-card-title">{t.modalidade}</span>
+                      <span className="item-card-title">{t.modalidade.nome}</span>
                       <span className="item-card-subtitle">
-                        {t.dia_semana} {t.horario} · {t.quadra} · capacidade {t.capacidade}
+                        {t.dia_semana} {t.horario} ({t.duracao_minutos} min) · {t.quadra.nome} ·
+                        capacidade {t.capacidade}
                       </span>
                     </div>
                   </div>
@@ -173,7 +182,7 @@ function MatriculaPagamentoRow({
       <div className="item-card-info">
         <span className="item-card-title">{matricula.aluno.nome}</span>
         <span className="item-card-subtitle">
-          {matricula.turma.modalidade} · {matricula.tipo === "mensal" ? "plano mensal" : "avulsa"}
+          {matricula.turma.modalidade.nome} · {matricula.tipo === "mensal" ? "plano mensal" : "avulsa"}
         </span>
         {erro && <p className="form-error">{erro}</p>}
       </div>
@@ -201,15 +210,23 @@ function MatriculaPagamentoRow({
   );
 }
 
-const DIAS_SEMANA = [
-  "segunda",
-  "terça",
-  "quarta",
-  "quinta",
-  "sexta",
-  "sábado",
-  "domingo",
+const DIAS_SEMANA: { value: string; label: string }[] = [
+  { value: "segunda", label: "Seg" },
+  { value: "terça", label: "Ter" },
+  { value: "quarta", label: "Qua" },
+  { value: "quinta", label: "Qui" },
+  { value: "sexta", label: "Sex" },
+  { value: "sábado", label: "Sáb" },
+  { value: "domingo", label: "Dom" },
 ];
+
+// Horas cheias disponíveis pra seleção — cobre a janela típica de
+// funcionamento de uma arena (manhã cedo até o fim da noite).
+const HORAS_DISPONIVEIS = Array.from({ length: 19 }, (_, i) => i + 5); // 5h..23h
+
+function toggleEmLista<T>(lista: T[], item: T): T[] {
+  return lista.includes(item) ? lista.filter((i) => i !== item) : [...lista, item];
+}
 
 function CriarTurmaForm({
   vinculos,
@@ -219,39 +236,91 @@ function CriarTurmaForm({
   onCriada: () => void;
 }) {
   const [vinculoId, setVinculoId] = useState(vinculos[0]?.id ?? 0);
-  const [modalidade, setModalidade] = useState("");
-  const [quadra, setQuadra] = useState("");
+  const pointId = vinculos.find((v) => v.id === vinculoId)?.point_id ?? 0;
+
+  const [modalidades, setModalidades] = useState<Modalidade[]>([]);
+  const [modalidadeId, setModalidadeId] = useState<number | null>(null);
+  const [quadras, setQuadras] = useState<Quadra[]>([]);
+  const [quadraId, setQuadraId] = useState<number | null>(null);
+
   const [capacidade, setCapacidade] = useState("4");
-  const [diaSemana, setDiaSemana] = useState(DIAS_SEMANA[0]);
-  const [horario, setHorario] = useState("18:00");
+  const [duracaoMinutos, setDuracaoMinutos] = useState("60");
+  const [diasSemana, setDiasSemana] = useState<string[]>([]);
+  const [horarios, setHorarios] = useState<number[]>([]);
+
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState(false);
+  const [sucesso, setSucesso] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pointId) return;
+    api.get<Modalidade[]>(`/modalidades?point_id=${pointId}`).then((res) => {
+      setModalidades(res);
+      setModalidadeId(res[0]?.id ?? null);
+    });
+  }, [pointId]);
+
+  useEffect(() => {
+    const modalidade = modalidades.find((m) => m.id === modalidadeId);
+    if (modalidade) setDuracaoMinutos(String(modalidade.duracao_padrao_minutos));
+
+    if (!pointId || modalidadeId === null) {
+      setQuadras([]);
+      setQuadraId(null);
+      return;
+    }
+    api.get<Quadra[]>(`/quadras?point_id=${pointId}&modalidade_id=${modalidadeId}`).then((res) => {
+      setQuadras(res);
+      setQuadraId(res[0]?.id ?? null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pointId, modalidadeId]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErro(null);
-    setSucesso(false);
+    setSucesso(null);
+
+    if (modalidadeId === null || quadraId === null) return;
+    if (diasSemana.length === 0 || horarios.length === 0) {
+      setErro("Escolha pelo menos um dia e um horário.");
+      return;
+    }
+
     setEnviando(true);
     try {
-      await api.post("/turmas", {
+      const turmasCriadas = await api.post<unknown[]>("/turmas", {
         vinculo_id: vinculoId,
-        modalidade,
-        quadra,
+        modalidade_id: modalidadeId,
+        quadra_id: quadraId,
         capacidade: Number(capacidade),
-        dia_semana: diaSemana,
-        horario,
+        dias_semana: diasSemana,
+        horarios: horarios.map((h) => `${String(h).padStart(2, "0")}:00`),
+        duracao_minutos: Number(duracaoMinutos),
         recorrencia: "semanal",
       });
-      setSucesso(true);
-      setModalidade("");
-      setQuadra("");
+      setSucesso(
+        turmasCriadas.length === 1
+          ? "1 turma criada."
+          : `${turmasCriadas.length} turmas criadas (${diasSemana.length} dia(s) × ${horarios.length} horário(s)).`,
+      );
+      setDiasSemana([]);
+      setHorarios([]);
       onCriada();
     } catch {
       setErro("Não foi possível criar a turma. Confira os valores e tente de novo.");
     } finally {
       setEnviando(false);
     }
+  }
+
+  if (modalidades.length === 0) {
+    return (
+      <p className="empty-state">
+        Nenhuma modalidade cadastrada nesse Point ainda — peça pro admin cadastrar
+        modalidades e quadras antes.
+      </p>
+    );
   }
 
   return (
@@ -271,53 +340,100 @@ function CriarTurmaForm({
 
       <label>
         Modalidade
+        <select
+          value={modalidadeId ?? ""}
+          onChange={(e) => setModalidadeId(Number(e.target.value))}
+        >
+          {modalidades.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.nome}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {quadras.length === 0 ? (
+        <p className="empty-state" style={{ padding: 0 }}>
+          Nenhuma quadra cadastrada pra essa modalidade — peça pro admin associar uma.
+        </p>
+      ) : (
+        <div className="form-row">
+          <label>
+            Quadra
+            <select value={quadraId ?? ""} onChange={(e) => setQuadraId(Number(e.target.value))}>
+              {quadras.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Capacidade
+            <input
+              type="number"
+              min="1"
+              value={capacidade}
+              onChange={(e) => setCapacidade(e.target.value)}
+              required
+            />
+          </label>
+        </div>
+      )}
+
+      <label>
+        Duração da aula (min)
         <input
-          placeholder="Beach tennis, futevôlei..."
-          value={modalidade}
-          onChange={(e) => setModalidade(e.target.value)}
+          type="number"
+          min="15"
+          step="15"
+          value={duracaoMinutos}
+          onChange={(e) => setDuracaoMinutos(e.target.value)}
           required
         />
       </label>
 
-      <div className="form-row">
-        <label>
-          Quadra
-          <input value={quadra} onChange={(e) => setQuadra(e.target.value)} required />
-        </label>
-        <label>
-          Capacidade
-          <input
-            type="number"
-            min="1"
-            value={capacidade}
-            onChange={(e) => setCapacidade(e.target.value)}
-            required
-          />
-        </label>
-      </div>
+      <label>
+        Dias da semana
+        <div className="toggle-grid">
+          {DIAS_SEMANA.map((d) => (
+            <button
+              key={d.value}
+              type="button"
+              className={diasSemana.includes(d.value) ? "toggle-chip active" : "toggle-chip"}
+              onClick={() => setDiasSemana((atual) => toggleEmLista(atual, d.value))}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+      </label>
 
-      <div className="form-row">
-        <label>
-          Dia da semana
-          <select value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)}>
-            {DIAS_SEMANA.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Horário
-          <input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} required />
-        </label>
-      </div>
+      <label>
+        Horários (hora cheia)
+        <div className="toggle-grid">
+          {HORAS_DISPONIVEIS.map((h) => (
+            <button
+              key={h}
+              type="button"
+              className={horarios.includes(h) ? "toggle-chip active" : "toggle-chip"}
+              onClick={() => setHorarios((atual) => toggleEmLista(atual, h))}
+            >
+              {h}h
+            </button>
+          ))}
+        </div>
+      </label>
+
+      <p className="empty-state" style={{ padding: 0 }}>
+        Cria uma turma pra cada combinação de dia e horário marcados acima.
+      </p>
 
       {erro && <p className="form-error">{erro}</p>}
-      {sucesso && <p className="form-success">Turma criada.</p>}
+      {sucesso && <p className="form-success">{sucesso}</p>}
 
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Criando..." : "Criar turma"}
+      <button type="submit" disabled={enviando || quadras.length === 0}>
+        {enviando ? "Criando..." : "Criar turma(s)"}
       </button>
     </form>
   );
