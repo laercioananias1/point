@@ -22,33 +22,40 @@ export default function Login() {
 
   return (
     <div className="auth-screen">
-      <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>Point</h1>
-        <p className="auth-subtitle">Entre com seu celular ou e-mail</p>
+      <div>
+        <div className="auth-brand">
+          <span className="auth-brand-mark" />
+          <span className="auth-brand-name">Point</span>
+        </div>
 
-        <label htmlFor="identificador">Celular ou e-mail</label>
-        <input
-          id="identificador"
-          value={identificador}
-          onChange={(e) => setIdentificador(e.target.value)}
-          required
-        />
+        <form className="auth-card" onSubmit={handleSubmit}>
+          <h1>Entrar</h1>
+          <p className="auth-subtitle">Use o celular ou e-mail do seu cadastro</p>
 
-        <label htmlFor="senha">Senha</label>
-        <input
-          id="senha"
-          type="password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          required
-        />
+          <label htmlFor="identificador">Celular ou e-mail</label>
+          <input
+            id="identificador"
+            value={identificador}
+            onChange={(e) => setIdentificador(e.target.value)}
+            required
+          />
 
-        {erro && <p className="auth-error">{erro}</p>}
+          <label htmlFor="senha">Senha</label>
+          <input
+            id="senha"
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+          />
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Entrando..." : "Entrar"}
-        </button>
-      </form>
+          {erro && <p className="auth-error">{erro}</p>}
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

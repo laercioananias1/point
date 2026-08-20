@@ -46,6 +46,7 @@ export default function ProfessorDashboard() {
   const pointsSemVinculo = points.filter(
     (p) => !vinculos.some((v) => v.point_id === p.id && v.status !== "recusado"),
   );
+  const vinculosAtivos = vinculos.filter((v) => v.status === "ativo");
 
   return (
     <Layout>
@@ -75,6 +76,17 @@ export default function ProfessorDashboard() {
                   </div>
                 ))}
               </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Criar turma</h2>
+            {vinculosAtivos.length === 0 ? (
+              <p className="empty-state">
+                Você precisa de um vínculo aprovado por um Point antes de criar turmas.
+              </p>
+            ) : (
+              <CriarTurmaForm vinculos={vinculosAtivos} onCriada={carregar} />
             )}
           </section>
 
@@ -186,6 +198,128 @@ function MatriculaPagamentoRow({
         </div>
       )}
     </div>
+  );
+}
+
+const DIAS_SEMANA = [
+  "segunda",
+  "terça",
+  "quarta",
+  "quinta",
+  "sexta",
+  "sábado",
+  "domingo",
+];
+
+function CriarTurmaForm({
+  vinculos,
+  onCriada,
+}: {
+  vinculos: Vinculo[];
+  onCriada: () => void;
+}) {
+  const [vinculoId, setVinculoId] = useState(vinculos[0]?.id ?? 0);
+  const [modalidade, setModalidade] = useState("");
+  const [quadra, setQuadra] = useState("");
+  const [capacidade, setCapacidade] = useState("4");
+  const [diaSemana, setDiaSemana] = useState(DIAS_SEMANA[0]);
+  const [horario, setHorario] = useState("18:00");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    setSucesso(false);
+    setEnviando(true);
+    try {
+      await api.post("/turmas", {
+        vinculo_id: vinculoId,
+        modalidade,
+        quadra,
+        capacidade: Number(capacidade),
+        dia_semana: diaSemana,
+        horario,
+        recorrencia: "semanal",
+      });
+      setSucesso(true);
+      setModalidade("");
+      setQuadra("");
+      onCriada();
+    } catch {
+      setErro("Não foi possível criar a turma. Confira os valores e tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <form className="form-card" onSubmit={handleSubmit}>
+      {vinculos.length > 1 && (
+        <label>
+          Point
+          <select value={vinculoId} onChange={(e) => setVinculoId(Number(e.target.value))}>
+            {vinculos.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.point.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      <label>
+        Modalidade
+        <input
+          placeholder="Beach tennis, futevôlei..."
+          value={modalidade}
+          onChange={(e) => setModalidade(e.target.value)}
+          required
+        />
+      </label>
+
+      <div className="form-row">
+        <label>
+          Quadra
+          <input value={quadra} onChange={(e) => setQuadra(e.target.value)} required />
+        </label>
+        <label>
+          Capacidade
+          <input
+            type="number"
+            min="1"
+            value={capacidade}
+            onChange={(e) => setCapacidade(e.target.value)}
+            required
+          />
+        </label>
+      </div>
+
+      <div className="form-row">
+        <label>
+          Dia da semana
+          <select value={diaSemana} onChange={(e) => setDiaSemana(e.target.value)}>
+            {DIAS_SEMANA.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Horário
+          <input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} required />
+        </label>
+      </div>
+
+      {erro && <p className="form-error">{erro}</p>}
+      {sucesso && <p className="form-success">Turma criada.</p>}
+
+      <button type="submit" disabled={enviando}>
+        {enviando ? "Criando..." : "Criar turma"}
+      </button>
+    </form>
   );
 }
 
