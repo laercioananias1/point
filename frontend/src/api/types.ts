@@ -68,7 +68,7 @@ export interface TurmaResumo {
   duracao_minutos: number;
   recorrencia: string;
   periodo_inicio: string;
-  periodo_fim: string;
+  periodo_fim: string | null;
   vinculo: Vinculo;
 }
 

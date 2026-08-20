@@ -9,14 +9,15 @@ from app.schemas.vinculo import VinculoOut
 class TurmaCreate(ORMModel):
     """Cria uma Turma pra cada combinação de dia × horário — ex.: 2 dias e
     2 horários criam 4 turmas numa chamada só (pedido do usuário, 2026-08-19).
-    periodo_inicio/periodo_fim valem pra todas as turmas do lote."""
+    periodo_inicio/periodo_fim valem pra todas as turmas do lote.
+    periodo_fim=None = recorrente, sem data de término (2026-08-20)."""
 
     vinculo_id: int
     modalidade_id: int
     quadra_id: int
     capacidade: int
     periodo_inicio: date
-    periodo_fim: date
+    periodo_fim: date | None = None
     dias_semana: list[str]
     horarios: list[str]  # cada um "HH:00" — sempre hora cheia
     duracao_minutos: int | None = None  # None = usa o padrão da modalidade
@@ -34,5 +35,5 @@ class TurmaOut(ORMModel):
     duracao_minutos: int
     recorrencia: str
     periodo_inicio: date
-    periodo_fim: date
+    periodo_fim: date | None
     vinculo: VinculoOut

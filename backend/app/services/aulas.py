@@ -38,7 +38,10 @@ def gerar_aulas_do_mes(db: Session, matricula: Matricula, referencia: date | Non
         limite_inicio = assinatura.data_inicio
 
     inicio = max(inicio_mes, limite_inicio)
-    fim = min(fim_mes, turma.periodo_fim)
+    # periodo_fim nulo = turma recorrente sem data de término (2026-08-20) —
+    # o teto vira só o fim do mês, igual pra qualquer turma nesse gerador
+    # mensal (ele nunca tenta gerar mais de um mês de uma vez).
+    fim = fim_mes if turma.periodo_fim is None else min(fim_mes, turma.periodo_fim)
     if inicio > fim:
         return 0
 

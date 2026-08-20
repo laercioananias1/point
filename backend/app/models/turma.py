@@ -18,7 +18,10 @@ class Turma(TimestampMixin, Base):
     periodo_inicio/periodo_fim delimitam a vigência — além de dizer até quando
     a turma roda, é o que permite checar conflito de agenda do professor: duas
     turmas do mesmo professor, mesmo dia_semana e horário, só colidem de
-    verdade se os períodos se sobrepõem."""
+    verdade se os períodos se sobrepõem. periodo_fim nulo = recorrente sem
+    data de término (pedido do usuário, 2026-08-20) — todo lugar que compara
+    com periodo_fim precisa tratar NULL como 'nunca termina', não como
+    'não sabemos'."""
 
     __tablename__ = "turmas"
 
@@ -34,7 +37,7 @@ class Turma(TimestampMixin, Base):
     duracao_minutos: Mapped[int] = mapped_column(Integer, default=60)
     recorrencia: Mapped[str] = mapped_column(String(30), default="semanal")
     periodo_inicio: Mapped[date] = mapped_column(Date)
-    periodo_fim: Mapped[date] = mapped_column(Date)
+    periodo_fim: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     vinculo: Mapped["Vinculo"] = relationship(back_populates="turmas")  # noqa: F821
     modalidade: Mapped["Modalidade"] = relationship()  # noqa: F821

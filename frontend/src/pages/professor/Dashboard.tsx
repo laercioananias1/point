@@ -248,6 +248,7 @@ function CriarTurmaForm({
   const [duracaoMinutos, setDuracaoMinutos] = useState("60");
   const [periodoInicio, setPeriodoInicio] = useState(hoje());
   const [periodoFim, setPeriodoFim] = useState(daquiA(90));
+  const [recorrente, setRecorrente] = useState(false);
   const [diasSemana, setDiasSemana] = useState<string[]>([]);
   const [horarios, setHorarios] = useState<number[]>([]);
 
@@ -289,7 +290,7 @@ function CriarTurmaForm({
       setErro("Escolha pelo menos um dia e um horário.");
       return;
     }
-    if (periodoInicio > periodoFim) {
+    if (!recorrente && periodoInicio > periodoFim) {
       setErro("O início do período precisa ser antes do fim.");
       return;
     }
@@ -302,7 +303,7 @@ function CriarTurmaForm({
         quadra_id: quadraId,
         capacidade: Number(capacidade),
         periodo_inicio: periodoInicio,
-        periodo_fim: periodoFim,
+        periodo_fim: recorrente ? null : periodoFim,
         dias_semana: diasSemana,
         horarios: horarios.map((h) => `${String(h).padStart(2, "0")}:00`),
         duracao_minutos: Number(duracaoMinutos),
@@ -422,10 +423,21 @@ function CriarTurmaForm({
             type="date"
             value={periodoFim}
             onChange={(e) => setPeriodoFim(e.target.value)}
-            required
+            disabled={recorrente}
+            required={!recorrente}
           />
         </label>
       </div>
+
+      <label style={{ flexDirection: "row", alignItems: "center", gap: "8px" }}>
+        <input
+          type="checkbox"
+          checked={recorrente}
+          onChange={(e) => setRecorrente(e.target.checked)}
+          style={{ width: "auto" }}
+        />
+        Sem data de término (recorrente)
+      </label>
 
       <label>
         Dias da semana

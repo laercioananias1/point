@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -53,13 +54,21 @@ def criar_turmas(
 
     if not payload.dias_semana or not payload.horarios:
         raise HTTPException(422, "Escolha pelo menos um dia e um horário")
-    if payload.periodo_inicio > payload.periodo_fim:
+    if payload.periodo_fim is not None and payload.periodo_inicio > payload.periodo_fim:
         raise HTTPException(422, "O início do período precisa ser antes do fim")
 
     # Agenda validada globalmente (seção 3.1) — o professor é uma entidade
     # única e global, então o conflito é checado em TODOS os vínculos dele,
     # não só no Point deste vínculo. Duas turmas só colidem de verdade se o
-    # dia/horário bate E os períodos se sobrepõem.
+    # dia/horário bate E os períodos se sobrepõem — periodo_fim nulo (turma
+    # recorrente, sem data de término, pedido do usuário 2026-08-20) conta
+    # como "nunca termina", não pode sumir da checagem por causa do NULL.
+    filtro_periodo = [
+        or_(Turma.periodo_fim.is_(None), Turma.periodo_fim >= payload.periodo_inicio),
+    ]
+    if payload.periodo_fim is not None:
+        filtro_periodo.append(Turma.periodo_inicio <= payload.periodo_fim)
+
     conflitos = (
         db.query(Turma)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
@@ -67,8 +76,7 @@ def criar_turmas(
             Vinculo.professor_id == professor.professor_id,
             Turma.dia_semana.in_(payload.dias_semana),
             Turma.horario.in_(payload.horarios),
-            Turma.periodo_inicio <= payload.periodo_fim,
-            Turma.periodo_fim >= payload.periodo_inicio,
+            *filtro_periodo,
         )
         .all()
     )
@@ -142,7 +150,10 @@ def buscar_turmas(
     query = (
         db.query(Turma)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
-        .filter(Vinculo.status == VinculoStatus.ATIVO, Turma.periodo_fim >= date.today())
+        .filter(
+            Vinculo.status == VinculoStatus.ATIVO,
+            or_(Turma.periodo_fim.is_(None), Turma.periodo_fim >= date.today()),
+        )
     )
     if modalidade:
         query = query.join(Modalidade, Turma.modalidade_id == Modalidade.id).filter(

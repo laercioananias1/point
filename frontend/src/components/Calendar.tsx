@@ -7,7 +7,7 @@ export interface CalendarItem {
   horario: string; // "HH:00"
   duracaoMinutos: number;
   periodoInicio: string; // "YYYY-MM-DD"
-  periodoFim: string; // "YYYY-MM-DD"
+  periodoFim: string | null; // "YYYY-MM-DD" — null = recorrente, sem fim
   titulo: string;
   subtitulo?: string;
 }
@@ -30,7 +30,8 @@ function diaSemanaDeData(date: Date): string {
 
 function ocorreNaData(item: CalendarItem, date: Date): boolean {
   const iso = toISODate(date);
-  return item.diaSemana === diaSemanaDeData(date) && iso >= item.periodoInicio && iso <= item.periodoFim;
+  const dentroDoPeriodo = iso >= item.periodoInicio && (item.periodoFim === null || iso <= item.periodoFim);
+  return item.diaSemana === diaSemanaDeData(date) && dentroDoPeriodo;
 }
 
 function inicioDaSemana(ref: Date): Date {
