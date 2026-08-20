@@ -1,4 +1,6 @@
-from sqlalchemy import ForeignKey, Integer, String
+from datetime import date
+
+from sqlalchemy import Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -10,9 +12,13 @@ class Turma(TimestampMixin, Base):
 
     Cada linha é UM par dia_semana + horário (uma recorrência semanal só) —
     "segunda 18h" e "quarta 18h" são duas Turmas distintas, mesmo com a mesma
-    modalidade/quadra/professor. O endpoint de criação (seção pedido do
-    usuário, 2026-08-19) cria várias de uma vez a partir de uma seleção de
-    dias × horários."""
+    modalidade/quadra/professor. O endpoint de criação cria várias de uma vez
+    a partir de uma seleção de dias × horários (pedido do usuário, 2026-08-19).
+
+    periodo_inicio/periodo_fim delimitam a vigência — além de dizer até quando
+    a turma roda, é o que permite checar conflito de agenda do professor: duas
+    turmas do mesmo professor, mesmo dia_semana e horário, só colidem de
+    verdade se os períodos se sobrepõem."""
 
     __tablename__ = "turmas"
 
@@ -27,6 +33,8 @@ class Turma(TimestampMixin, Base):
     horario: Mapped[str] = mapped_column(String(5))  # "HH:00" — sempre hora cheia
     duracao_minutos: Mapped[int] = mapped_column(Integer, default=60)
     recorrencia: Mapped[str] = mapped_column(String(30), default="semanal")
+    periodo_inicio: Mapped[date] = mapped_column(Date)
+    periodo_fim: Mapped[date] = mapped_column(Date)
 
     vinculo: Mapped["Vinculo"] = relationship(back_populates="turmas")  # noqa: F821
     modalidade: Mapped["Modalidade"] = relationship()  # noqa: F821

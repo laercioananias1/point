@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { api } from "../../api/client";
+import { api, ApiError } from "../../api/client";
 import type {
   Matricula,
   Modalidade,
@@ -11,6 +11,8 @@ import type {
 } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+import { WeeklyCalendar } from "../../components/WeeklyCalendar";
+import { DIAS_SEMANA } from "../../lib/dias";
 
 const MODELOS_REPASSE: { value: ModeloRepasse; label: string }[] = [
   { value: "percentual", label: "Percentual por aula/mensalidade" },
@@ -72,19 +74,16 @@ export default function ProfessorDashboard() {
                 Nenhuma turma ainda — crie uma dentro de um vínculo ativo.
               </p>
             ) : (
-              <div className="card-list">
-                {turmas.map((t) => (
-                  <div className="item-card" key={t.id}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">{t.modalidade.nome}</span>
-                      <span className="item-card-subtitle">
-                        {t.dia_semana} {t.horario} ({t.duracao_minutos} min) · {t.quadra.nome} ·
-                        capacidade {t.capacidade}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <WeeklyCalendar
+                items={turmas.map((t) => ({
+                  id: t.id,
+                  diaSemana: t.dia_semana,
+                  horario: t.horario,
+                  duracaoMinutos: t.duracao_minutos,
+                  titulo: t.modalidade.nome,
+                  subtitulo: `${t.quadra.nome} · ${t.vinculo.point.nome}`,
+                }))}
+              />
             )}
           </section>
 
@@ -210,22 +209,22 @@ function MatriculaPagamentoRow({
   );
 }
 
-const DIAS_SEMANA: { value: string; label: string }[] = [
-  { value: "segunda", label: "Seg" },
-  { value: "terça", label: "Ter" },
-  { value: "quarta", label: "Qua" },
-  { value: "quinta", label: "Qui" },
-  { value: "sexta", label: "Sex" },
-  { value: "sábado", label: "Sáb" },
-  { value: "domingo", label: "Dom" },
-];
-
 // Horas cheias disponíveis pra seleção — cobre a janela típica de
 // funcionamento de uma arena (manhã cedo até o fim da noite).
 const HORAS_DISPONIVEIS = Array.from({ length: 19 }, (_, i) => i + 5); // 5h..23h
 
 function toggleEmLista<T>(lista: T[], item: T): T[] {
   return lista.includes(item) ? lista.filter((i) => i !== item) : [...lista, item];
+}
+
+function hoje(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function daquiA(dias: number): string {
+  const data = new Date();
+  data.setDate(data.getDate() + dias);
+  return data.toISOString().slice(0, 10);
 }
 
 function CriarTurmaForm({
@@ -245,6 +244,8 @@ function CriarTurmaForm({
 
   const [capacidade, setCapacidade] = useState("4");
   const [duracaoMinutos, setDuracaoMinutos] = useState("60");
+  const [periodoInicio, setPeriodoInicio] = useState(hoje());
+  const [periodoFim, setPeriodoFim] = useState(daquiA(90));
   const [diasSemana, setDiasSemana] = useState<string[]>([]);
   const [horarios, setHorarios] = useState<number[]>([]);
 
@@ -286,6 +287,10 @@ function CriarTurmaForm({
       setErro("Escolha pelo menos um dia e um horário.");
       return;
     }
+    if (periodoInicio > periodoFim) {
+      setErro("O início do período precisa ser antes do fim.");
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -294,6 +299,8 @@ function CriarTurmaForm({
         modalidade_id: modalidadeId,
         quadra_id: quadraId,
         capacidade: Number(capacidade),
+        periodo_inicio: periodoInicio,
+        periodo_fim: periodoFim,
         dias_semana: diasSemana,
         horarios: horarios.map((h) => `${String(h).padStart(2, "0")}:00`),
         duracao_minutos: Number(duracaoMinutos),
@@ -307,8 +314,12 @@ function CriarTurmaForm({
       setDiasSemana([]);
       setHorarios([]);
       onCriada();
-    } catch {
-      setErro("Não foi possível criar a turma. Confira os valores e tente de novo.");
+    } catch (e) {
+      setErro(
+        e instanceof ApiError
+          ? e.message
+          : "Não foi possível criar a turma. Confira os valores e tente de novo.",
+      );
     } finally {
       setEnviando(false);
     }
@@ -392,6 +403,27 @@ function CriarTurmaForm({
           required
         />
       </label>
+
+      <div className="form-row">
+        <label>
+          Início do período
+          <input
+            type="date"
+            value={periodoInicio}
+            onChange={(e) => setPeriodoInicio(e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Fim do período
+          <input
+            type="date"
+            value={periodoFim}
+            onChange={(e) => setPeriodoFim(e.target.value)}
+            required
+          />
+        </label>
+      </div>
 
       <label>
         Dias da semana

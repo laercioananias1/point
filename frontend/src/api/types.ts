@@ -66,6 +66,8 @@ export interface TurmaResumo {
   horario: string;
   duracao_minutos: number;
   recorrencia: string;
+  periodo_inicio: string;
+  periodo_fim: string;
   vinculo: Vinculo;
 }
 

@@ -46,6 +46,28 @@ def criar_turmas(
 
     if not payload.dias_semana or not payload.horarios:
         raise HTTPException(422, "Escolha pelo menos um dia e um horário")
+    if payload.periodo_inicio > payload.periodo_fim:
+        raise HTTPException(422, "O início do período precisa ser antes do fim")
+
+    # Agenda validada globalmente (seção 3.1) — o professor é uma entidade
+    # única e global, então o conflito é checado em TODOS os vínculos dele,
+    # não só no Point deste vínculo. Duas turmas só colidem de verdade se o
+    # dia/horário bate E os períodos se sobrepõem.
+    conflitos = (
+        db.query(Turma)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Vinculo.professor_id == professor.professor_id,
+            Turma.dia_semana.in_(payload.dias_semana),
+            Turma.horario.in_(payload.horarios),
+            Turma.periodo_inicio <= payload.periodo_fim,
+            Turma.periodo_fim >= payload.periodo_inicio,
+        )
+        .all()
+    )
+    if conflitos:
+        ocupados = ", ".join(sorted({f"{t.dia_semana} {t.horario}" for t in conflitos}))
+        raise HTTPException(409, f"Você já tem turma nesse horário: {ocupados}")
 
     duracao = payload.duracao_minutos or modalidade.duracao_padrao_minutos
 
@@ -59,6 +81,8 @@ def criar_turmas(
             horario=horario,
             duracao_minutos=duracao,
             recorrencia=payload.recorrencia,
+            periodo_inicio=payload.periodo_inicio,
+            periodo_fim=payload.periodo_fim,
         )
         for dia in payload.dias_semana
         for horario in payload.horarios
@@ -101,7 +125,7 @@ def buscar_turmas(
     query = (
         db.query(Turma)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
-        .filter(Vinculo.status == VinculoStatus.ATIVO)
+        .filter(Vinculo.status == VinculoStatus.ATIVO, Turma.periodo_fim >= date.today())
     )
     if modalidade:
         query = query.join(Modalidade, Turma.modalidade_id == Modalidade.id).filter(

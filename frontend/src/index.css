@@ -495,3 +495,83 @@ button.danger:hover:not(:disabled) {
   border-color: var(--accent);
   color: #fff;
 }
+
+/* Weekly calendar — agenda de turmas */
+.calendar-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: 52px repeat(7, minmax(96px, 1fr));
+  min-width: 720px;
+}
+
+.calendar-cell {
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.calendar-corner {
+  border-top: none;
+  border-left: none;
+  background: var(--surface-sunk);
+}
+
+.calendar-day-header {
+  padding: 10px 6px;
+  text-align: center;
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--navy);
+  background: var(--surface-sunk);
+}
+
+.calendar-hour-label {
+  padding: 4px 6px;
+  text-align: right;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ink-muted);
+  background: var(--surface-sunk);
+  border-left: none;
+}
+
+.calendar-slot {
+  min-height: 40px;
+}
+
+.calendar-item {
+  margin: 2px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+.calendar-item-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-item-subtitle {
+  font-size: 10.5px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
