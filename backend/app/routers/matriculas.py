@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -5,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import require_role
-from app.models.enums import MatriculaStatus, Role
+from app.models.credito_reposicao import CreditoReposicao
+from app.models.enums import CreditoMotivo, CreditoStatus, MatriculaStatus, Role
 from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.user import User
@@ -87,6 +89,41 @@ def recusar_matricula(
 ) -> Matricula:
     matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
     matricula.status = MatriculaStatus.RECUSADA
+    db.commit()
+    db.refresh(matricula)
+    return matricula
+
+
+@router.patch("/{matricula_id}/cancelar", response_model=MatriculaOut)
+def cancelar_matricula(
+    matricula_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    aluno: Annotated[User, Depends(require_role(Role.ALUNO))],
+) -> Matricula:
+    """Cancelamento antecipado pelo próprio aluno (seção 4.4) — gera crédito
+    de reposição. Simplificação: o documento fala em 'antes do horário da
+    aula no mesmo dia', mas o modelo não guarda a data de cada ocorrência de
+    uma Turma recorrente (só dia_semana/horário do template), então não dá
+    pra validar esse prazo aqui — todo cancelamento de matrícula ativa gera
+    crédito, sem checar o horário."""
+    matricula = db.get(Matricula, matricula_id)
+    if matricula is None or matricula.aluno_id != aluno.aluno_id:
+        raise HTTPException(404, "Matrícula não encontrada")
+    if matricula.status != MatriculaStatus.ATIVA:
+        raise HTTPException(422, "Só é possível cancelar uma matrícula ativa")
+
+    matricula.status = MatriculaStatus.CANCELADA
+
+    prazo_dias = matricula.turma.vinculo.point.prazo_credito_dias
+    db.add(
+        CreditoReposicao(
+            matricula_id=matricula.id,
+            motivo=CreditoMotivo.CANCELAMENTO_ALUNO,
+            data_aula=date.today(),
+            data_expiracao=date.today() + timedelta(days=prazo_dias),
+            status=CreditoStatus.DISPONIVEL,
+        )
+    )
     db.commit()
     db.refresh(matricula)
     return matricula

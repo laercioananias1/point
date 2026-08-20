@@ -30,4 +30,9 @@ class Matricula(TimestampMixin, Base):
     aluno: Mapped["Aluno"] = relationship(back_populates="matriculas")  # noqa: F821
     turma: Mapped["Turma"] = relationship(back_populates="matriculas")  # noqa: F821
     pagamentos: Mapped[list["Pagamento"]] = relationship(back_populates="matricula")  # noqa: F821
-    creditos: Mapped[list["CreditoReposicao"]] = relationship(back_populates="matricula")  # noqa: F821
+    # foreign_keys explícito: CreditoReposicao tem uma segunda FK para
+    # matriculas (nova_matricula_id, a matrícula de reposição) — sem isso o
+    # SQLAlchemy não sabe qual usar para este relationship.
+    creditos: Mapped[list["CreditoReposicao"]] = relationship(  # noqa: F821
+        back_populates="matricula", foreign_keys="CreditoReposicao.matricula_id"
+    )

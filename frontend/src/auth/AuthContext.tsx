@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, setToken, clearToken, getToken } from "../api/client";
 
 export type Role = "super_admin" | "admin_point" | "professor" | "aluno";
@@ -7,6 +7,7 @@ export interface User {
   id: string;
   nome: string;
   role: Role;
+  point_id: number | null;
 }
 
 interface AuthContextValue {
@@ -21,6 +22,15 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Recarregar a página mantém o token (localStorage), mas perde o `user`
+  // em memória — busca de novo no boot do app pra não voltar pro login à toa.
+  useEffect(() => {
+    if (getToken() && !user) {
+      api.get<User>("/auth/me").then(setUser).catch(clearToken);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function login(identificador: string, senha: string) {
     setLoading(true);

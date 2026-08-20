@@ -4,6 +4,8 @@ export type MatriculaStatus = "em_analise" | "ativa" | "recusada" | "cancelada";
 export type MatriculaTipo = "avulsa" | "mensal";
 export type PagamentoMeio = "pix" | "dinheiro";
 export type PagamentoStatus = "pendente" | "confirmado" | "estornado";
+export type CreditoMotivo = "forca_maior" | "cancelamento_aluno";
+export type CreditoStatus = "disponivel" | "usado" | "expirado";
 
 export interface PointResumo {
   id: number;
@@ -64,6 +66,16 @@ export interface Pagamento extends PagamentoResumo {
   matricula_id: number;
   aluno_nome: string;
   turma_modalidade: string;
+}
+
+export interface Credito {
+  id: number;
+  matricula_id: number;
+  motivo: CreditoMotivo;
+  data_aula: string;
+  data_expiracao: string;
+  status: CreditoStatus;
+  nova_matricula_id: number | null;
 }
 
 export interface Matricula {

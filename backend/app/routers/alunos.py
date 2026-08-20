@@ -7,10 +7,12 @@ from app.core.database import get_db
 from app.core.deps import require_role
 from app.core.security import hash_password
 from app.models.aluno import Aluno
+from app.models.credito_reposicao import CreditoReposicao
 from app.models.enums import Role
 from app.models.matricula import Matricula
 from app.models.user import User
 from app.schemas.aluno import AlunoCreate, AlunoOut
+from app.schemas.credito import CreditoOut
 from app.schemas.matricula import MatriculaOut
 
 router = APIRouter(prefix="/alunos", tags=["alunos"])
@@ -61,3 +63,21 @@ def minhas_matriculas(
     de status, pra ele acompanhar tanto o que já está ativo quanto o que
     ainda está em análise."""
     return db.query(Matricula).filter(Matricula.aluno_id == user.aluno_id).all()
+
+
+@router.get("/me/creditos", response_model=list[CreditoOut])
+def meus_creditos(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.ALUNO))],
+) -> list[CreditoReposicao]:
+    """Créditos de reposição do aluno, em qualquer status (seção 4.4) — pra
+    ele ver tanto o que ainda pode usar quanto o histórico."""
+    # join explícito: CreditoReposicao tem duas FKs pra matriculas
+    # (matricula_id e nova_matricula_id) — sem isso o SQLAlchemy não sabe
+    # qual usar e recusa a query (AmbiguousForeignKeysError).
+    return (
+        db.query(CreditoReposicao)
+        .join(Matricula, CreditoReposicao.matricula_id == Matricula.id)
+        .filter(Matricula.aluno_id == user.aluno_id)
+        .all()
+    )

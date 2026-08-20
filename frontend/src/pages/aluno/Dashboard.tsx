@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api } from "../../api/client";
-import type { Matricula, MatriculaTipo, PagamentoMeio, TurmaResumo } from "../../api/types";
+import type { Credito, Matricula, MatriculaTipo, PagamentoMeio, TurmaResumo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 
 export default function AlunoDashboard() {
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
+  const [creditos, setCreditos] = useState<Credito[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -13,7 +14,12 @@ export default function AlunoDashboard() {
     setLoading(true);
     setErro(null);
     try {
-      setMatriculas(await api.get<Matricula[]>("/alunos/me/matriculas"));
+      const [matriculasRes, creditosRes] = await Promise.all([
+        api.get<Matricula[]>("/alunos/me/matriculas"),
+        api.get<Credito[]>("/alunos/me/creditos"),
+      ]);
+      setMatriculas(matriculasRes);
+      setCreditos(creditosRes);
     } catch {
       setErro("Não foi possível carregar sua agenda. Tente novamente.");
     } finally {
@@ -29,6 +35,7 @@ export default function AlunoDashboard() {
   const emAnalise = matriculas.filter((m) => m.status === "em_analise");
   const encerradas = matriculas.filter((m) => m.status === "recusada" || m.status === "cancelada");
   const turmasJaMatriculadas = new Set(matriculas.map((m) => m.turma_id));
+  const creditosDisponiveis = creditos.filter((c) => c.status === "disponivel");
 
   return (
     <Layout>
@@ -44,7 +51,7 @@ export default function AlunoDashboard() {
             {ativas.length === 0 ? (
               <p className="empty-state">Nenhuma matrícula ativa ainda.</p>
             ) : (
-              <MatriculaLista matriculas={ativas} onPago={carregar} />
+              <MatriculaLista matriculas={ativas} onMudanca={carregar} />
             )}
           </section>
 
@@ -63,6 +70,19 @@ export default function AlunoDashboard() {
           )}
 
           <section className="section">
+            <h2>Créditos de reposição ({creditosDisponiveis.length})</h2>
+            {creditosDisponiveis.length === 0 ? (
+              <p className="empty-state">Nenhum crédito disponível no momento.</p>
+            ) : (
+              <div className="card-list">
+                {creditosDisponiveis.map((c) => (
+                  <CreditoRow key={c.id} credito={c} onReagendado={carregar} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
             <h2>Buscar turmas</h2>
             <BuscarTurmas jaMatriculadoEm={turmasJaMatriculadas} onMatricular={carregar} />
           </section>
@@ -74,10 +94,10 @@ export default function AlunoDashboard() {
 
 function MatriculaLista({
   matriculas,
-  onPago,
+  onMudanca,
 }: {
   matriculas: Matricula[];
-  onPago?: () => void;
+  onMudanca?: () => void;
 }) {
   return (
     <div className="card-list">
@@ -90,8 +110,8 @@ function MatriculaLista({
               {m.turma.vinculo.professor.nome} · {m.tipo === "mensal" ? "plano mensal" : "avulsa"}
             </span>
           </div>
-          {onPago && m.status === "ativa" ? (
-            <PagamentoStatusOuBotao matricula={m} onPago={onPago} />
+          {onMudanca && m.status === "ativa" ? (
+            <AcoesMatriculaAtiva matricula={m} onMudanca={onMudanca} />
           ) : (
             <StatusPill status={m.status} />
           )}
@@ -101,17 +121,9 @@ function MatriculaLista({
   );
 }
 
-function PagamentoStatusOuBotao({
-  matricula,
-  onPago,
-}: {
-  matricula: Matricula;
-  onPago: () => void;
-}) {
+function AcoesMatriculaAtiva({ matricula, onMudanca }: { matricula: Matricula; onMudanca: () => void }) {
   const jaConfirmado = matricula.pagamentos.some((p) => p.status === "confirmado");
-  const [enviando, setEnviando] = useState(false);
-
-  if (jaConfirmado) return <StatusPill status="confirmado" />;
+  const [enviando, setEnviando] = useState<"pagar" | "cancelar" | null>(null);
 
   const valor =
     matricula.tipo === "mensal"
@@ -119,19 +131,94 @@ function PagamentoStatusOuBotao({
       : matricula.turma.vinculo.preco_avulso;
 
   async function pagar() {
-    setEnviando(true);
+    setEnviando("pagar");
     try {
       await api.post("/pagamentos", { matricula_id: matricula.id, valor, meio: "pix" });
-      onPago();
+      onMudanca();
+    } finally {
+      setEnviando(null);
+    }
+  }
+
+  async function cancelar() {
+    setEnviando("cancelar");
+    try {
+      await api.patch(`/matriculas/${matricula.id}/cancelar`);
+      onMudanca();
+    } finally {
+      setEnviando(null);
+    }
+  }
+
+  return (
+    <div className="item-card-actions">
+      {jaConfirmado ? (
+        <StatusPill status="confirmado" />
+      ) : (
+        <button disabled={enviando !== null} onClick={pagar}>
+          {enviando === "pagar" ? "Pagando..." : `Pagar R$ ${valor.toFixed(2)} com Pix`}
+        </button>
+      )}
+      <button className="secondary" disabled={enviando !== null} onClick={cancelar}>
+        {enviando === "cancelar" ? "Cancelando..." : "Cancelar"}
+      </button>
+    </div>
+  );
+}
+
+function CreditoRow({ credito, onReagendado }: { credito: Credito; onReagendado: () => void }) {
+  const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
+  const [turmaId, setTurmaId] = useState<number | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get<TurmaResumo[]>("/turmas").then((res) => {
+      setTurmas(res);
+      setTurmaId(res[0]?.id ?? null);
+    });
+  }, []);
+
+  async function reagendar() {
+    if (turmaId === null) return;
+    setEnviando(true);
+    setErro(null);
+    try {
+      await api.post(`/creditos/${credito.id}/reagendar`, { turma_id: turmaId });
+      onReagendado();
+    } catch {
+      setErro("Não foi possível reagendar. Tente de novo.");
     } finally {
       setEnviando(false);
     }
   }
 
   return (
-    <button disabled={enviando} onClick={pagar}>
-      {enviando ? "Pagando..." : `Pagar R$ ${valor.toFixed(2)} com Pix`}
-    </button>
+    <div className="item-card">
+      <div className="item-card-info">
+        <span className="item-card-title">
+          {credito.motivo === "forca_maior" ? "Aula cancelada pelo Point" : "Cancelamento antecipado"}
+        </span>
+        <span className="item-card-subtitle">
+          aula de {credito.data_aula} · válido até {credito.data_expiracao}
+        </span>
+        {erro && <p className="form-error">{erro}</p>}
+      </div>
+      <div className="item-card-actions">
+        {turmas.length > 0 && (
+          <select value={turmaId ?? ""} onChange={(e) => setTurmaId(Number(e.target.value))}>
+            {turmas.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.modalidade} · {t.dia_semana} {t.horario} · {t.vinculo.point.nome}
+              </option>
+            ))}
+          </select>
+        )}
+        <button disabled={enviando || turmaId === null} onClick={reagendar}>
+          {enviando ? "Reagendando..." : "Reagendar"}
+        </button>
+      </div>
+    </div>
   );
 }
 

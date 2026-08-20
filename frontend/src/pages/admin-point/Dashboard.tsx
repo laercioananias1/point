@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { api } from "../../api/client";
-import type { Matricula, Pagamento, Vinculo } from "../../api/types";
+import { useAuth } from "../../auth/AuthContext";
+import type { Matricula, Pagamento, TurmaResumo, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 
 export default function AdminPointDashboard() {
+  const { user } = useAuth();
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
@@ -207,6 +209,15 @@ export default function AdminPointDashboard() {
           </section>
 
           <section className="section">
+            <h2>Cancelar aula por força maior</h2>
+            {user?.point_id ? (
+              <CancelarAulaForm pointId={user.point_id} />
+            ) : (
+              <p className="empty-state">Não foi possível identificar o seu Point.</p>
+            )}
+          </section>
+
+          <section className="section">
             <h2>Vínculos do Point ({vinculosDecididos.length})</h2>
             {vinculosDecididos.length === 0 ? (
               <p className="empty-state">Nenhum outro vínculo por aqui ainda.</p>
@@ -250,5 +261,80 @@ export default function AdminPointDashboard() {
         </>
       )}
     </Layout>
+  );
+}
+
+function CancelarAulaForm({ pointId }: { pointId: number }) {
+  const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
+  const [turmaId, setTurmaId] = useState<number | null>(null);
+  const [dataAula, setDataAula] = useState(new Date().toISOString().slice(0, 10));
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.get<TurmaResumo[]>(`/turmas?point_id=${pointId}`).then((res) => {
+      setTurmas(res);
+      setTurmaId(res[0]?.id ?? null);
+    });
+  }, [pointId]);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (turmaId === null) return;
+    setEnviando(true);
+    setErro(null);
+    setResultado(null);
+    try {
+      const creditos = await api.post<unknown[]>(`/turmas/${turmaId}/cancelamentos`, {
+        data_aula: dataAula,
+      });
+      setResultado(creditos.length);
+    } catch {
+      setErro("Não foi possível cancelar. Tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  if (turmas.length === 0) {
+    return <p className="empty-state">Nenhuma turma no seu Point ainda.</p>;
+  }
+
+  return (
+    <form className="form-card" onSubmit={handleSubmit}>
+      <label>
+        Turma
+        <select value={turmaId ?? ""} onChange={(e) => setTurmaId(Number(e.target.value))}>
+          {turmas.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.modalidade} · {t.dia_semana} {t.horario} · com {t.vinculo.professor.nome}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label>
+        Data da aula cancelada
+        <input type="date" value={dataAula} onChange={(e) => setDataAula(e.target.value)} required />
+      </label>
+
+      <p className="empty-state" style={{ padding: 0 }}>
+        Gera crédito de reposição pra todo aluno com matrícula ativa nessa turma.
+      </p>
+
+      {erro && <p className="form-error">{erro}</p>}
+      {resultado !== null && (
+        <p className="form-success">
+          {resultado === 0
+            ? "Nenhuma matrícula ativa nessa turma — nenhum crédito gerado."
+            : `${resultado} crédito(s) de reposição gerado(s).`}
+        </p>
+      )}
+
+      <button type="submit" disabled={enviando}>
+        {enviando ? "Cancelando..." : "Cancelar aula"}
+      </button>
+    </form>
   );
 }

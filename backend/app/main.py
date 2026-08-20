@@ -7,6 +7,7 @@ from app.routers import (
     alunos,
     auth,
     configuracoes,
+    creditos,
     matriculas,
     pagamentos,
     points,
@@ -34,6 +35,7 @@ app.include_router(turmas.router)
 app.include_router(matriculas.router)
 app.include_router(pagamentos.router)
 app.include_router(configuracoes.router)
+app.include_router(creditos.router)
 
 
 @app.get("/health")
