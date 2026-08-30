@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
+from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.services.scheduler import iniciar_scheduler, parar_scheduler
 from app.services.uploads import UPLOADS_DIR
@@ -43,7 +44,10 @@ app = FastAPI(title="Point API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    # Configurável via CORS_ORIGINS no .env (pedido do usuário, 2026-08-30:
+    # deploy em produção) — dev usa o padrão (só o Vite local); produção
+    # aponta pro domínio de verdade (ex.: https://point.taskhero.com.br).
+    allow_origins=get_settings().cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

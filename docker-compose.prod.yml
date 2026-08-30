@@ -1,0 +1,68 @@
+# Produção (pedido do usuário, 2026-08-30) — diferente do docker-compose.yml
+# de dev: sem bind mount do código-fonte, sem --reload, sem Vite dev server,
+# e nada exposto além de localhost (o nginx/Traefik já existente no VPS é
+# quem termina TLS e expõe pra internet — ver DEPLOY.md).
+#
+# Uso:
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: point
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sem "ports" de propósito — só a rede interna do compose acessa o
+    # banco. Em dev (docker-compose.yml) fica exposto em 3307 pra debug
+    # local; em produção não tem motivo pra abrir isso pra fora.
+
+  api:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+    volumes:
+      # Nome, não bind mount — fotos/banners/logo enviados por upload
+      # (app/services/uploads.py) precisam sobreviver a um rebuild da
+      # imagem; sem isso, cada `--build` apagaria tudo que foi enviado.
+      - uploads_data:/app/uploads
+    environment:
+      DATABASE_URL: mysql+pymysql://root:${DB_ROOT_PASSWORD}@db/point
+      JWT_SECRET: ${JWT_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-Point <onboarding@resend.dev>}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      TOTALPASS_PARTNER_API_KEY: ${TOTALPASS_PARTNER_API_KEY:-}
+      TOTALPASS_BASE_URL: ${TOTALPASS_BASE_URL:-https://booking-api.staging.totalpass.com}
+    restart: always
+    ports:
+      # 127.0.0.1 só — o nginx/Traefik do host é quem fala com a internet
+      # (ver DEPLOY.md pro server block/labels).
+      - "127.0.0.1:8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        # Build arg, não env var de runtime — o Vite embute isso no JS
+        # final na hora do build (ver frontend/Dockerfile.prod).
+        VITE_API_URL: ${VITE_API_URL}
+    restart: always
+    ports:
+      - "127.0.0.1:8002:80"
+    depends_on:
+      - api
+
+volumes:
+  db_data:
+  uploads_data:

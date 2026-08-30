@@ -12,7 +12,9 @@ modelo de dados, roadmap de construção, decisões em aberto).
 - **Backend:** Python · FastAPI + SQLAlchemy 2.0 · MySQL · Alembic
 - **Frontend:** React + TypeScript (Vite)
 - **Local:** Docker Compose
-- **Produção (planejado):** AWS — RDS, ECS Fargate, S3 + CloudFront
+- **Produção:** VPS próprio (mesmo servidor de outros serviços do TaskHero),
+  Docker Compose + nginx/Traefik do host — ver [DEPLOY.md](DEPLOY.md). Deploy
+  manual por enquanto, sem CI/CD (pedido do usuário, 2026-08-30).
 
 ## Rodando localmente
 

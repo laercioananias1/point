@@ -29,6 +29,17 @@ class Settings(BaseSettings):
     totalpass_partner_api_key: str = ""
     totalpass_base_url: str = "https://booking-api.staging.totalpass.com"
 
+    # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
+    # 2026-08-30: deploy em produção) — em dev é só o Vite local; em
+    # produção, o domínio de verdade do painel (ex.:
+    # "https://point.taskhero.com.br"). Nunca deixa aberto pra qualquer
+    # origem (allow_credentials=True não permite "*" mesmo se quisesse).
+    cors_origins: str = "http://localhost:5173"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [origem.strip() for origem in self.cors_origins.split(",") if origem.strip()]
+
 
 @lru_cache
 def get_settings() -> Settings:
