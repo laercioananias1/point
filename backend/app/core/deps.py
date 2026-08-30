@@ -36,10 +36,14 @@ def require_role(*allowed: Role):
     Só decide QUEM pode chamar o endpoint. O recorte de DADOS (ex.: só o Point
     do admin, só o vínculo do professor) é responsabilidade de cada router —
     ver a nota de isolamento por vinculo_id no plano de arquitetura (seção 4).
+
+    Uma conta pode ter mais de um papel agora (pedido do usuário, 2026-08-26
+    — dono do Point que também é professor) — basta ter QUALQUER UM dos
+    papéis pedidos, não precisa ser o único papel da conta.
     """
 
     def dependency(user: Annotated[User, Depends(get_current_user)]) -> User:
-        if user.role not in allowed:
+        if not any(user.tem_role(role) for role in allowed):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Sem permissão para este recurso")
         return user
 

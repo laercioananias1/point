@@ -14,7 +14,7 @@ class Aluno(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nome: Mapped[str] = mapped_column(String(120))
     contato: Mapped[str] = mapped_column(String(30))  # celular
-    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str] = mapped_column(String(255))
     forma_pagamento_preferida: Mapped[FormaPagamento] = mapped_column(Enum(FormaPagamento))
 
     matriculas: Mapped[list["Matricula"]] = relationship(back_populates="aluno")  # noqa: F821

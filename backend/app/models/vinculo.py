@@ -9,9 +9,10 @@ from app.models.enums import ModeloRepasse, VinculoStatus
 class Vinculo(TimestampMixin, Base):
     """Entidade de junção N:N entre Professor e Point (seção 3).
 
-    Cada vínculo carrega suas próprias condições comerciais — preço e modelo
-    de repasse — aprovadas pelo admin do Point que o professor está entrando.
-    """
+    Preço de aula avulsa/plano é tabela do Point, por modalidade — não fica
+    aqui (pedido do usuário, 2026-08-21: "com o professor só tem o acordo
+    de repasse"). O vínculo carrega só o acordo de repasse decidido pelo
+    admin do Point na hora do convite."""
 
     __tablename__ = "vinculos"
 
@@ -19,8 +20,6 @@ class Vinculo(TimestampMixin, Base):
     professor_id: Mapped[int] = mapped_column(ForeignKey("professores.id"))
     point_id: Mapped[int] = mapped_column(ForeignKey("points.id"))
 
-    preco_avulso: Mapped[float] = mapped_column(Numeric(10, 2))
-    preco_plano: Mapped[float] = mapped_column(Numeric(10, 2))
     modelo_repasse: Mapped[ModeloRepasse] = mapped_column(Enum(ModeloRepasse))
     valor_repasse: Mapped[float] = mapped_column(Numeric(10, 2))
     status: Mapped[VinculoStatus] = mapped_column(

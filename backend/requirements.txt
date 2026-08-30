@@ -13,6 +13,9 @@ passlib[bcrypt]==1.7.4
 # Fixado em 4.0.1 até o passlib publicar uma versão compatível.
 bcrypt==4.0.1
 python-multipart==0.0.20
+# Job diário de geração de aulas do mês (pedido do usuário, 2026-08-21) — em
+# processo, sem infra externa; ver app/services/scheduler.py.
+apscheduler==3.10.4
 
 pytest==8.3.4
 httpx==0.28.1

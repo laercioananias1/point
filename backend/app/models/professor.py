@@ -13,7 +13,7 @@ class Professor(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nome: Mapped[str] = mapped_column(String(120))
     contato: Mapped[str] = mapped_column(String(30))  # celular
-    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str] = mapped_column(String(255))
     modalidades: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     vinculos: Mapped[list["Vinculo"]] = relationship(back_populates="professor")  # noqa: F821

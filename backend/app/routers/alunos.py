@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -22,8 +23,10 @@ router = APIRouter(prefix="/alunos", tags=["alunos"])
 
 @router.post("", response_model=AlunoOut, status_code=201)
 def cadastrar_aluno(payload: AlunoCreate, db: Annotated[Session, Depends(get_db)]) -> Aluno:
-    if db.query(User).filter(User.celular == payload.contato).first():
-        raise HTTPException(409, "Já existe uma conta com este celular")
+    # Só e-mail precisa ser único — é o login de todo mundo (pedido do
+    # usuário, 2026-08-21); celular pode repetir.
+    if db.query(User).filter(User.email == payload.email).first():
+        raise HTTPException(409, "Já existe uma conta com este e-mail")
 
     aluno = Aluno(
         nome=payload.nome,
@@ -39,13 +42,30 @@ def cadastrar_aluno(payload: AlunoCreate, db: Annotated[Session, Depends(get_db)
         celular=payload.contato,
         email=payload.email,
         senha_hash=hash_password(payload.senha),
-        role=Role.ALUNO,
+        roles=[Role.ALUNO.value],
         aluno_id=aluno.id,
     )
     db.add(user)
     db.commit()
     db.refresh(aluno)
     return aluno
+
+
+@router.get("", response_model=list[AlunoOut])
+def buscar_alunos(
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+    busca: str = "",
+) -> list[Aluno]:
+    """Busca de aluno já cadastrado, por nome ou contato — pro admin achar
+    rápido ao montar uma assinatura (pedido do usuário, 2026-08-20: o
+    cadastro de assinatura passou a ser só do admin, então ele precisa de
+    um jeito de achar um aluno que já existe na plataforma)."""
+    query = db.query(Aluno)
+    if busca:
+        termo = f"%{busca}%"
+        query = query.filter(or_(Aluno.nome.ilike(termo), Aluno.contato.ilike(termo)))
+    return query.order_by(Aluno.nome).limit(20).all()
 
 
 @router.get("/me", response_model=AlunoOut)

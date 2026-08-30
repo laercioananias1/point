@@ -12,6 +12,7 @@ from app.models.enums import (
     CreditoMotivo,
     CreditoStatus,
     MatriculaStatus,
+    MatriculaTipo,
     PeriodoDia,
     Role,
     VinculoStatus,
@@ -19,13 +20,20 @@ from app.models.enums import (
 from app.models.aula import Aula
 from app.models.matricula import Matricula
 from app.models.modalidade import Modalidade
+from app.models.point import DIAS_UTEIS
 from app.models.quadra import Quadra
 from app.models.turma import Turma
+from app.models.turma_dia_semana import TurmaDiaSemana
 from app.models.turma_excecao import TurmaExcecao
 from app.models.user import User
 from app.models.vinculo import Vinculo
-from app.schemas.credito import CancelamentoAula, CreditoOut
-from app.schemas.turma import RemocaoTurmaOut, TurmaCreate, TurmaOut, TurmaRemocao
+from app.schemas.turma import (
+    RemocaoTurmaOut,
+    TurmaCreate,
+    TurmaOut,
+    TurmaProlongamento,
+    TurmaRemocao,
+)
 from app.services.aulas import DIAS_SEMANA
 
 router = APIRouter(tags=["turmas"])
@@ -37,8 +45,9 @@ def criar_turmas(
     db: Annotated[Session, Depends(get_db)],
     professor: Annotated[User, Depends(require_role(Role.PROFESSOR))],
 ) -> list[Turma]:
-    """Cria 1 turma por combinação dia × horário — dois dias e dois horários
-    viram 4 turmas numa chamada só (pedido do usuário, 2026-08-19)."""
+    """Cria 1 turma por horário selecionado, cada uma cobrindo todos os dias
+    marcados — dois dias e dois horários viram 2 turmas, não 4 (pedido do
+    usuário, 2026-08-20: turma é o grupo/horário recorrente inteiro)."""
     vinculo = db.get(Vinculo, payload.vinculo_id)
     if vinculo is None or vinculo.professor_id != professor.professor_id:
         raise HTTPException(404, "Vínculo não encontrado")
@@ -60,6 +69,31 @@ def criar_turmas(
     if payload.periodo_fim is not None and payload.periodo_inicio > payload.periodo_fim:
         raise HTTPException(422, "O início do período precisa ser antes do fim")
 
+    # Point define em que dias/horários funciona, separado por dias úteis x
+    # fim de semana (pedido do usuário, 2026-08-21 — sábado costuma ter só
+    # parte da manhã, bem diferente do horário de semana). Checa cada
+    # combinação dia×horário contra o grupo certo, já que um mesmo lote
+    # pode misturar dia útil com fim de semana no mesmo horário selecionado.
+    point = vinculo.point
+    violacoes: list[str] = []
+    for dia in payload.dias_semana:
+        if dia in DIAS_UTEIS:
+            dias_ok = point.dias_semana_funcionamento
+            horarios_ok = point.horarios_semana_funcionamento
+        else:
+            dias_ok = point.dias_fds_funcionamento
+            horarios_ok = point.horarios_fds_funcionamento
+        if dia not in dias_ok:
+            violacoes.append(f"{dia} (Point fechado nesse dia)")
+            continue
+        fora = sorted(set(payload.horarios) - set(horarios_ok))
+        if fora:
+            violacoes.append(f"{dia} às {', '.join(fora)}")
+    if violacoes:
+        raise HTTPException(
+            422, f"Fora do horário de funcionamento do Point: {'; '.join(violacoes)}"
+        )
+
     # Agenda validada globalmente (seção 3.1) — o professor é uma entidade
     # única e global, então o conflito é checado em TODOS os vínculos dele,
     # não só no Point deste vínculo. Duas turmas só colidem de verdade se o
@@ -73,18 +107,19 @@ def criar_turmas(
         filtro_periodo.append(Turma.periodo_inicio <= payload.periodo_fim)
 
     conflitos = (
-        db.query(Turma)
+        db.query(Turma, TurmaDiaSemana.dia_semana)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .join(TurmaDiaSemana, TurmaDiaSemana.turma_id == Turma.id)
         .filter(
             Vinculo.professor_id == professor.professor_id,
-            Turma.dia_semana.in_(payload.dias_semana),
+            TurmaDiaSemana.dia_semana.in_(payload.dias_semana),
             Turma.horario.in_(payload.horarios),
             *filtro_periodo,
         )
         .all()
     )
     if conflitos:
-        ocupados = ", ".join(sorted({f"{t.dia_semana} {t.horario}" for t in conflitos}))
+        ocupados = ", ".join(sorted({f"{dia} {t.horario}" for t, dia in conflitos}))
         raise HTTPException(409, f"Você já tem turma nesse horário: {ocupados}")
 
     duracao = payload.duracao_minutos or modalidade.duracao_padrao_minutos
@@ -95,14 +130,13 @@ def criar_turmas(
             modalidade_id=modalidade.id,
             quadra_id=quadra.id,
             capacidade=payload.capacidade,
-            dia_semana=dia,
             horario=horario,
             duracao_minutos=duracao,
             recorrencia=payload.recorrencia,
             periodo_inicio=payload.periodo_inicio,
             periodo_fim=payload.periodo_fim,
+            dias_semana_rel=[TurmaDiaSemana(dia_semana=dia) for dia in payload.dias_semana],
         )
-        for dia in payload.dias_semana
         for horario in payload.horarios
     ]
     db.add_all(turmas)
@@ -117,7 +151,7 @@ def remover_turma(
     turma_id: int,
     payload: TurmaRemocao,
     db: Annotated[Session, Depends(get_db)],
-    professor: Annotated[User, Depends(require_role(Role.PROFESSOR))],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR, Role.ADMIN_POINT))],
 ) -> RemocaoTurmaOut:
     """Remover uma turma recorrente, do jeito que se edita um evento
     recorrente num calendário (pedido do usuário, 2026-08-20):
@@ -129,15 +163,63 @@ def remover_turma(
       véspera da data escolhida). Se a turma nunca teve nenhuma matrícula, a
       linha é apagada de vez em vez de sobrar um período fechado sem uso;
       se já teve, só encurtamos o período — apagar quebraria a integridade
-      referencial de pagamentos/créditos/aulas já ligados a ela."""
+      referencial de pagamentos/créditos/aulas já ligados a ela.
+
+    Admin do Point também pode (pedido do usuário, 2026-08-26: "cria o
+    Agenda também [pro admin], igual professor") — o admin cobre o Point
+    inteiro, não só as próprias turmas.
+
+    gerar_credito (pedido do usuário, 2026-08-28) consolida aqui o que
+    antes era um formulário solto de "cancelar aula por força maior"
+    (turma + data escolhidas manualmente, sem nenhuma ligação com a
+    ocorrência sendo removida na agenda) — agora é só um check nessa
+    mesma remoção: gera crédito de reposição pra quem tinha aula
+    justamente na data removida (mesma regra de matricula_tem_aula_em:
+    mensal só entra se esse dia da semana for dela; avulsa só se for a
+    própria data)."""
     turma = db.get(Turma, turma_id)
-    if turma is None or turma.vinculo.professor_id != professor.professor_id:
+    if turma is None:
+        raise HTTPException(404, "Turma não encontrada")
+    pode = (user.tem_role(Role.PROFESSOR) and turma.vinculo.professor_id == user.professor_id) or (
+        user.tem_role(Role.ADMIN_POINT) and turma.vinculo.point_id == user.point_id
+    )
+    if not pode:
         raise HTTPException(404, "Turma não encontrada")
 
     if payload.data < date.today():
         raise HTTPException(422, "Não dá pra remover uma data que já passou")
-    if DIAS_SEMANA[payload.data.weekday()] != turma.dia_semana:
-        raise HTTPException(422, f"Essa turma acontece às {turma.dia_semana}s, não nessa data")
+    if DIAS_SEMANA[payload.data.weekday()] not in turma.dias_semana:
+        dias = ", ".join(f"{d}s" for d in turma.dias_semana)
+        raise HTTPException(422, f"Essa turma acontece às {dias}, não nessa data")
+
+    creditos_gerados = 0
+    if payload.gerar_credito:
+        dia_semana_removido = DIAS_SEMANA[payload.data.weekday()]
+        matriculas_afetadas = [
+            m
+            for m in db.query(Matricula)
+            .filter(Matricula.turma_id == turma_id, Matricula.status == MatriculaStatus.ATIVA)
+            .all()
+            if (
+                dia_semana_removido in m.dias_semana
+                if m.tipo == MatriculaTipo.MENSAL
+                else m.data_avulsa == payload.data
+            )
+        ]
+        if matriculas_afetadas:
+            prazo_dias = turma.vinculo.point.prazo_credito_dias
+            creditos = [
+                CreditoReposicao(
+                    matricula_id=m.id,
+                    motivo=CreditoMotivo.FORCA_MAIOR,
+                    data_aula=payload.data,
+                    data_expiracao=date.today() + timedelta(days=prazo_dias),
+                    status=CreditoStatus.DISPONIVEL,
+                )
+                for m in matriculas_afetadas
+            ]
+            db.add_all(creditos)
+            creditos_gerados = len(creditos)
 
     if payload.escopo == "unica_data":
         if payload.data < turma.periodo_inicio or (
@@ -165,7 +247,10 @@ def remover_turma(
         )
         db.commit()
         return RemocaoTurmaOut(
-            turma_removida=False, aulas_removidas=aulas_removidas, novo_periodo_fim=turma.periodo_fim
+            turma_removida=False,
+            aulas_removidas=aulas_removidas,
+            novo_periodo_fim=turma.periodo_fim,
+            creditos_gerados=creditos_gerados,
         )
 
     # escopo == "a_partir_desta_data"
@@ -185,13 +270,74 @@ def remover_turma(
     if not tem_historico:
         db.delete(turma)
         db.commit()
-        return RemocaoTurmaOut(turma_removida=True, aulas_removidas=aulas_removidas, novo_periodo_fim=None)
+        return RemocaoTurmaOut(
+            turma_removida=True,
+            aulas_removidas=aulas_removidas,
+            novo_periodo_fim=None,
+            creditos_gerados=creditos_gerados,
+        )
 
     turma.periodo_fim = novo_fim
     db.commit()
     return RemocaoTurmaOut(
-        turma_removida=False, aulas_removidas=aulas_removidas, novo_periodo_fim=novo_fim
+        turma_removida=False,
+        aulas_removidas=aulas_removidas,
+        novo_periodo_fim=novo_fim,
+        creditos_gerados=creditos_gerados,
     )
+
+
+@router.patch("/turmas/{turma_id}/periodo", response_model=TurmaOut)
+def prolongar_turma(
+    turma_id: int,
+    payload: TurmaProlongamento,
+    db: Annotated[Session, Depends(get_db)],
+    professor: Annotated[User, Depends(require_role(Role.PROFESSOR))],
+) -> Turma:
+    """Estender o período de uma turma (pedido do usuário, 2026-08-20) —
+    edição direta, sem criar turma nova nem mexer em matrícula/histórico,
+    porque só alarga o futuro: nada que já aconteceu muda de sentido.
+    Só serve pra alargar; encurtar é o 'remover a partir desta data'."""
+    turma = db.get(Turma, turma_id)
+    if turma is None or turma.vinculo.professor_id != professor.professor_id:
+        raise HTTPException(404, "Turma não encontrada")
+
+    if turma.periodo_fim is None:
+        raise HTTPException(422, "Essa turma já é recorrente, sem data de término")
+    if payload.periodo_fim is not None and payload.periodo_fim <= turma.periodo_fim:
+        raise HTTPException(
+            422,
+            "A nova data precisa ser depois da atual — pra encurtar, use a remoção de turma",
+        )
+
+    # Só precisa checar conflito na janela nova (a antiga já era livre) —
+    # mesma regra global de agenda da criação (seção 3.1).
+    inicio_janela = turma.periodo_fim + timedelta(days=1)
+    filtro_periodo = [or_(Turma.periodo_fim.is_(None), Turma.periodo_fim >= inicio_janela)]
+    if payload.periodo_fim is not None:
+        filtro_periodo.append(Turma.periodo_inicio <= payload.periodo_fim)
+
+    conflitos = (
+        db.query(Turma, TurmaDiaSemana.dia_semana)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .join(TurmaDiaSemana, TurmaDiaSemana.turma_id == Turma.id)
+        .filter(
+            Vinculo.professor_id == professor.professor_id,
+            Turma.id != turma.id,
+            TurmaDiaSemana.dia_semana.in_(turma.dias_semana),
+            Turma.horario == turma.horario,
+            *filtro_periodo,
+        )
+        .all()
+    )
+    if conflitos:
+        ocupados = ", ".join(sorted({f"{dia} {t.horario}" for t, dia in conflitos}))
+        raise HTTPException(409, f"Você já tem turma nesse horário: {ocupados}")
+
+    turma.periodo_fim = payload.periodo_fim
+    db.commit()
+    db.refresh(turma)
+    return turma
 
 
 @router.get("/professores/me/turmas", response_model=list[TurmaOut])
@@ -223,6 +369,7 @@ def buscar_turmas(
     modalidade: str | None = None,
     modalidade_id: int | None = None,
     point_id: int | None = None,
+    professor_id: int | None = None,
     periodo_dia: PeriodoDia | None = None,
 ) -> list[Turma]:
     """Busca do aluno por modalidade/local (seção 4.2) — qualquer usuário
@@ -231,7 +378,9 @@ def buscar_turmas(
     (controle de capacidade da Turma, ainda fora deste scaffold). point_id
     também serve pro admin do Point listar só as turmas do seu Point (ex.:
     pra escolher qual cancelar por força maior, ou quais oferecer na
-    ativação de uma assinatura — daí modalidade_id e periodo_dia)."""
+    ativação de uma assinatura — daí modalidade_id e periodo_dia). professor_id
+    é o que a tela de reagendar crédito usa (pedido do usuário, 2026-08-25:
+    "só pode reagendar com o professor que já dá aula pra ele")."""
     query = (
         db.query(Turma)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
@@ -248,6 +397,8 @@ def buscar_turmas(
         query = query.filter(Turma.modalidade_id == modalidade_id)
     if point_id:
         query = query.filter(Vinculo.point_id == point_id)
+    if professor_id:
+        query = query.filter(Vinculo.professor_id == professor_id)
     turmas = query.all()
     if periodo_dia:
         horas_validas = PERIODO_DIA_HORAS[periodo_dia]
@@ -255,43 +406,13 @@ def buscar_turmas(
     return turmas
 
 
-@router.post("/turmas/{turma_id}/cancelamentos", response_model=list[CreditoOut])
-def cancelar_aula_por_forca_maior(
-    turma_id: int,
-    payload: CancelamentoAula,
-    db: Annotated[Session, Depends(get_db)],
-    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
-) -> list[CreditoReposicao]:
-    """Chuva, quadra indisponível etc. (seção 4.4) — gera crédito de reposição
-    pra todo aluno com matrícula ativa na turma. Não existe uma entidade
-    'Aula' (ocorrência específica); data_aula em CancelamentoAula só marca
-    qual dia motivou o cancelamento, pro histórico."""
-    turma = db.get(Turma, turma_id)
-    if turma is None or turma.vinculo.point_id != admin.point_id:
-        raise HTTPException(404, "Turma não encontrada")
-
-    matriculas_ativas = (
-        db.query(Matricula)
-        .filter(Matricula.turma_id == turma_id, Matricula.status == MatriculaStatus.ATIVA)
-        .all()
-    )
-
-    prazo_dias = turma.vinculo.point.prazo_credito_dias
-    creditos = [
-        CreditoReposicao(
-            matricula_id=m.id,
-            motivo=CreditoMotivo.FORCA_MAIOR,
-            data_aula=payload.data_aula,
-            data_expiracao=date.today() + timedelta(days=prazo_dias),
-            status=CreditoStatus.DISPONIVEL,
-        )
-        for m in matriculas_ativas
-    ]
-    db.add_all(creditos)
-    db.commit()
-    for c in creditos:
-        db.refresh(c)
-    return creditos
+# O antigo POST /turmas/{turma_id}/cancelamentos ("Cancelar aula por força
+# maior", formulário solto na tela do Professor) foi removido (pedido do
+# usuário, 2026-08-28: "esse botão sai da tela do professor e fica tb na
+# agenda") — a mesma coisa (gerar crédito de reposição por causa de uma
+# aula cancelada) agora é só o check "gerar crédito" dentro da remoção de
+# ocorrência pela Agenda (remover_turma acima), que já sabe a turma e a
+# data certas, sem precisar escolher os dois de novo à mão.
 
 
 @router.get("/vinculos/{vinculo_id}/turmas", response_model=list[TurmaOut])

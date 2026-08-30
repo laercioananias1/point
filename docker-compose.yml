@@ -24,6 +24,9 @@ services:
     environment:
       DATABASE_URL: mysql+pymysql://root:${DB_ROOT_PASSWORD:-root}@db/point
       JWT_SECRET: ${JWT_SECRET:-change-me-in-.env}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-Point <onboarding@resend.dev>}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
       # 8001 no host: outro projeto local já usa a 8000.
       - "8001:8000"

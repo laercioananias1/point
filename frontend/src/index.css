@@ -50,6 +50,10 @@ body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* Tira o flash cinza ao tocar em links/botões no mobile — sensação de
+     app, não de site (pedido do usuário, 2026-08-25). */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
 
 h1,
@@ -91,9 +95,14 @@ button:disabled {
 }
 
 input,
-select {
+select,
+textarea {
+  width: 100%;
   font-family: "Work Sans", sans-serif;
-  font-size: 14px;
+  /* 16px, não 14px: abaixo disso o Safari no iPhone dá zoom automático ao
+     focar o campo — quebra a sensação de app (pedido do usuário,
+     2026-08-25). */
+  font-size: 16px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -102,8 +111,14 @@ select {
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
+textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
@@ -128,14 +143,6 @@ select:focus {
   justify-content: center;
   gap: 8px;
   margin-bottom: 28px;
-}
-
-.auth-brand-mark {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--coral);
-  display: inline-block;
 }
 
 .auth-brand-name {
@@ -194,6 +201,15 @@ select:focus {
   min-height: 100vh;
 }
 
+/* Header + faixa de suporte (quando tem) presos juntos no topo — um só
+   elemento sticky envolvendo os dois, pra não competir (dois "position:
+   sticky; top: 0" empilhados se sobrepõem ao rolar em vez de empilhar). */
+.app-sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -201,6 +217,38 @@ select:focus {
   padding: 14px 28px;
   background: var(--navy);
   border-bottom: 1px solid var(--navy-line);
+}
+
+/* Faixa de modo suporte (pedido do usuário, 2026-08-30: dono do app
+   "entrar como" o admin de um Point) — fica presa acima do cabeçalho em
+   toda tela enquanto durar, cor de alerta de propósito (não é a sessão
+   de verdade de quem está vendo). */
+.app-suporte-faixa {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--warn);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.app-suporte-faixa button {
+  width: auto;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.app-suporte-faixa button:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .app-header-left {
@@ -220,14 +268,16 @@ select:focus {
   color: #fff;
 }
 
-.app-brand::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--coral);
-  display: inline-block;
+/* Logomarca do próprio Point no lugar da marca genérica do app (pedido do
+   usuário, 2026-08-30) — mesma "caixa" de tamanho do LogoMark (22px),
+   contain pra não distorcer imagem enviada em qualquer proporção. */
+.app-brand-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 4px;
 }
+
 
 .app-nav {
   display: flex;
@@ -261,6 +311,13 @@ select:focus {
   color: var(--navy-text);
 }
 
+.app-user-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.3;
+}
+
 .app-user-role {
   color: var(--navy-text-muted);
   font-size: 11.5px;
@@ -268,22 +325,78 @@ select:focus {
   letter-spacing: 0.06em;
 }
 
-.app-user button {
+.app-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: transparent;
   border: 1px solid var(--navy-line);
   color: var(--navy-text);
   padding: 7px 14px;
 }
 
-.app-user button:hover:not(:disabled) {
+.app-logout-btn:hover:not(:disabled) {
   background: var(--navy-ink);
   border-color: var(--navy-line);
+}
+
+/* Atalho de canto (ex.: engrenagem de Configurações) — pedido do usuário,
+   2026-08-25. Mesmo tratamento visual do botão de sair, mas circular e só
+   com ícone, já que fica ao lado dele no cabeçalho. */
+.app-header-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 100px;
+  background: transparent;
+  border: 1px solid var(--navy-line);
+  color: var(--navy-text);
+  text-decoration: none;
+}
+
+.app-header-icon-btn:hover {
+  background: var(--navy-ink);
+  border-color: var(--navy-line);
+}
+
+.app-header-icon-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .app-main {
   max-width: 1040px;
   margin: 0 auto;
   padding: 40px 28px 80px;
+}
+
+/* Barra de abas inferior — pedido do usuário, 2026-08-25: "layout pra ficar
+   como um aplicativo no celular". Só existe pra quem tem mais de 1 tela
+   (admin_point, hoje); os outros papéis usam a tela cheia sem abas. Fica
+   escondida em telas largas — o menu de topo (.app-nav) já resolve lá. */
+.app-tabbar {
+  display: none;
+}
+
+.app-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px calc(6px + env(safe-area-inset-bottom));
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.app-tab.active {
+  color: var(--accent);
 }
 
 /* Dashboards */
@@ -322,6 +435,19 @@ select:focus {
   box-shadow: var(--shadow-card);
 }
 
+/* item-card inteiro clicável — ex.: pendências da home do admin (pedido do
+   usuário, 2026-08-25). Mesmo tratamento do item de calendário clicável. */
+.item-card-clickable {
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.item-card-clickable:hover,
+.item-card-clickable:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 .item-card-info {
   display: flex;
   flex-direction: column;
@@ -344,6 +470,72 @@ select:focus {
   align-items: center;
 }
 
+/* Caixinha visual pra abrir uma tela separada — pedido do usuário,
+   2026-08-26: "quero que tenha um botão convidar aluno e abre a tela de
+   cadastro. Não deixe tudo em uma tela... uma caixinha bem visual, com
+   ícone". Piloto no fluxo de convidar aluno, pra depois levar ao resto do
+   app (pedido do próprio usuário). */
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.action-card:hover,
+.action-card:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.action-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.action-card-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.action-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-card-title {
+  font-weight: 600;
+  font-size: 15.5px;
+}
+
+.action-card-subtitle {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.action-card-chevron {
+  margin-left: auto;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
 button.secondary {
   background: var(--surface);
   color: var(--ink);
@@ -362,6 +554,512 @@ button.danger {
 
 button.danger:hover:not(:disabled) {
   background: #a3311f;
+}
+
+/* Botão-link — ex.: "Ver agenda completa" na home do aluno (pedido do
+   usuário, 2026-08-25). Ação secundária de navegação, não precisa do peso
+   visual de um botão cheio. */
+.link-btn {
+  background: transparent;
+  color: var(--accent);
+  border: none;
+  padding: 4px 0;
+  font-weight: 600;
+}
+
+.link-btn:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+/* Cabeçalho de tela "cheia" aberta a partir de uma caixinha .action-card
+   (pedido do usuário, 2026-08-26: "em vez de ter um link voltar... deixa
+   somente um X... para retornar a tela anterior") — X circular fecha e
+   volta, título ao lado. Piloto no Convidar aluno, pra levar ao resto do
+   app depois (mesmo pedido do action-card). */
+.screen-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.screen-header h1 {
+  margin: 0;
+}
+
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+  padding: 0;
+}
+
+.close-btn:hover:not(:disabled) {
+  background: var(--risk-soft);
+  border-color: var(--risk);
+  color: var(--risk);
+}
+
+/* Ação de destaque no cabeçalho, à direita (pedido do usuário, 2026-08-26:
+   "Comprar" em Meus créditos — mesmo "+" do exemplo de app de academia). */
+.header-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: none;
+  color: var(--accent-strong);
+  padding: 0;
+}
+
+.header-action-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Atalhos da home do aluno, tipo app de academia (pedido do usuário,
+   2026-08-26) — ícone em cima, rótulo embaixo, lado a lado. */
+.quick-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.quick-action {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.quick-action:hover,
+.quick-action:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.quick-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.quick-action-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Placeholder de banner (pedido do usuário, 2026-08-26: "deixa um espaço
+   pra banner, pra colocar alguma propaganda de evento quando houver") —
+   de propósito visualmente "vazio", pra não parecer conteúdo de verdade
+   antes de existir um banner real. */
+.banner-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 16px;
+  border-radius: 16px;
+  border: 1.5px dashed var(--line);
+  color: var(--ink-muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+.banner-placeholder-icone {
+  font-size: 22px;
+}
+
+/* Carrossel de fotos do Point (pedido do usuário, 2026-08-30: "as fotos
+   precisa ser um carrossel") — components/Carrossel.tsx. Scroll nativo
+   com snap, sem lib externa; setas só aparecem com mais de 1 foto. */
+.carrossel {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.carrossel-trilho {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.carrossel-trilho::-webkit-scrollbar {
+  display: none;
+}
+
+.carrossel-item {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  aspect-ratio: 4 / 3;
+  background: var(--surface-sunk);
+}
+
+.carrossel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Modo "contido" (pedido do usuário, 2026-08-30: banner de torneio
+   cortado/ilegível no box 4:3 padrão) — banner é pôster/flyer, proporção
+   imprevisível. Sem altura fixa nem aspect-ratio forçado: a imagem ocupa
+   a largura toda e a altura segue a proporção natural dela (largura
+   100% + height auto preserva o aspect-ratio intrínseco do <img>) — sem
+   isso, altura fixa + object-fit:contain sobra fundo colorido dos dois
+   lados sempre que a imagem for mais "quadrada"/vertical que o card
+   (pedido do usuário, 2026-08-30: "ficou um fundo nas laterais").
+   max-height só entra como teto de segurança pra pôster muito vertical
+   não tomar a tela inteira — nesse caso raro, contain ainda evita corte. */
+.carrossel-item-contido {
+  aspect-ratio: auto;
+  height: auto;
+  background: transparent;
+}
+
+.carrossel-item-contido img {
+  height: auto;
+  max-height: min(70vh, 520px);
+  object-fit: contain;
+}
+
+.carrossel-seta {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(18, 36, 46, 0.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.carrossel-seta:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.carrossel-seta-esquerda {
+  left: 8px;
+}
+
+.carrossel-seta-direita {
+  right: 8px;
+}
+
+.carrossel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.carrossel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+
+.carrossel-dot.active {
+  background: #fff;
+  width: 16px;
+  border-radius: 4px;
+}
+
+/* Grade de miniaturas na tela de gestão de fotos do Point (admin-point/
+   MeuPoint.tsx) — diferente do carrossel, que é só exibição. */
+.foto-point-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.foto-point-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-sunk);
+}
+
+.foto-point-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.foto-point-remover {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(18, 36, 46, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.foto-point-remover svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Label solto fora de .form-card (pedido do usuário, 2026-08-26: filtro
+   de professor em Turmas e Agenda do admin) — mesmo visual de
+   .form-card label, sem precisar envolver num form inteiro. */
+.filter-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 280px;
+}
+
+/* Estado vazio "hero", centralizado (pedido do usuário, 2026-08-26: tela
+   de "Novo agendamento" parecida com app de academia — ícone grande,
+   título, explicação e um botão de ação, tudo centralizado). */
+.empty-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 56px 20px 40px;
+}
+
+.empty-hero-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  margin-bottom: 10px;
+}
+
+.empty-hero h2 {
+  margin: 0;
+  font-size: 16.5px;
+}
+
+.empty-hero p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13.5px;
+  max-width: 320px;
+}
+
+.empty-hero button {
+  margin-top: 18px;
+}
+
+/* Tira horizontal de dias, tipo grade de academia (pedido do usuário,
+   2026-08-26: "quero uma tela parecida com essa" — screenshot de app de
+   academia com tira de dias + lista de sessões do dia). Piloto no
+   reagendamento de crédito. */
+.day-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  margin-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.day-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  width: 46px;
+  padding: 8px 0;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.day-pill-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.day-pill-numero {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.day-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.day-pill.active .day-pill-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.day-pill:disabled {
+  opacity: 0.4;
+}
+
+/* Calendário próprio da agenda do aluno (pedido do usuário, 2026-08-26:
+   "a agenda do aluno pode ser diferente, pq é algo individual só dele" —
+   referência de app com visão mês/semana por pontinho, sem hora-a-hora, e
+   o dia selecionado detalhado embaixo). Mês e semana reaproveitam a mesma
+   grade — semana é só menos linhas. */
+.mini-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.mini-calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mini-calendar-titulo {
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 130px;
+  text-align: center;
+}
+
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mini-calendar-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding-bottom: 4px;
+}
+
+.mini-calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 2px;
+  border-radius: 12px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.mini-calendar-day.outside {
+  color: var(--ink-muted);
+  opacity: 0.4;
+}
+
+.mini-calendar-day.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mini-calendar-weekday-inline {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 700;
+}
+
+.mini-calendar-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.mini-calendar-dot.ativo {
+  background: var(--accent);
+}
+
+.mini-calendar-dia-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 14px 0 8px;
+}
+
+.info-box {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--surface-sunk);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  line-height: 1.4;
 }
 
 .status-pill {
@@ -389,10 +1087,53 @@ button.danger:hover:not(:disabled) {
   color: var(--risk);
 }
 
+/* Neutro/informativo — não é bom nem ruim, só descreve (ex.: "Recorrente"
+   vs "Avulsa" na agenda do aluno, pedido do usuário, 2026-08-26). */
+.status-pill.status-info {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .empty-state {
   color: var(--ink-muted);
   font-size: 14px;
   padding: 16px 0;
+}
+
+/* Extrato de pagamento — quais aulas um pagamento cobre (pedido do usuário,
+   2026-08-21). */
+.extrato-pagamento {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0 0;
+  border-top: 1px dashed var(--line);
+  margin-top: 8px;
+}
+
+.extrato-pagamento-titulo {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.extrato-pagamento-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.extrato-pagamento-lista li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 .form-card {
@@ -419,6 +1160,13 @@ button.danger:hover:not(:disabled) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+/* min-width:0 evita que um input largo (ex.: number com spinner) force a
+   coluna a crescer além do 1fr e estourar o card (bug visto no convite de
+   professor, campo "Valor (R$)"). */
+.form-row > label {
+  min-width: 0;
 }
 
 .form-error {
@@ -494,6 +1242,27 @@ button.danger:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+.toggle-chip.active:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Escolha de turma + dias por aluno (pedido do usuário, 2026-08-21) — cada
+   turma escolhida abre os dias dela pra marcar só o subconjunto que esse
+   aluno vai frequentar. */
+.turma-escolha-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.turma-escolha-item {
+  display: flex;
+  flex-direction: column;
 }
 
 /* Weekly calendar — agenda de turmas */
@@ -596,6 +1365,124 @@ button.danger:hover:not(:disabled) {
 .calendar-day-header.today {
   color: var(--accent-strong);
   background: var(--accent-soft);
+}
+
+/* Mapa de calor de ocupação das quadras (pedido do usuário, 2026-08-26) —
+   mesmo tratamento visual do calendário (bordas, cabeçalho), mas cada
+   célula é preenchida com a intensidade da ocupação em vez de um evento. */
+.ocupacao-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.ocupacao-grid {
+  display: grid;
+  min-width: 480px;
+}
+
+.ocupacao-cell {
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+}
+
+.ocupacao-corner {
+  border-top: none;
+  border-left: none;
+  background: var(--surface-sunk);
+}
+
+.ocupacao-header {
+  padding: 8px 4px;
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  background: var(--surface-sunk);
+}
+
+.ocupacao-header.hoje {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.ocupacao-hour-label {
+  padding: 4px 6px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ink-muted);
+  background: var(--surface-sunk);
+}
+
+.ocupacao-valor {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-strong);
+}
+
+.ocupacao-valor.claro {
+  color: #fff;
+}
+
+/* Célula clicável — abre a lista de alunos daquele dia/horário (pedido do
+   usuário, 2026-08-26). */
+.ocupacao-slot-clicavel {
+  cursor: pointer;
+  transition: box-shadow 120ms ease;
+}
+
+.ocupacao-slot-clicavel:hover,
+.ocupacao-slot-clicavel:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.ocupacao-lista-alunos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.ocupacao-lista-alunos li {
+  padding: 8px 10px;
+  background: var(--surface-sunk);
+  border-radius: 8px;
+  font-size: 13.5px;
+}
+
+/* Legenda de intensidade — reaproveita a mesma escala de opacidade das
+   células preenchidas, pra ficar óbvio o que a cor quer dizer. */
+.ocupacao-legenda {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.ocupacao-legenda-escala {
+  display: flex;
+  gap: 2px;
+}
+
+.ocupacao-legenda-escala span {
+  width: 16px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
 }
 
 /* Toolbar: navegação + troca de visão (dia/semana/mês) */
@@ -758,10 +1645,98 @@ button.danger:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* Achado ao mostrar o reagendamento de crédito (pedido do usuário,
+     2026-08-25: "o layout do reagendamento ta ruim") — sem isso, um modal
+     com conteúdo mais alto que a tela simplesmente vazava por cima/baixo do
+     viewport (sem scroll nenhum, nem no modal nem na página atrás, que fica
+     fixed). max-height combina com o padding:20px do .modal-backdrop dos
+     dois lados. */
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 .modal-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* ==========================================================================
+   Mobile — "layout pra ficar como um aplicativo no celular" (pedido do
+   usuário, 2026-08-25). Troca o menu de topo pela barra de abas inferior,
+   condensa o cabeçalho, e dá mais espaço de toque. 640px cobre praticamente
+   todo celular em pé, incluindo os "grandes" (iPhone Pro Max, Android XL).
+   ========================================================================== */
+@media (max-width: 640px) {
+  .app-header {
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  }
+
+  .app-header-left {
+    gap: 12px;
+  }
+
+  /* A barra inferior substitui esse menu no mobile — os dois juntos seriam
+     redundantes (mesmas 3 telas, duas vezes na tela). */
+  .app-nav {
+    display: none;
+  }
+
+  /* Cargo/nome ocupam espaço que falta no cabeçalho estreito — o essencial
+     (saudação de quem é) já está no resto da tela; o botão de sair sozinho
+     já resolve a ação que importa aqui. */
+  .app-user-text {
+    display: none;
+  }
+
+  .app-logout-label {
+    display: none;
+  }
+
+  .app-logout-btn {
+    padding: 8px;
+    border-radius: 100px;
+  }
+
+  .app-main {
+    padding: 20px 16px 32px;
+  }
+
+  /* Reserva espaço pra barra de abas fixa não tapar o fim do conteúdo. */
+  .app-main-com-abas {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  .app-tabbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 16px -8px rgba(18, 36, 46, 0.12);
+    z-index: 50;
+  }
+
+  /* Formulários lado a lado ficam apertados demais numa tela de celular —
+     empilha em 1 coluna só. */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-card {
+    max-width: none;
+  }
+
+  /* Alvo de toque confortável (Apple HIG recomenda ~44px) sem inchar o
+     botão no desktop. */
+  button {
+    padding: 12px 18px;
+  }
+
+  button.secondary,
+  .toggle-chip {
+    padding: 10px 14px;
+  }
 }

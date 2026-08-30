@@ -1,9 +1,17 @@
-from sqlalchemy import Enum, ForeignKey, Integer, Numeric
+from datetime import date
+
+from sqlalchemy import Date, Enum, ForeignKey, Integer, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.base import TimestampMixin
-from app.models.enums import MatriculaStatus, MatriculaTipo, ModeloRepasse, PagamentoMeio
+from app.models.enums import (
+    MatriculaStatus,
+    MatriculaTipo,
+    ModeloRepasse,
+    PagamentoMeio,
+    PagamentoStatus,
+)
 
 
 class Matricula(TimestampMixin, Base):
@@ -28,6 +36,14 @@ class Matricula(TimestampMixin, Base):
         ForeignKey("assinaturas.id"), nullable=True
     )
 
+    # Data específica escolhida pelo aluno pra matrícula AVULSA (pedido do
+    # usuário, 2026-08-25: reposição de crédito precisa deixar o aluno
+    # escolher dia/horário no calendário, não cair sempre no
+    # turma.periodo_inicio) — nula pra matrícula mensal (usa dias_semana +
+    # data_inicio_efetiva em vez disso) e pra avulsa antiga, de antes desse
+    # campo existir (cai no fallback abaixo, mesmo comportamento de sempre).
+    data_avulsa: Mapped[date | None] = mapped_column(Date, nullable=True)
+
     # Exceção de repasse por aluno (seção 3.2) — quando nulo, usa o padrão do Vínculo.
     repasse_override_modelo: Mapped[ModeloRepasse | None] = mapped_column(
         Enum(ModeloRepasse), nullable=True
@@ -44,3 +60,93 @@ class Matricula(TimestampMixin, Base):
     creditos: Mapped[list["CreditoReposicao"]] = relationship(  # noqa: F821
         back_populates="matricula", foreign_keys="CreditoReposicao.matricula_id"
     )
+    excecoes_rel: Mapped[list["MatriculaExcecao"]] = relationship(  # noqa: F821
+        cascade="all, delete-orphan"
+    )
+    dias_semana_rel: Mapped[list["MatriculaDiaSemana"]] = relationship(  # noqa: F821
+        cascade="all, delete-orphan"
+    )
+    # Ocorrências geradas por gerar_aulas_do_mes (pedido do usuário,
+    # 2026-08-21: "consigo ter um extrato que o pagamento X refere-se às
+    # aulas xyz?") — usada por Pagamento.aulas_cobertas pra montar esse
+    # extrato. Cancelamento apaga a linha direto (ver cancelar_aula_matricula
+    # e cancelar_aula_por_forca_maior), não passa por aqui.
+    aulas: Mapped[list["Aula"]] = relationship()  # noqa: F821
+
+    @property
+    def excecoes(self) -> list[date]:
+        """Datas que ESSE aluno cancelou com antecedência (pedido do
+        usuário, 2026-08-20) — pra MatriculaOut expor direto, e pro
+        frontend somar com as exceções da Turma ao montar a agenda."""
+        return [e.data for e in self.excecoes_rel]
+
+    @property
+    def dias_semana(self) -> list[str]:
+        """Dias da semana que ESSE aluno frequenta dentro da Turma (pedido
+        do usuário, 2026-08-21) — subconjunto de Turma.dias_semana; só
+        preenchido pra matrícula mensal (avulsa não usa isso). Ordenado
+        segunda→domingo, igual Turma.dias_semana."""
+        from app.services.aulas import DIAS_SEMANA
+
+        ordem = {dia: i for i, dia in enumerate(DIAS_SEMANA)}
+        return sorted(
+            (d.dia_semana for d in self.dias_semana_rel), key=lambda d: ordem.get(d, len(DIAS_SEMANA))
+        )
+
+    @property
+    def mes_atual_pago(self) -> bool:
+        """Mensalidade recorrente de verdade (pedido do usuário, 2026-08-21):
+        matrícula mensal só conta como paga se tem um Pagamento CONFIRMADO
+        do mês corrente — o mês anterior pago não vale pra este mês.
+        Avulsa continua com a regra antiga (qualquer confirmado, sem mês)."""
+        if self.tipo != MatriculaTipo.MENSAL:
+            return any(p.status == PagamentoStatus.CONFIRMADO for p in self.pagamentos)
+        mes_atual = date.today().replace(day=1)
+        return any(
+            p.status == PagamentoStatus.CONFIRMADO and p.mes_referencia == mes_atual
+            for p in self.pagamentos
+        )
+
+    @property
+    def pagamento_pendente_atual(self) -> bool:
+        """Já lançou pagamento do período atual (Pix ou dinheiro) mas ainda
+        não foi confirmado pelo admin do Point (pedido do usuário,
+        2026-08-21: Pix deixou de confirmar sozinho na hora — agora passa
+        pela mesma conferência manual do dinheiro). Pro frontend saber
+        quando mostrar "aguardando confirmação" em vez do botão de pagar."""
+        if self.tipo != MatriculaTipo.MENSAL:
+            return any(p.status == PagamentoStatus.PENDENTE for p in self.pagamentos)
+        mes_atual = date.today().replace(day=1)
+        return any(
+            p.status == PagamentoStatus.PENDENTE and p.mes_referencia == mes_atual
+            for p in self.pagamentos
+        )
+
+    @property
+    def inadimplente(self) -> bool:
+        """Mensalidade em atraso (pedido do usuário, 2026-08-21) — deve o
+        mês anterior ao de hoje. Ver a regra completa em
+        app.services.aulas.matricula_inadimplente (import local aqui pra
+        evitar import circular — aulas.py importa Matricula)."""
+        from app.services.aulas import matricula_inadimplente
+
+        return matricula_inadimplente(self)
+
+    @property
+    def data_inicio_efetiva(self) -> date:
+        """A partir de quando essa matrícula realmente vale — o maior entre
+        o início da Turma e o início da Assinatura, se houver (pedido do
+        usuário, 2026-08-21: a agenda do aluno não pode mostrar aulas de
+        antes dele ter entrado, mesmo que a turma já rodasse há mais tempo
+        pra outros alunos). Mesma lógica já usada em gerar_aulas_do_mes.
+
+        Matrícula avulsa com data própria (pedido do usuário, 2026-08-25 —
+        reposição de crédito) usa exatamente essa data, não o início da
+        Turma (que é só quando o PROFESSOR abriu a turma, não tem nada a
+        ver com o dia que ESSE aluno escolheu reagendar)."""
+        if self.tipo == MatriculaTipo.AVULSA and self.data_avulsa is not None:
+            return self.data_avulsa
+        inicio = self.turma.periodo_inicio
+        if self.assinatura and self.assinatura.data_inicio and self.assinatura.data_inicio > inicio:
+            return self.assinatura.data_inicio
+        return inicio

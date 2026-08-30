@@ -25,7 +25,7 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function diaSemanaDeData(date: Date): string {
+export function diaSemanaDeData(date: Date): string {
   return DIAS_SEMANA[(date.getDay() + 6) % 7].value;
 }
 
@@ -36,13 +36,49 @@ function ocorreNaData(item: CalendarItem, date: Date): boolean {
   return item.diaSemana === diaSemanaDeData(date) && dentroDoPeriodo && !removida;
 }
 
-function inicioDaSemana(ref: Date): Date {
+export interface Ocorrencia {
+  item: CalendarItem;
+  data: Date;
+}
+
+/** As próximas N ocorrências (de hoje em diante, incluindo hoje) entre
+ * várias recorrências — pedido do usuário, 2026-08-25: lista compacta de
+ * "próximos agendamentos" na home do aluno, sem precisar abrir o
+ * calendário inteiro pra ver o que vem por aí. Varre dia a dia (até um
+ * teto de `limiteDias`, pra não rodar pra sempre se não sobrar nenhuma
+ * ocorrência futura) e ordena por horário dentro de cada dia. */
+export function proximasOcorrencias(
+  items: CalendarItem[],
+  apartirDe: Date,
+  quantidade: number,
+  limiteDias = 120,
+): Ocorrencia[] {
+  const resultado: Ocorrencia[] = [];
+  let cursor = new Date(apartirDe.getFullYear(), apartirDe.getMonth(), apartirDe.getDate());
+  let diasVerificados = 0;
+
+  while (resultado.length < quantidade && diasVerificados < limiteDias) {
+    const doDia = items
+      .filter((item) => ocorreNaData(item, cursor))
+      .sort((a, b) => a.horario.localeCompare(b.horario));
+    for (const item of doDia) {
+      if (resultado.length >= quantidade) break;
+      resultado.push({ item, data: new Date(cursor) });
+    }
+    cursor = somarDias(cursor, 1);
+    diasVerificados += 1;
+  }
+
+  return resultado;
+}
+
+export function inicioDaSemana(ref: Date): Date {
   const d = new Date(ref);
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
   return d;
 }
 
-function somarDias(ref: Date, dias: number): Date {
+export function somarDias(ref: Date, dias: number): Date {
   const d = new Date(ref);
   d.setDate(d.getDate() + dias);
   return d;

@@ -42,7 +42,7 @@ def _autoriza_point(db: Session, point_id: int, user: User) -> Point:
     point = db.get(Point, point_id)
     if point is None:
         raise HTTPException(404, "Point não encontrado")
-    if user.role == Role.ADMIN_POINT and user.point_id != point_id:
+    if user.tem_role(Role.ADMIN_POINT) and user.point_id != point_id:
         raise HTTPException(403, "Sem permissão para este Point")
     return point
 

@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { LogoMark } from "../components/LogoMark";
 
 export default function Login() {
   const { login, loading } = useAuth();
   const navigate = useNavigate();
-  const [identificador, setIdentificador] = useState("");
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
 
@@ -13,10 +14,10 @@ export default function Login() {
     e.preventDefault();
     setErro(null);
     try {
-      await login(identificador, senha);
+      await login(email, senha);
       navigate("/");
     } catch {
-      setErro("Celular/e-mail ou senha incorretos.");
+      setErro("E-mail ou senha incorretos.");
     }
   }
 
@@ -24,19 +25,20 @@ export default function Login() {
     <div className="auth-screen">
       <div>
         <div className="auth-brand">
-          <span className="auth-brand-mark" />
+          <LogoMark size={28} />
           <span className="auth-brand-name">Point</span>
         </div>
 
         <form className="auth-card" onSubmit={handleSubmit}>
           <h1>Entrar</h1>
-          <p className="auth-subtitle">Use o celular ou e-mail do seu cadastro</p>
+          <p className="auth-subtitle">Use o e-mail do seu cadastro</p>
 
-          <label htmlFor="identificador">Celular ou e-mail</label>
+          <label htmlFor="email">E-mail</label>
           <input
-            id="identificador"
-            value={identificador}
-            onChange={(e) => setIdentificador(e.target.value)}
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 

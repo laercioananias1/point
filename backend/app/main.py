@@ -1,13 +1,22 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.core.database import SessionLocal
+from app.services.scheduler import iniciar_scheduler, parar_scheduler
+from app.services.uploads import UPLOADS_DIR
 from app.routers import (
     alunos,
     assinaturas,
     auth,
+    checkins,
     configuracoes,
+    convites,
+    convites_admin,
+    convites_vinculo,
     creditos,
     fechamentos,
     matriculas,
@@ -21,7 +30,16 @@ from app.routers import (
     vinculos,
 )
 
-app = FastAPI(title="Point API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Job diário de geração de aulas do mês (pedido do usuário, 2026-08-21) —
+    # ver app/services/scheduler.py.
+    iniciar_scheduler()
+    yield
+    parar_scheduler()
+
+
+app = FastAPI(title="Point API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,6 +64,17 @@ app.include_router(creditos.router)
 app.include_router(fechamentos.router)
 app.include_router(planos.router)
 app.include_router(assinaturas.router)
+app.include_router(convites.router)
+app.include_router(convites_vinculo.router)
+app.include_router(convites_admin.router)
+app.include_router(checkins.router)
+
+# Fotos de Point (pedido do usuário, 2026-08-30) — arquivo estático servido
+# direto, sem passar por rota autenticada (mesma URL vale pra qualquer
+# aluno/professor ver a foto na Início). UPLOADS_DIR precisa existir antes
+# do mount, senão o StaticFiles recusa subir.
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 
 @app.get("/health")

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Table
+from sqlalchemy import Column, ForeignKey, Integer, Numeric, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -16,7 +16,13 @@ modalidade_quadras = Table(
 class Modalidade(TimestampMixin, Base):
     """Cadastrada pelo admin do Point (seção 4.1) — ex.: 'Beach Tennis',
     'Futevôlei'. duracao_padrao_minutos alimenta o campo de duração da Turma
-    na hora de criar (o professor pode sobrescrever por turma)."""
+    na hora de criar (o professor pode sobrescrever por turma).
+
+    preco_avulso/preco_plano são a tabela de preços do Point (pedido do
+    usuário, 2026-08-21: "esses valores são tabela do point... com o
+    professor só tem o acordo de repasse") — não fazem mais parte do
+    Vínculo. Todo professor que dá aula dessa modalidade nesse Point cobra
+    o mesmo preço; o que varia por professor é só o repasse (Vinculo)."""
 
     __tablename__ = "modalidades"
 
@@ -24,6 +30,8 @@ class Modalidade(TimestampMixin, Base):
     point_id: Mapped[int] = mapped_column(ForeignKey("points.id"))
     nome: Mapped[str] = mapped_column(String(60))
     duracao_padrao_minutos: Mapped[int] = mapped_column(Integer, default=60)
+    preco_avulso: Mapped[float] = mapped_column(Numeric(10, 2))
+    preco_plano: Mapped[float] = mapped_column(Numeric(10, 2))
 
     quadras: Mapped[list["Quadra"]] = relationship(  # noqa: F821
         secondary=modalidade_quadras, back_populates="modalidades"

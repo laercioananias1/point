@@ -10,10 +10,15 @@ from app.models.base import TimestampMixin
 class Turma(TimestampMixin, Base):
     """Pertence a 1 Vínculo (1 professor + 1 Point); elo com os alunos via Matrícula.
 
-    Cada linha é UM par dia_semana + horário (uma recorrência semanal só) —
-    "segunda 18h" e "quarta 18h" são duas Turmas distintas, mesmo com a mesma
-    modalidade/quadra/professor. O endpoint de criação cria várias de uma vez
-    a partir de uma seleção de dias × horários (pedido do usuário, 2026-08-19).
+    Uma Turma é o grupo/horário recorrente inteiro — "beach tênis iniciante,
+    seg/qua/sex 8h" é UMA turma, com 3 linhas em TurmaDiaSemana (pedido do
+    usuário, 2026-08-20: "a turma não deveria ser uma pra n dias?"). Antes
+    cada dia virava uma Turma separada, o que fragmentava Matrícula/Pagamento
+    de um mesmo plano em vários registros artificiais — ver decisão registrada
+    ali. horário/duração/quadra/capacidade continuam únicos por Turma: todo
+    dia que ela acontece é no mesmo horário. Dois horários diferentes (ex.:
+    8h e 18h) continuam sendo duas Turmas — o endpoint de criação faz 1 Turma
+    por horário selecionado, cada uma cobrindo todos os dias marcados.
 
     periodo_inicio/periodo_fim delimitam a vigência — além de dizer até quando
     a turma roda, é o que permite checar conflito de agenda do professor: duas
@@ -32,7 +37,6 @@ class Turma(TimestampMixin, Base):
 
     capacidade: Mapped[int] = mapped_column(Integer)
 
-    dia_semana: Mapped[str] = mapped_column(String(20))
     horario: Mapped[str] = mapped_column(String(5))  # "HH:00" — sempre hora cheia
     duracao_minutos: Mapped[int] = mapped_column(Integer, default=60)
     recorrencia: Mapped[str] = mapped_column(String(30), default="semanal")
@@ -46,9 +50,26 @@ class Turma(TimestampMixin, Base):
     excecoes_rel: Mapped[list["TurmaExcecao"]] = relationship(  # noqa: F821
         cascade="all, delete-orphan"
     )
+    dias_semana_rel: Mapped[list["TurmaDiaSemana"]] = relationship(  # noqa: F821
+        cascade="all, delete-orphan"
+    )
 
     @property
     def excecoes(self) -> list[date]:
         """Só as datas, pra TurmaOut expor direto (seção pedido do usuário,
         2026-08-20) sem precisar aninhar TurmaExcecao como schema."""
         return [e.data for e in self.excecoes_rel]
+
+    @property
+    def dias_semana(self) -> list[str]:
+        """Dias da semana, na ordem segunda→domingo (não na ordem em que
+        foram cadastrados), pra TurmaOut expor direto sem aninhar schema.
+        Um valor fora da lista (não deveria existir — TurmaCreate já valida
+        contra DIAS_SEMANA — mas achamos uma linha de teste com lixo assim
+        em dev, 2026-08-20) só vai pro fim em vez de derrubar a resposta."""
+        from app.services.aulas import DIAS_SEMANA
+
+        ordem = {dia: i for i, dia in enumerate(DIAS_SEMANA)}
+        return sorted(
+            (d.dia_semana for d in self.dias_semana_rel), key=lambda d: ordem.get(d, len(DIAS_SEMANA))
+        )

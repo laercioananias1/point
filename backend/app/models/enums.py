@@ -75,7 +75,12 @@ class CreditoStatus(str, enum.Enum):
 
 class CheckinOrigem(str, enum.Enum):
     PRESUMIDO = "presumido"
-    # WELLHUB e TOTALPASS entram na Fase 2 (seção 5.4 do plano de arquitetura)
+    # Implementado (pedido do usuário, 2026-08-25: "quero fazer integração
+    # com totalpass... aceitar os checkins") — ver app/services/totalpass.py.
+    TOTALPASS = "totalpass"
+    # WELLHUB continua reservado pra quando a mesma integração for feita
+    # pro Wellhub (mesmo desenho, API diferente).
+    WELLHUB = "wellhub"
 
 
 class CheckinStatus(str, enum.Enum):
@@ -91,3 +96,15 @@ class PeriodoDia(str, enum.Enum):
     MANHA = "manha"
     TARDE = "tarde"
     NOITE = "noite"
+
+
+class ConviteStatus(str, enum.Enum):
+    """Convite de assinatura mandado pelo admin pro e-mail do aluno (pedido
+    do usuário, 2026-08-20 — o aluno cadastra a própria conta, o admin não
+    cria senha por ele). 'expirado' não é um status gravado — é calculado
+    comparando `expira_em` com hoje, pra não depender de um job rodando
+    pra virar o status sozinho."""
+
+    PENDENTE = "pendente"
+    ACEITO = "aceito"
+    CANCELADO = "cancelado"

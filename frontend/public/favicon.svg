@@ -1,4 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
   <rect width="48" height="48" rx="12" fill="#0E3A53"/>
-  <circle cx="24" cy="24" r="11" fill="#F2542D"/>
+  <!-- Rede de quadra de praia (beach tennis/futevôlei) — postes + fita
+       superior + malha, cores da paleta já usada no app (--navy-text,
+       --coral). -->
+  <path d="M13 15v18M35 15v18" stroke="#EAF1F4" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M13 20h22" stroke="#EAF1F4" stroke-width="3" stroke-linecap="round"/>
+  <path
+    d="M17 20v11M21.5 20v11M26 20v11M30.5 20v11"
+    stroke="#EAF1F4"
+    stroke-width="1.4"
+    stroke-linecap="round"
+    opacity="0.55"
+  />
+  <!-- Bola cruzando por cima da rede — o "ponto" sendo feito. -->
+  <circle cx="32" cy="14" r="6" fill="#F2542D"/>
 </svg>

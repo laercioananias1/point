@@ -11,6 +11,24 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 12  # 12h
 
+    # E-mail de convite via Resend (pedido do usuário, 2026-08-20). Sem
+    # resend_api_key configurada, o envio vira um log no console em vez de
+    # falhar — dá pra testar o fluxo de convite sem conta no Resend.
+    resend_api_key: str = ""
+    resend_from: str = "Point <onboarding@resend.dev>"
+    frontend_url: str = "http://localhost:5173"
+
+    # Integração TotalPass (pedido do usuário, 2026-08-25: "quero fazer
+    # integração com totalpass... aceitar os checkins"). partner_api_key é
+    # da plataforma inteira — conseguido com o time de parceiros da
+    # TotalPass, não é self-service (ver app/services/totalpass.py). O
+    # place_api_key é POR Point (Point.place_api_key, cada Point pega o
+    # dele no portal deles). Base URL aponta pro staging por padrão de
+    # propósito — nunca bater em produção sem trocar isso explicitamente
+    # no .env quando o Point realmente for pra produção.
+    totalpass_partner_api_key: str = ""
+    totalpass_base_url: str = "https://booking-api.staging.totalpass.com"
+
 
 @lru_cache
 def get_settings() -> Settings:

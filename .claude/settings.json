@@ -62,7 +62,38 @@
       "Bash(python -c \"import sys,json; a=json.load\\(sys.stdin\\); print\\('status:',a['status'],'turmas:',[\\(t['dia_semana'],t['horario']\\) for t in a['turmas']]\\)\")",
       "Bash(python -c \"import sys,json; ts=json.load\\(sys.stdin\\); print\\([t['id'] for t in ts if t['periodo_fim'] is None]\\)\")",
       "Bash(git commit -m 'Turma recorrente: periodo_fim vira opcional \\(null = sem data de termino\\) *)",
-      "Bash(git commit -m 'Remover turma pelo calendario: so este dia, ou este dia em diante *)"
+      "Bash(git commit -m 'Remover turma pelo calendario: so este dia, ou este dia em diante *)",
+      "Bash(git commit -m 'Remocao de aula vira popup, e calendario nao perde posicao ao recarregar *)",
+      "Bash(python -c \"print\\('fallback: sem docker rodando, checar por texto'\\)\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\laerc\\\\.claude\\\\projects\\\\c--Projetos-TaskHero-point\\\\memory\" 2>/dev/null; echo ok)",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_pivot.py\")",
+      "Bash(grep -n \"login\\\\|criar convite [0-9]\\\\|aceitar\\\\|matriculas do aluno\\\\|assinaturas do aluno\\\\|assinaturas do point\\\\|status\\\\\":\" /tmp_smoke_out.txt)",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_mensalidade.py\")",
+      "Bash(docker cp *)",
+      "Read(//c/Users/laerc/AppData/Local/Temp/claude/c--Projetos-TaskHero-point/b46f5b0c-6e41-41b4-b679-8dc7f1b28117/scratchpad/**)",
+      "Bash(MSYS_NO_PATHCONV=1 docker cp /c/Users/laerc/AppData/Local/Temp/claude/c--Projetos-TaskHero-point/b46f5b0c-6e41-41b4-b679-8dc7f1b28117/scratchpad/smoke_inadimplencia.py point-api-1:/tmp/smoke_inadimplencia.py)",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_lembrete.py\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_pix_pendente.py\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_config_vencimento.py\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\debug_pagar.py\")",
+      "Bash(curl -s \"http://localhost:5173/src/pages/aluno/Dashboard.tsx\")",
+      "Bash(MSYS_NO_PATHCONV=1 docker compose exec -T web sh -c \"grep -c pagamento_pendente_atual /app/src/pages/aluno/Dashboard.tsx\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_extrato.py\")",
+      "Bash(curl -s \"http://localhost:5173/src/components/ExtratoPagamento.tsx\")",
+      "Bash(curl -s \"http://localhost:5173/src/pages/admin-point/Dashboard.tsx\")",
+      "Bash(curl -s \"http://localhost:5173/src/index.css\")",
+      "Bash(curl -s \"http://localhost:5173/src/components/Layout.tsx\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_perfil.py\")",
+      "Bash(/c/Users/laerc/AppData/Local/Programs/Python/Python313/python -c ' *)",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_professor_perfil.py\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_admin_point.py\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:5173/src/pages/admin-point/Inicio.tsx\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_dashboard.py\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:5173/src/components/GraficoOcupacao.tsx\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_ocupacao.py\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_ocupacao_alunos.py\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:5173/src/components/Calendar.tsx\")",
+      "Bash(\"/c/Users/laerc/AppData/Local/Programs/Python/Python313/python\" \"C:\\\\Users\\\\laerc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projetos-TaskHero-point\\\\b46f5b0c-6e41-41b4-b679-8dc7f1b28117\\\\scratchpad\\\\smoke_ocupacao_semana.py\")"
     ],
     "ask": [
       "Bash(git push*)",
@@ -76,6 +107,9 @@
       "PowerShell(aws *)",
       "PowerShell(eb deploy*)",
       "PowerShell(Remove-Item*)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\laerc\\.claude\\projects\\c--Projetos-TaskHero-point\\memory"
     ]
   }
 }

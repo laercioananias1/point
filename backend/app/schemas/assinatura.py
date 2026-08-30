@@ -1,28 +1,13 @@
 from datetime import date
 
+from pydantic import Field
+
 from app.models.enums import MatriculaStatus, PagamentoMeio, PeriodoDia
 from app.schemas.aluno import AlunoOut
 from app.schemas.common import ORMModel
+from app.schemas.convite import ConviteTurmaEscolhaOut
 from app.schemas.modalidade import ModalidadeOut
 from app.schemas.plano import PlanoOut
-from app.schemas.turma import TurmaOut
-
-
-class AssinaturaCreate(ORMModel):
-    """O 'interesse' do aluno — sem escolher turma nenhuma (pedido do
-    usuário, 2026-08-19)."""
-
-    point_id: int
-    modalidade_id: int
-    frequencia_semanal_desejada: int  # 1..6
-    periodo_dia_desejado: PeriodoDia
-    fonte_pagamento: PagamentoMeio
-
-
-class AssinaturaAtivar(ORMModel):
-    plano_id: int
-    turma_ids: list[int]
-    data_inicio: date
 
 
 class AssinaturaOut(ORMModel):
@@ -36,4 +21,7 @@ class AssinaturaOut(ORMModel):
     status: MatriculaStatus
     plano: PlanoOut | None
     data_inicio: date | None
-    turmas: list[TurmaOut]
+    # Cada turma envolvida e só os dias que ESSE aluno frequenta nela
+    # (pedido do usuário, 2026-08-21) — lido de Assinatura.turmas_com_dias,
+    # não da relação `turmas` (que seria a agenda inteira da turma).
+    turmas: list[ConviteTurmaEscolhaOut] = Field(validation_alias="turmas_com_dias")

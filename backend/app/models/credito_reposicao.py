@@ -35,3 +35,19 @@ class CreditoReposicao(TimestampMixin, Base):
     matricula: Mapped["Matricula"] = relationship(  # noqa: F821
         back_populates="creditos", foreign_keys=[matricula_id]
     )
+
+    @property
+    def professor_id(self) -> int:
+        """Pra CreditoOut expor direto (pedido do usuário, 2026-08-25: "ele
+        só pode reagendar com o professor que já dá aula pra ele") — o
+        reagendamento fica restrito ao mesmo professor da turma que gerou o
+        crédito, então o frontend precisa saber quem é sem outra chamada."""
+        return self.matricula.turma.vinculo.professor_id
+
+    @property
+    def professor_nome(self) -> str:
+        return self.matricula.turma.vinculo.professor.nome
+
+    @property
+    def modalidade_nome(self) -> str:
+        return self.matricula.turma.modalidade.nome

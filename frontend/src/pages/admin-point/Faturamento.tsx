@@ -1,40 +1,34 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Fechamento, Matricula, ModeloRepasse, Vinculo } from "../../api/types";
-import { Layout } from "../../components/Layout";
+import type { Fechamento, Vinculo } from "../../api/types";
+import { Icon, Layout } from "../../components/Layout";
+import { formatarReais, rotuloRepasse } from "../../lib/formato";
 
-const MODELOS_REPASSE: { value: ModeloRepasse; label: string }[] = [
-  { value: "percentual", label: "Percentual" },
-  { value: "valor_fixo_mensal", label: "Valor fixo mensal" },
-  { value: "valor_fixo_por_aula", label: "Valor fixo por aula" },
-];
-
-function rotuloModelo(modelo: ModeloRepasse): string {
-  return MODELOS_REPASSE.find((m) => m.value === modelo)?.label ?? modelo;
-}
-
+/** Saiu da barra de abas do rodapé e virou botão dentro de Ver Mais
+ * (pedido do usuário, 2026-08-30: "faturamento vai também pra dentro de
+ * Ver mais") — mesmo tratamento já dado a Turmas/Ocupação/Aluno/
+ * Professor antes: tela cheia com X pra fechar, aberta a partir de uma
+ * caixinha, em vez de aba fixa. */
 export default function AdminPointFaturamento() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
-  const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [fechamentos, setFechamentos] = useState<Fechamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [processando, setProcessando] = useState<Set<number>>(new Set());
 
   const carregar = useCallback(async () => {
     if (!user?.point_id) return;
     setLoading(true);
     setErro(null);
     try {
-      const [vinculosRes, matriculasRes, fechamentosRes] = await Promise.all([
+      const [vinculosRes, fechamentosRes] = await Promise.all([
         api.get<Vinculo[]>("/vinculos"),
-        api.get<Matricula[]>("/matriculas"),
         api.get<Fechamento[]>(`/points/${user.point_id}/fechamentos`),
       ]);
       setVinculos(vinculosRes);
-      setMatriculas(matriculasRes);
       setFechamentos(fechamentosRes);
     } catch {
       setErro("Não foi possível carregar o faturamento. Tente novamente.");
@@ -47,24 +41,6 @@ export default function AdminPointFaturamento() {
     carregar();
   }, [carregar]);
 
-  async function removerExcecao(matriculaId: number) {
-    setProcessando((atual) => new Set(atual).add(matriculaId));
-    try {
-      await api.patch(`/matriculas/${matriculaId}/repasse`, { modelo: null, valor: null });
-      await carregar();
-    } finally {
-      setProcessando((atual) => {
-        const proximo = new Set(atual);
-        proximo.delete(matriculaId);
-        return proximo;
-      });
-    }
-  }
-
-  const comExcecao = matriculas.filter((m) => m.repasse_override_modelo !== null);
-  const semExcecaoAtivas = matriculas.filter(
-    (m) => m.repasse_override_modelo === null && m.status === "ativa",
-  );
   const totalTaxa = fechamentos.reduce((soma, f) => soma + f.total_taxa_servico, 0);
   const totalRepassado = fechamentos.reduce(
     (soma, f) => soma + f.repasses.reduce((s, r) => s + r.valor, 0),
@@ -73,7 +49,17 @@ export default function AdminPointFaturamento() {
 
   return (
     <Layout>
-      <h1>Faturamento</h1>
+      <div className="screen-header">
+        <button
+          type="button"
+          className="close-btn"
+          onClick={() => navigate("/admin-point/mais")}
+          aria-label="Fechar"
+        >
+          <Icon name="x" />
+        </button>
+        <h1>Faturamento</h1>
+      </div>
 
       {erro && <p className="form-error">{erro}</p>}
       {loading && <p className="empty-state">Carregando...</p>}
@@ -88,11 +74,11 @@ export default function AdminPointFaturamento() {
               </div>
               <div className="stat-tile">
                 <div className="stat-label">Taxa de serviço total</div>
-                <div className="stat-value">R$ {totalTaxa.toFixed(2)}</div>
+                <div className="stat-value">{formatarReais(totalTaxa)}</div>
               </div>
               <div className="stat-tile">
                 <div className="stat-label">Repassado a professores</div>
-                <div className="stat-value">R$ {totalRepassado.toFixed(2)}</div>
+                <div className="stat-value">{formatarReais(totalRepassado)}</div>
               </div>
             </div>
           </section>
@@ -108,8 +94,7 @@ export default function AdminPointFaturamento() {
                     <div className="item-card-info">
                       <span className="item-card-title">{v.professor.nome}</span>
                       <span className="item-card-subtitle">
-                        {rotuloModelo(v.modelo_repasse)} · {v.valor_repasse}
-                        {v.modelo_repasse === "percentual" ? "%" : ""}
+                        {rotuloRepasse(v.modelo_repasse, v.valor_repasse)}
                       </span>
                     </div>
                   </div>
@@ -118,50 +103,24 @@ export default function AdminPointFaturamento() {
             )}
           </section>
 
-          <section className="section">
-            <h2>Exceções de repasse por aluno ({comExcecao.length})</h2>
-            {comExcecao.length === 0 ? (
-              <p className="empty-state">Nenhuma exceção definida — todo mundo usa o padrão do vínculo.</p>
-            ) : (
-              <div className="card-list">
-                {comExcecao.map((m) => (
-                  <div className="item-card" key={m.id}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">{m.aluno.nome}</span>
-                      <span className="item-card-subtitle">
-                        {m.turma.modalidade.nome} · {rotuloModelo(m.repasse_override_modelo!)} ·{" "}
-                        {m.repasse_override_valor}
-                        {m.repasse_override_modelo === "percentual" ? "%" : ""}
-                      </span>
-                    </div>
-                    <button
-                      className="secondary"
-                      disabled={processando.has(m.id)}
-                      onClick={() => removerExcecao(m.id)}
-                    >
-                      {processando.has(m.id) ? "Removendo..." : "Remover exceção"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          {/* "Exceções de repasse por aluno" (com o form "Definir nova
+              exceção") saiu daqui (pedido do usuário, 2026-08-30: "tira
+              essa exceção porque precisa ser melhor definida") — volta
+              redesenhada mais pra frente. O endpoint (PATCH
+              /matriculas/{id}/repasse) continua no backend. */}
 
-          <section className="section">
-            <h2>Definir nova exceção</h2>
-            {semExcecaoAtivas.length === 0 ? (
-              <p className="empty-state">Nenhuma matrícula ativa sem exceção pra ajustar.</p>
-            ) : (
-              <NovaExcecaoForm matriculas={semExcecaoAtivas} onDefinido={carregar} />
-            )}
-          </section>
+          {/* "Gerar fechamento" saiu daqui por enquanto (pedido do usuário,
+              2026-08-30) — o texto dizia "roda sozinho no 5º dia útil", mas
+              isso nunca chegou a existir de verdade (só documentado como
+              intenção futura); com a confirmação de pagamento Pix pausada
+              até a API de verdade chegar, esse disparo manual também some
+              até lá. O endpoint (POST /points/{id}/fechamentos) continua
+              no backend. */}
 
           <section className="section">
             <h2>Histórico de fechamentos ({fechamentos.length})</h2>
             {fechamentos.length === 0 ? (
-              <p className="empty-state">
-                Nenhum fechamento gerado ainda — dá pra gerar na tela de Aprovações.
-              </p>
+              <p className="empty-state">Nenhum fechamento gerado ainda.</p>
             ) : (
               <div className="card-list">
                 {fechamentos.map((f) => (
@@ -171,12 +130,12 @@ export default function AdminPointFaturamento() {
                         {f.periodo_inicio} a {f.periodo_fim}
                       </span>
                       <span className="item-card-subtitle">
-                        {f.quantidade_pagamentos} pagamento(s) · taxa total R${" "}
-                        {f.total_taxa_servico.toFixed(2)}
+                        {f.quantidade_pagamentos} pagamento(s) · taxa total{" "}
+                        {formatarReais(f.total_taxa_servico)}
                       </span>
                       {f.repasses.map((r) => (
                         <span className="item-card-subtitle" key={r.professor_id}>
-                          {r.professor_nome}: R$ {r.valor.toFixed(2)}
+                          {r.professor_nome}: {formatarReais(r.valor)}
                         </span>
                       ))}
                     </div>
@@ -191,75 +150,4 @@ export default function AdminPointFaturamento() {
   );
 }
 
-function NovaExcecaoForm({
-  matriculas,
-  onDefinido,
-}: {
-  matriculas: Matricula[];
-  onDefinido: () => void;
-}) {
-  const [matriculaId, setMatriculaId] = useState(matriculas[0]?.id ?? 0);
-  const [modelo, setModelo] = useState<ModeloRepasse>("percentual");
-  const [valor, setValor] = useState("");
-  const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setEnviando(true);
-    setErro(null);
-    try {
-      await api.patch(`/matriculas/${matriculaId}/repasse`, { modelo, valor: Number(valor) });
-      setValor("");
-      onDefinido();
-    } catch {
-      setErro("Não foi possível salvar. Confira os valores e tente de novo.");
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  return (
-    <form className="form-card" onSubmit={handleSubmit}>
-      <label>
-        Aluno / matrícula
-        <select value={matriculaId} onChange={(e) => setMatriculaId(Number(e.target.value))}>
-          {matriculas.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.aluno.nome} · {m.turma.modalidade.nome}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label>
-        Modelo
-        <select value={modelo} onChange={(e) => setModelo(e.target.value as ModeloRepasse)}>
-          {MODELOS_REPASSE.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label>
-        {modelo === "percentual" ? "Percentual (%)" : "Valor (R$)"}
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          value={valor}
-          onChange={(e) => setValor(e.target.value)}
-          required
-        />
-      </label>
-
-      {erro && <p className="form-error">{erro}</p>}
-
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Salvando..." : "Definir exceção"}
-      </button>
-    </form>
-  );
-}

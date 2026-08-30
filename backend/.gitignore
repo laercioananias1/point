@@ -4,3 +4,6 @@ __pycache__/
 venv/
 .env
 .pytest_cache/
+# Fotos de Point enviadas via upload (app/services/uploads.py) — conteúdo
+# do usuário, não código-fonte.
+uploads/

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -8,7 +8,7 @@ from app.core.deps import get_current_user, require_role
 from app.models.enums import Role
 from app.models.modalidade import Modalidade
 from app.models.user import User
-from app.schemas.modalidade import ModalidadeCreate, ModalidadeOut
+from app.schemas.modalidade import ModalidadeCreate, ModalidadeOut, ModalidadeUpdate
 
 router = APIRouter(prefix="/modalidades", tags=["modalidades"])
 
@@ -36,3 +36,24 @@ def listar_modalidades(
     """Qualquer usuário autenticado pode ver — o professor precisa disso pra
     escolher a modalidade ao criar uma turma."""
     return db.query(Modalidade).filter(Modalidade.point_id == point_id).all()
+
+
+@router.patch("/{modalidade_id}", response_model=ModalidadeOut)
+def atualizar_modalidade(
+    modalidade_id: int,
+    payload: ModalidadeUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> Modalidade:
+    """Ajustar nome/duração/preços da tabela do Point (pedido do usuário,
+    2026-08-21) — preço de aula avulsa/plano vive aqui, não no vínculo."""
+    modalidade = db.get(Modalidade, modalidade_id)
+    if modalidade is None or modalidade.point_id != admin.point_id:
+        raise HTTPException(404, "Modalidade não encontrada")
+
+    for campo, valor in payload.model_dump(exclude_none=True).items():
+        setattr(modalidade, campo, valor)
+
+    db.commit()
+    db.refresh(modalidade)
+    return modalidade
