@@ -4,6 +4,27 @@ Passo a passo pra rodar manualmente no VPS, assumindo Docker + Docker Compose
 já instalados e um nginx (ou Traefik) já rodando no host cuidando de outros
 subdomínios do TaskHero.
 
+## 0. Servidor compartilhado com pouca RAM — configure swap primeiro
+
+Se esse VPS já roda outra stack (esse é o caso — `adsops`, com o próprio
+MySQL) e tem pouca memória (esse servidor tem ~1.9GB), configure um
+swapfile **antes** de subir os containers — sem isso, o MySQL do Point
+entra em loop de restart sob pressão de memória (aconteceu no primeiro
+deploy: `RestartCount=4`, sistema com só 68Mi livres, 0B de swap):
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+free -h   # confirma 2.0G de swap
+```
+
+O `docker-compose.prod.yml` também já reduz o footprint padrão do MySQL
+(`innodb_buffer_pool_size`, `performance_schema` desligado, menos
+conexões) — ajuda, mas não substitui o swap como rede de segurança.
+
 ## 1. Primeira vez no servidor
 
 ```bash
