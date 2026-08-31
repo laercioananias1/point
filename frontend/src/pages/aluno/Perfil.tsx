@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import type { AlunoResumo, Assinatura, PeriodoDia } from "../../api/types";
 import { Layout } from "../../components/Layout";
@@ -24,6 +25,7 @@ const ROTULO_FORMA_PAGAMENTO: Record<string, string> = {
  * gestão dos planos mensais (assinatura); pagar/cancelar aula avulsa e
  * calendário ficam na Agenda. */
 export default function AlunoPerfil() {
+  const navigate = useNavigate();
   const [perfil, setPerfil] = useState<AlunoResumo | null>(null);
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
   const [pronto, setPronto] = useState(false);
@@ -75,6 +77,14 @@ export default function AlunoPerfil() {
                 </span>
               </div>
             </div>
+            <button
+              type="button"
+              className="secondary"
+              style={{ marginTop: 12 }}
+              onClick={() => navigate("/aluno/perfil/senha")}
+            >
+              Trocar senha
+            </button>
           </section>
 
           <section className="section">

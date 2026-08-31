@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import type { ProfessorResumo, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
@@ -14,6 +15,7 @@ import { TrocarArea } from "../../components/TrocarArea";
  * placeholder de avisos que já existia lá (pages/professor/Inicio.tsx),
  * pra não duplicar a mesma informação em duas telas. */
 export default function ProfessorPerfil() {
+  const navigate = useNavigate();
   const [perfil, setPerfil] = useState<ProfessorResumo | null>(null);
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
   const [pronto, setPronto] = useState(false);
@@ -59,6 +61,14 @@ export default function ProfessorPerfil() {
                 )}
               </div>
             </div>
+            <button
+              type="button"
+              className="secondary"
+              style={{ marginTop: 12 }}
+              onClick={() => navigate("/professor/perfil/senha")}
+            >
+              Trocar senha
+            </button>
           </section>
 
           <section className="section">

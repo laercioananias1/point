@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.security import create_access_token, verify_password
+from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
-from app.schemas.auth import LoginRequest, TokenResponse, UserOut
+from app.schemas.auth import LoginRequest, TokenResponse, TrocarSenhaRequest, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -35,3 +35,24 @@ def quem_sou_eu(user: Annotated[User, Depends(get_current_user)]) -> User:
     """Rehidrata a sessão no boot do app (recarregar a página não perde o
     usuário, só o token em memória permanece)."""
     return user
+
+
+@router.patch("/senha", status_code=204)
+def trocar_senha(
+    payload: TrocarSenhaRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> None:
+    """Trocar a própria senha (pedido do usuário, 2026-08-31 — até aqui só
+    dava pra trocar direto no banco, sem tela nenhuma). Pede a senha atual
+    de novo — mesmo já autenticado por token — pra confirmar que quem está
+    fazendo isso é o dono da conta, não alguém com a sessão aberta numa
+    máquina compartilhada."""
+    if not verify_password(payload.senha_atual, user.senha_hash):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Senha atual incorreta")
+    if len(payload.senha_nova) < 6:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY, "A nova senha precisa ter pelo menos 6 caracteres"
+        )
+    user.senha_hash = hash_password(payload.senha_nova)
+    db.commit()

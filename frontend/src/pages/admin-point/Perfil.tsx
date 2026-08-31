@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Point } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
@@ -15,6 +16,7 @@ import { TrocarArea } from "../../components/TrocarArea";
  * (endereço, horários, sobre...) não repete aqui porque o admin já
  * gerencia tudo isso direto em Meu Point. */
 export default function AdminPointPerfil() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [point, setPoint] = useState<Point | null>(null);
   const [pronto, setPronto] = useState(false);
@@ -51,6 +53,14 @@ export default function AdminPointPerfil() {
                 <span className="item-card-subtitle">Admin do Point</span>
               </div>
             </div>
+            <button
+              type="button"
+              className="secondary"
+              style={{ marginTop: 12 }}
+              onClick={() => navigate("/admin-point/perfil/senha")}
+            >
+              Trocar senha
+            </button>
           </section>
 
           {point && (
