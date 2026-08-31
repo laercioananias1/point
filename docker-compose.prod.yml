@@ -8,6 +8,18 @@
 services:
   db:
     image: mysql:8.0
+    # Flags de memória (pedido do usuário, 2026-08-30 — servidor de 1.9GB
+    # dividido com outra stack, que também roda o MySQL dela; dois MySQL
+    # padrão sozinhos já passam de 700MB) — reduz o footprint padrão do
+    # MySQL 8, feito pra servidor dedicado bem maior. Ajuste esses números
+    # pra cima se algum dia esse Point tiver um servidor só dele, ou se o
+    # volume de dados/conexões crescer e começar a sentir o aperto.
+    command: >
+      --innodb-buffer-pool-size=64M
+      --innodb-log-buffer-size=8M
+      --performance-schema=OFF
+      --max-connections=30
+      --table-open-cache=64
     environment:
       MYSQL_DATABASE: point
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
