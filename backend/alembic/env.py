@@ -8,7 +8,14 @@ from app.core.database import Base
 from app.models import *  # noqa: F401,F403 — registra todos os models em Base.metadata
 
 config = context.config
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+# Escapa "%" antes de guardar (pedido do usuário, 2026-08-30: erro real no
+# primeiro deploy) — set_main_option guarda o valor por baixo dos panos
+# num configparser, que trata "%" como início de interpolação
+# ("%(nome)s"). Uma URL com senha percent-encoded (ex.: "%23" pro "#" da
+# senha) tem "%" de sobra que o configparser tenta interpretar e quebra
+# com "invalid interpolation syntax". "%%" é como o configparser escreve
+# um "%" literal.
+config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
