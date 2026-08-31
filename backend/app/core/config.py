@@ -6,7 +6,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "mysql+pymysql://root:root@localhost/point"
+    # Peças separadas da conexão com o banco, não a URL inteira pronta
+    # (pedido do usuário, 2026-08-30: primeiro deploy em produção pegou um
+    # bug real — DB_ROOT_PASSWORD com "#" quebrava o parsing quando a URL
+    # era montada crua por interpolação de string no docker-compose.yml,
+    # porque "#" e outros caracteres especiais precisam de percent-encoding
+    # dentro de uma URL, e uma senha comum não vem assim. `database_url`
+    # abaixo monta a URL em Python via sqlalchemy.engine.URL.create, que
+    # faz esse encoding certo sozinho — funciona com qualquer senha, não só
+    # as "seguras pra URL".
+    db_host: str = "localhost"
+    db_port: int = 3306
+    db_user: str = "root"
+    db_password: str = "root"
+    db_name: str = "point"
+
     jwt_secret: str = "change-me-in-.env"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 12  # 12h
@@ -39,6 +53,19 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [origem.strip() for origem in self.cors_origins.split(",") if origem.strip()]
+
+    @property
+    def database_url(self) -> str:
+        from sqlalchemy.engine import URL
+
+        return URL.create(
+            "mysql+pymysql",
+            username=self.db_user,
+            password=self.db_password,
+            host=self.db_host,
+            port=self.db_port,
+            database=self.db_name,
+        ).render_as_string(hide_password=False)
 
 
 @lru_cache

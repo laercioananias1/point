@@ -32,7 +32,15 @@ services:
       # imagem; sem isso, cada `--build` apagaria tudo que foi enviado.
       - uploads_data:/app/uploads
     environment:
-      DATABASE_URL: mysql+pymysql://root:${DB_ROOT_PASSWORD}@db/point
+      # Peças separadas, não uma DATABASE_URL montada crua (ver
+      # backend/app/core/config.py — senha com caractere especial tipo "#"
+      # quebra o parsing de uma URL inteira interpolada por string; foi
+      # exatamente o que aconteceu no primeiro deploy).
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD}
+      DB_NAME: point
       JWT_SECRET: ${JWT_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM: ${RESEND_FROM:-Point <onboarding@resend.dev>}
