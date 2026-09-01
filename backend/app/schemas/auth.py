@@ -7,13 +7,12 @@ class LoginRequest(ORMModel):
     senha: str
 
 
-class TrocarSenhaRequest(ORMModel):
-    """Pedido do usuário, 2026-08-31: "pode construir" (tela de trocar
-    senha) — até aqui só existia troca via update direto no banco, ver
-    DEPLOY.md. Pede a senha atual pra confirmar que é o dono da conta
-    (não só quem está com a sessão aberta na máquina)."""
+class EsqueciSenhaRequest(ORMModel):
+    email: str
 
-    senha_atual: str
+
+class RedefinirSenhaRequest(ORMModel):
+    token: str
     senha_nova: str
 
 

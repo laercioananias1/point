@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { LogoMark } from "../components/LogoMark";
 
@@ -56,6 +56,10 @@ export default function Login() {
           <button type="submit" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}
           </button>
+
+          <p className="auth-subtitle" style={{ textAlign: "center", marginTop: 4 }}>
+            <Link to="/esqueci-senha">Esqueci minha senha</Link>
+          </p>
         </form>
       </div>
     </div>

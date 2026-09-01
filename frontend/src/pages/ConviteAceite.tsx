@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
+import { LogoMark } from "../components/LogoMark";
 import type { Convite } from "../api/types";
 import { rotuloTurma } from "../lib/dias";
 import { formatarReais } from "../lib/formato";
@@ -32,8 +33,8 @@ export default function ConviteAceite() {
     <div className="auth-screen">
       <div>
         <div className="auth-brand">
-          <span className="auth-brand-mark" />
-          <span className="auth-brand-name">Point</span>
+          <LogoMark size={28} />
+          <span className="auth-brand-name">OPoint</span>
         </div>
 
         {carregando && <p className="auth-card">Carregando convite...</p>}

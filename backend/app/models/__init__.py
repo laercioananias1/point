@@ -18,6 +18,7 @@ from app.models.plano import Plano
 from app.models.point import Point
 from app.models.professor import Professor
 from app.models.quadra import Quadra
+from app.models.redefinicao_senha import RedefinicaoSenha
 from app.models.turma import Turma
 from app.models.turma_dia_semana import TurmaDiaSemana
 from app.models.turma_excecao import TurmaExcecao
@@ -45,6 +46,7 @@ __all__ = [
     "Point",
     "Professor",
     "Quadra",
+    "RedefinicaoSenha",
     "RepasseFechamento",
     "Turma",
     "TurmaDiaSemana",

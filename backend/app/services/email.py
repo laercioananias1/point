@@ -103,6 +103,27 @@ def enviar_convite_admin_email(*, nome: str, email: str, link: str, point_nome: 
     )
 
 
+def enviar_redefinicao_senha_email(*, nome: str, email: str, link: str) -> None:
+    """E-mail de redefinição de senha (pedido do usuário, 2026-09-01: "a
+    troca de senha precisa ser por email" — substitui a tela de trocar
+    senha que exigia saber a senha atual). Link de vida curta (1h, ver
+    app/models/redefinicao_senha.py) — quem não pediu pode ignorar."""
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2>Redefinir sua senha</h2>
+      <p>Olá, {nome}!</p>
+      <p>Recebemos um pedido pra redefinir a senha da sua conta. O link abaixo vale por 1 hora.</p>
+      <p>
+        <a href="{link}" style="display:inline-block;padding:10px 20px;background:#0e9594;
+           color:#fff;text-decoration:none;border-radius:6px;">Redefinir senha</a>
+      </p>
+      <p style="color:#666;font-size:13px;">Se o botão não funcionar, copie este link: {link}</p>
+      <p style="color:#666;font-size:13px;">Se você não pediu isso, pode ignorar este e-mail.</p>
+    </div>
+    """
+    _enviar(email=email, assunto="Redefinição de senha", html=html, link_fallback=link)
+
+
 def enviar_lembrete_mensalidade_email(
     *, nome: str, email: str, point_nome: str, modalidade_nome: str, valor: float, mes_referencia: str
 ) -> None:
