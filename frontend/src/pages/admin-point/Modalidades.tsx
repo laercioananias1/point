@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade } from "../../api/types";
@@ -10,6 +10,8 @@ import { formatarReais } from "../../lib/formato";
  * (pedido do usuário, 2026-08-30: "Ver Mais" com um botão por seção). */
 export default function AdminPointModalidades() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const criada = (location.state as { criada?: string } | null)?.criada;
   const { user } = useAuth();
   const [modalidades, setModalidades] = useState<Modalidade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,98 +50,40 @@ export default function AdminPointModalidades() {
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
+      {criada && <p className="form-success">Modalidade "{criada}" cadastrada.</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
       {!loading && !erro && (
-        <section className="section">
-          {modalidades.length === 0 ? (
-            <p className="empty-state">Nenhuma modalidade cadastrada ainda.</p>
-          ) : (
-            <div className="card-list" style={{ marginBottom: "16px" }}>
-              {modalidades.map((m) => (
-                <ModalidadeRow key={m.id} modalidade={m} onSalva={carregar} />
-              ))}
-            </div>
-          )}
-          <CriarModalidadeForm onCriada={carregar} />
-        </section>
+        <>
+          <section className="section">
+            {modalidades.length === 0 ? (
+              <p className="empty-state">Nenhuma modalidade cadastrada ainda.</p>
+            ) : (
+              <div className="card-list">
+                {modalidades.map((m) => (
+                  <ModalidadeRow key={m.id} modalidade={m} onSalva={carregar} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <Link to="/admin-point/configuracoes/modalidades/cadastrar" className="action-card">
+              <span className="action-card-icon">
+                <Icon name="plus" />
+              </span>
+              <span className="action-card-info">
+                <span className="action-card-title">Cadastrar modalidade</span>
+                <span className="action-card-subtitle">Nome, duração padrão da aula e preço da avulsa</span>
+              </span>
+              <span className="action-card-chevron" aria-hidden="true">
+                →
+              </span>
+            </Link>
+          </section>
+        </>
       )}
     </Layout>
-  );
-}
-
-function CriarModalidadeForm({ onCriada }: { onCriada: () => void }) {
-  const [nome, setNome] = useState("");
-  const [duracao, setDuracao] = useState("60");
-  const [precoAvulso, setPrecoAvulso] = useState("");
-  const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setErro(null);
-    setEnviando(true);
-    try {
-      await api.post("/modalidades", {
-        nome,
-        duracao_padrao_minutos: Number(duracao),
-        preco_avulso: Number(precoAvulso),
-      });
-      setNome("");
-      setPrecoAvulso("");
-      onCriada();
-    } catch {
-      setErro("Não foi possível cadastrar. Tente de novo.");
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  return (
-    <form className="form-card" onSubmit={handleSubmit}>
-      <div className="form-row">
-        <label>
-          Nome da modalidade
-          <input
-            placeholder="Beach tennis, futevôlei..."
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Duração padrão da aula (min)
-          <input
-            type="number"
-            min="15"
-            step="15"
-            value={duracao}
-            onChange={(e) => setDuracao(e.target.value)}
-            required
-          />
-        </label>
-      </div>
-      <p className="empty-state" style={{ padding: 0 }}>
-        Preço da aula avulsa dessa modalidade — vale pra qualquer professor que der aula dela aqui;
-        com o professor você combina só o repasse. Preço do plano mensal é por frequência semanal,
-        cadastrado em Planos (Configurações), não aqui.
-      </p>
-      <label>
-        Preço da aula avulsa (R$)
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          value={precoAvulso}
-          onChange={(e) => setPrecoAvulso(e.target.value)}
-          required
-        />
-      </label>
-      {erro && <p className="form-error">{erro}</p>}
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Cadastrando..." : "Cadastrar modalidade"}
-      </button>
-    </form>
   );
 }
 

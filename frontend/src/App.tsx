@@ -17,6 +17,7 @@ import AdminPointMeuPoint from "./pages/admin-point/MeuPoint";
 import AdminPointPrazos from "./pages/admin-point/Prazos";
 import AdminPointHorariosFuncionamento from "./pages/admin-point/HorariosFuncionamento";
 import AdminPointModalidades from "./pages/admin-point/Modalidades";
+import AdminPointCadastrarModalidade from "./pages/admin-point/CadastrarModalidade";
 import AdminPointQuadras from "./pages/admin-point/Quadras";
 import AdminPointPlanos from "./pages/admin-point/Planos";
 import AdminPointTurmas from "./pages/admin-point/Turmas";
@@ -196,6 +197,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointModalidades />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/modalidades/cadastrar"
+        element={
+          <ProtectedRoute>
+            <AdminPointCadastrarModalidade />
           </ProtectedRoute>
         }
       />
