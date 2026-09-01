@@ -117,7 +117,6 @@ export default function AdminPointInicio() {
       {pronto && (
         <>
           <section className="section">
-            <h2>Visão geral</h2>
             <div className="stats-grid">
               {stats.map((s) => (
                 <div className="stat-tile" key={s.rotulo}>
