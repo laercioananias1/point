@@ -172,6 +172,25 @@ export interface Credito {
   modalidade_nome: string;
 }
 
+// Histórico de cancelamentos (pedido do usuário, 2026-09-01: "sim,
+// inclusive coloca usuario q fez acao" / "e datahora") — ver GET
+// /matriculas/historico.
+export type HistoricoEventoTipo =
+  | "aula_cancelada"
+  | "matricula_cancelada"
+  | "assinatura_cancelada"
+  | "credito_expirado";
+
+export interface HistoricoEvento {
+  tipo: HistoricoEventoTipo;
+  data_hora: string;
+  aluno_id: number;
+  aluno_nome: string;
+  modalidade_nome: string;
+  detalhe: string;
+  cancelado_por_nome: string | null;
+}
+
 export interface RepasseFechamento {
   professor_id: number;
   professor_nome: string;

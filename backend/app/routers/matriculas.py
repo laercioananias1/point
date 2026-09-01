@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import require_role
+from app.models.assinatura import Assinatura
 from app.models.aula import Aula
 from app.models.credito_reposicao import CreditoReposicao
 from app.models.enums import (
@@ -22,6 +23,7 @@ from app.models.turma import Turma
 from app.models.user import User
 from app.models.vinculo import Vinculo
 from app.schemas.credito import CreditoOut
+from app.schemas.historico import HistoricoEventoOut
 from app.schemas.matricula import (
     AulaCanceladaOut,
     CancelarAulaAdminRequest,
@@ -132,7 +134,13 @@ def listar_matriculas_do_point(
 
 
 def _cancelar_aula(
-    db: Session, matricula: Matricula, data_aula: date, *, gerar_credito: bool, ignorar_prazo: bool
+    db: Session,
+    matricula: Matricula,
+    data_aula: date,
+    *,
+    gerar_credito: bool,
+    ignorar_prazo: bool,
+    cancelado_por: User,
 ) -> CreditoReposicao | None:
     """Núcleo compartilhado do cancelamento de UMA aula específica (pedido
     do usuário, 2026-08-20) — usado tanto pelo aluno cancelando a própria
@@ -176,7 +184,7 @@ def _cancelar_aula(
     if ja_cancelada:
         raise HTTPException(409, "Essa aula já tinha sido cancelada")
 
-    db.add(MatriculaExcecao(matricula_id=matricula.id, data=data_aula))
+    db.add(MatriculaExcecao(matricula_id=matricula.id, data=data_aula, cancelado_por_id=cancelado_por.id))
     db.query(Aula).filter(
         Aula.matricula_id == matricula.id, Aula.data == data_aula
     ).delete(synchronize_session=False)
@@ -215,7 +223,9 @@ def cancelar_aula_matricula(
     if matricula is None or matricula.aluno_id != aluno.aluno_id:
         raise HTTPException(404, "Matrícula não encontrada")
 
-    credito = _cancelar_aula(db, matricula, data_aula, gerar_credito=True, ignorar_prazo=False)
+    credito = _cancelar_aula(
+        db, matricula, data_aula, gerar_credito=True, ignorar_prazo=False, cancelado_por=aluno
+    )
     db.commit()
     db.refresh(credito)
     return credito
@@ -242,7 +252,12 @@ def cancelar_aula_matricula_admin(
     verdade perdida)."""
     matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
     credito = _cancelar_aula(
-        db, matricula, data_aula, gerar_credito=payload.gerar_credito, ignorar_prazo=True
+        db,
+        matricula,
+        data_aula,
+        gerar_credito=payload.gerar_credito,
+        ignorar_prazo=True,
+        cancelado_por=admin,
     )
     db.commit()
     if credito is not None:
@@ -295,7 +310,12 @@ def pausar_aulas_matricula(
             and data_atual not in datas_ja_canceladas
         ):
             credito = _cancelar_aula(
-                db, matricula, data_atual, gerar_credito=payload.gerar_credito, ignorar_prazo=True
+                db,
+                matricula,
+                data_atual,
+                gerar_credito=payload.gerar_credito,
+                ignorar_prazo=True,
+                cancelado_por=admin,
             )
             datas_canceladas.append(data_atual)
             if credito is not None:
@@ -324,6 +344,117 @@ def listar_creditos_do_point(
         .filter(Vinculo.point_id == admin.point_id)
         .all()
     )
+
+
+@router.get("/historico", response_model=list[HistoricoEventoOut])
+def listar_historico_cancelamentos(
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> list[HistoricoEventoOut]:
+    """Histórico de cancelamentos do Point — aula cancelada, matrícula/
+    avulsa cancelada, assinatura cancelada, crédito expirado (pedido do
+    usuário, 2026-09-01: "sim, inclusive coloca usuario q fez acao" —
+    depois de eu ter explicado que status muda mas nada some do banco,
+    só não tinha tela nenhuma mostrando isso). Junta as 4 fontes num
+    formato só, mais recente primeiro; mesmo padrão de GET /matriculas —
+    devolve tudo do Point, o frontend filtra por aluno na tela."""
+    eventos: list[HistoricoEventoOut] = []
+
+    excecoes = (
+        db.query(MatriculaExcecao)
+        .join(Matricula, MatriculaExcecao.matricula_id == Matricula.id)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(Vinculo.point_id == admin.point_id)
+        .all()
+    )
+    for e in excecoes:
+        eventos.append(
+            HistoricoEventoOut(
+                tipo="aula_cancelada",
+                data_hora=e.created_at,
+                aluno_id=e.matricula.aluno_id,
+                aluno_nome=e.matricula.aluno.nome,
+                modalidade_nome=e.matricula.turma.modalidade.nome,
+                detalhe=f"Aula de {e.data.isoformat()} cancelada",
+                cancelado_por_nome=e.cancelado_por_nome,
+            )
+        )
+
+    matriculas_canceladas = (
+        db.query(Matricula)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Vinculo.point_id == admin.point_id,
+            Matricula.status == MatriculaStatus.CANCELADA,
+            Matricula.cancelado_em.is_not(None),
+        )
+        .all()
+    )
+    for m in matriculas_canceladas:
+        rotulo_tipo = "Assinatura (turma)" if m.tipo == MatriculaTipo.MENSAL else "Avulsa"
+        eventos.append(
+            HistoricoEventoOut(
+                tipo="matricula_cancelada",
+                data_hora=m.cancelado_em,
+                aluno_id=m.aluno_id,
+                aluno_nome=m.aluno.nome,
+                modalidade_nome=m.turma.modalidade.nome,
+                detalhe=f"{rotulo_tipo} cancelada",
+                cancelado_por_nome=m.cancelado_por_nome,
+            )
+        )
+
+    assinaturas_canceladas = (
+        db.query(Assinatura)
+        .filter(
+            Assinatura.point_id == admin.point_id,
+            Assinatura.status == MatriculaStatus.CANCELADA,
+            Assinatura.cancelado_por_id.is_not(None),
+        )
+        .all()
+    )
+    for a in assinaturas_canceladas:
+        eventos.append(
+            HistoricoEventoOut(
+                tipo="assinatura_cancelada",
+                data_hora=a.updated_at,
+                aluno_id=a.aluno_id,
+                aluno_nome=a.aluno.nome,
+                modalidade_nome=a.modalidade.nome,
+                detalhe="Assinatura cancelada",
+                cancelado_por_nome=a.cancelado_por_nome,
+            )
+        )
+
+    creditos_expirados = (
+        db.query(CreditoReposicao)
+        .join(Matricula, CreditoReposicao.matricula_id == Matricula.id)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Vinculo.point_id == admin.point_id,
+            CreditoReposicao.status == CreditoStatus.EXPIRADO,
+            CreditoReposicao.cancelado_por_id.is_not(None),
+        )
+        .all()
+    )
+    for c in creditos_expirados:
+        eventos.append(
+            HistoricoEventoOut(
+                tipo="credito_expirado",
+                data_hora=c.updated_at,
+                aluno_id=c.matricula.aluno_id,
+                aluno_nome=c.matricula.aluno.nome,
+                modalidade_nome=c.modalidade_nome,
+                detalhe=f"Crédito da aula de {c.data_aula.isoformat()} expirado",
+                cancelado_por_nome=c.cancelado_por_nome,
+            )
+        )
+
+    eventos.sort(key=lambda e: e.data_hora, reverse=True)
+    return eventos
 
 
 @router.post("/{matricula_id}/lembrete-pagamento", status_code=204)
@@ -404,6 +535,8 @@ def cancelar_matricula(
         )
 
     matricula.status = MatriculaStatus.CANCELADA
+    matricula.cancelado_por_id = aluno.id
+    matricula.cancelado_em = datetime.now()
 
     prazo_dias = matricula.turma.vinculo.point.prazo_credito_dias
     db.add(

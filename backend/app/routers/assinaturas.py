@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -63,7 +63,12 @@ def cancelar_assinatura(
     deixar as avulsas" — avulsa nunca pertence a uma Assinatura, então
     ficava de fora do laço acima mesmo sendo, na prática, o aluno saindo
     do Point de vez). Só as com data futura — uma avulsa de uma aula que
-    já aconteceu fica como estava, não é "cancelamento" retroativo."""
+    já aconteceu fica como estava, não é "cancelamento" retroativo.
+
+    Registra quem cancelou e quando (pedido do usuário, 2026-09-01:
+    "sim, inclusive coloca usuario q fez acao" / "e datahora") — em cada
+    matrícula/avulsa afetada e no próprio crédito que expira, pra tela de
+    histórico (ver GET /matriculas/historico) mostrar isso depois."""
     assinatura = db.get(Assinatura, assinatura_id)
     if assinatura is None:
         raise HTTPException(404, "Assinatura não encontrada")
@@ -75,16 +80,23 @@ def cancelar_assinatura(
         raise HTTPException(422, "Só é possível cancelar uma assinatura ativa")
 
     assinatura.status = MatriculaStatus.CANCELADA
+    assinatura.cancelado_por_id = user.id
+    agora = datetime.now()
     for matricula in assinatura.matriculas:
         if matricula.status == MatriculaStatus.ATIVA:
             matricula.status = MatriculaStatus.CANCELADA
+            matricula.cancelado_por_id = user.id
+            matricula.cancelado_em = agora
         db.query(Aula).filter(
             Aula.matricula_id == matricula.id, Aula.data >= date.today()
         ).delete(synchronize_session=False)
         db.query(CreditoReposicao).filter(
             CreditoReposicao.matricula_id == matricula.id,
             CreditoReposicao.status == CreditoStatus.DISPONIVEL,
-        ).update({"status": CreditoStatus.EXPIRADO}, synchronize_session=False)
+        ).update(
+            {"status": CreditoStatus.EXPIRADO, "cancelado_por_id": user.id},
+            synchronize_session=False,
+        )
 
     outras_avulsas = (
         db.query(Matricula)
@@ -101,6 +113,8 @@ def cancelar_assinatura(
     )
     for avulsa in outras_avulsas:
         avulsa.status = MatriculaStatus.CANCELADA
+        avulsa.cancelado_por_id = user.id
+        avulsa.cancelado_em = agora
 
     db.commit()
     db.refresh(assinatura)

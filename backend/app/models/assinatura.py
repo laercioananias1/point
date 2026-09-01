@@ -44,6 +44,13 @@ class Assinatura(TimestampMixin, Base):
     plano_id: Mapped[int | None] = mapped_column(ForeignKey("planos.id"), nullable=True)
     data_inicio: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    # Histórico de cancelamento (pedido do usuário, 2026-09-01: "coloca
+    # usuario q fez acao" / "e datahora") — quem cancelou (aluno
+    # desistindo, ou admin em nome dele). Sem campo de data próprio: status
+    # só muda uma vez nessa entidade (ATIVA→CANCELADA), então updated_at
+    # (TimestampMixin) já é a data do cancelamento sem ambiguidade.
+    cancelado_por_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
     aluno: Mapped["Aluno"] = relationship()  # noqa: F821
     point: Mapped["Point"] = relationship()  # noqa: F821
     modalidade: Mapped["Modalidade"] = relationship()  # noqa: F821
@@ -52,6 +59,11 @@ class Assinatura(TimestampMixin, Base):
         secondary="assinatura_turmas"
     )
     matriculas: Mapped[list["Matricula"]] = relationship(back_populates="assinatura")  # noqa: F821
+    cancelado_por: Mapped["User | None"] = relationship(foreign_keys=[cancelado_por_id])  # noqa: F821
+
+    @property
+    def cancelado_por_nome(self) -> str | None:
+        return self.cancelado_por.nome if self.cancelado_por is not None else None
 
     @property
     def turmas_com_dias(self) -> list[dict]:

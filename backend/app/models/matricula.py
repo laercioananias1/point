@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Date, Enum, ForeignKey, Integer, Numeric
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -50,10 +50,20 @@ class Matricula(TimestampMixin, Base):
     )
     repasse_override_valor: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
 
+    # Histórico de cancelamento (pedido do usuário, 2026-09-01: "sim,
+    # inclusive coloca usuario q fez acao" / "e datahora") — quem cancelou
+    # essa matrícula (aluno desistindo da própria avulsa, ou admin
+    # cancelando a assinatura/avulsa em nome dele) e quando. Campo próprio
+    # em vez de reaproveitar updated_at (esse já muda por outro motivo —
+    # PATCH .../repasse — e não seria mais "data do cancelamento").
+    cancelado_por_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    cancelado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
     aluno: Mapped["Aluno"] = relationship(back_populates="matriculas")  # noqa: F821
     turma: Mapped["Turma"] = relationship(back_populates="matriculas")  # noqa: F821
     assinatura: Mapped["Assinatura | None"] = relationship(back_populates="matriculas")  # noqa: F821
     pagamentos: Mapped[list["Pagamento"]] = relationship(back_populates="matricula")  # noqa: F821
+    cancelado_por: Mapped["User | None"] = relationship(foreign_keys=[cancelado_por_id])  # noqa: F821
     # foreign_keys explícito: CreditoReposicao tem uma segunda FK para
     # matriculas (nova_matricula_id, a matrícula de reposição) — sem isso o
     # SQLAlchemy não sabe qual usar para este relationship.
@@ -84,6 +94,10 @@ class Matricula(TimestampMixin, Base):
         if self.assinatura is None or self.assinatura.plano is None:
             return None
         return float(self.assinatura.plano.preco)
+
+    @property
+    def cancelado_por_nome(self) -> str | None:
+        return self.cancelado_por.nome if self.cancelado_por is not None else None
 
     @property
     def excecoes(self) -> list[date]:

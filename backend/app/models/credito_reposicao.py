@@ -32,9 +32,22 @@ class CreditoReposicao(TimestampMixin, Base):
         ForeignKey("matriculas.id"), nullable=True
     )
 
+    # Histórico de quem expirou esse crédito à força (pedido do usuário,
+    # 2026-09-01: "coloca usuario q fez acao" / "e datahora") — só
+    # preenchido quando vira EXPIRADO por um cancelamento de assinatura
+    # (não quando vence sozinho pelo tempo, nem quando vira USADO por
+    # reagendamento). Sem campo de data próprio — status só muda uma vez
+    # depois de criado, updated_at (TimestampMixin) já basta.
+    cancelado_por_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
     matricula: Mapped["Matricula"] = relationship(  # noqa: F821
         back_populates="creditos", foreign_keys=[matricula_id]
     )
+    cancelado_por: Mapped["User | None"] = relationship(foreign_keys=[cancelado_por_id])  # noqa: F821
+
+    @property
+    def cancelado_por_nome(self) -> str | None:
+        return self.cancelado_por.nome if self.cancelado_por is not None else None
 
     @property
     def professor_id(self) -> int:

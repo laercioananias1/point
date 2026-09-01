@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { Assinatura, Credito, Matricula, TurmaResumo } from "../../api/types";
+import type { Assinatura, Credito, HistoricoEvento, Matricula, TurmaResumo } from "../../api/types";
 import { diaSemanaDeData, somarDias, toISODate } from "../../components/Calendar";
 import { AgendaAlunoCalendario, type Ocorrencia } from "../../components/AgendaAlunoCalendario";
 import { Icon, Layout } from "../../components/Layout";
@@ -26,6 +26,7 @@ export default function AdminPointAgendaAluno() {
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [creditos, setCreditos] = useState<Credito[]>([]);
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
+  const [historico, setHistorico] = useState<HistoricoEvento[]>([]);
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<Ocorrencia | null>(null);
@@ -35,14 +36,16 @@ export default function AdminPointAgendaAluno() {
   const carregar = useCallback(async () => {
     setErro(null);
     try {
-      const [matriculasRes, creditosRes, assinaturasRes] = await Promise.all([
+      const [matriculasRes, creditosRes, assinaturasRes, historicoRes] = await Promise.all([
         api.get<Matricula[]>("/matriculas"),
         api.get<Credito[]>("/matriculas/creditos"),
         api.get<Assinatura[]>("/assinaturas"),
+        api.get<HistoricoEvento[]>("/matriculas/historico"),
       ]);
       setMatriculas(matriculasRes);
       setCreditos(creditosRes);
       setAssinaturas(assinaturasRes);
+      setHistorico(historicoRes);
       setPronto(true);
     } catch {
       setErro("Não foi possível carregar a agenda desse aluno. Tente novamente.");
@@ -63,6 +66,7 @@ export default function AdminPointAgendaAluno() {
   const assinaturasAtivasDoAluno = assinaturas.filter(
     (a) => a.aluno.id === idAluno && a.status === "ativa",
   );
+  const historicoDoAluno = historico.filter((h) => h.aluno_id === idAluno);
 
   return (
     <Layout>
@@ -160,6 +164,33 @@ export default function AdminPointAgendaAluno() {
                       <span className="item-card-subtitle">válido até {c.data_expiracao}</span>
                     </div>
                     <button onClick={() => setReagendandoCredito(c)}>Reagendar</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <h2>Histórico ({historicoDoAluno.length})</h2>
+            {historicoDoAluno.length === 0 ? (
+              <p className="empty-state">Nenhum cancelamento registrado pra esse aluno ainda.</p>
+            ) : (
+              <div className="card-list">
+                {historicoDoAluno.map((h, i) => (
+                  <div className="item-card" key={i}>
+                    <div className="item-card-info">
+                      <span className="item-card-title">{h.detalhe}</span>
+                      <span className="item-card-subtitle">
+                        {new Date(h.data_hora).toLocaleString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {h.cancelado_por_nome && ` · por ${h.cancelado_por_nome}`}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
