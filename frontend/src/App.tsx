@@ -19,6 +19,7 @@ import AdminPointHorariosFuncionamento from "./pages/admin-point/HorariosFuncion
 import AdminPointModalidades from "./pages/admin-point/Modalidades";
 import AdminPointCadastrarModalidade from "./pages/admin-point/CadastrarModalidade";
 import AdminPointQuadras from "./pages/admin-point/Quadras";
+import AdminPointCadastrarQuadra from "./pages/admin-point/CadastrarQuadra";
 import AdminPointPlanos from "./pages/admin-point/Planos";
 import AdminPointCadastrarPlano from "./pages/admin-point/CadastrarPlano";
 import AdminPointTurmas from "./pages/admin-point/Turmas";
@@ -214,6 +215,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointQuadras />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/quadras/cadastrar"
+        element={
+          <ProtectedRoute>
+            <AdminPointCadastrarQuadra />
           </ProtectedRoute>
         }
       />

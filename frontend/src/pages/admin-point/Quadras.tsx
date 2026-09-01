@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, Quadra } from "../../api/types";
@@ -9,6 +9,8 @@ import { Icon, Layout } from "../../components/Layout";
  * (pedido do usuário, 2026-08-30: "Ver Mais" com um botão por seção). */
 export default function AdminPointQuadras() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const criada = (location.state as { criada?: string } | null)?.criada;
   const { user } = useAuth();
   const [quadras, setQuadras] = useState<Quadra[]>([]);
   const [modalidades, setModalidades] = useState<Modalidade[]>([]);
@@ -53,94 +55,48 @@ export default function AdminPointQuadras() {
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
+      {criada && <p className="form-success">Quadra "{criada}" cadastrada.</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
       {!loading && !erro && (
-        <section className="section">
-          {quadras.length === 0 ? (
-            <p className="empty-state">Nenhuma quadra cadastrada ainda.</p>
-          ) : (
-            <div className="card-list" style={{ marginBottom: "16px" }}>
-              {quadras.map((q) => (
-                <QuadraRow key={q.id} quadra={q} modalidades={modalidades} onSalva={carregar} />
-              ))}
-            </div>
-          )}
+        <>
+          <section className="section">
+            {quadras.length === 0 ? (
+              <p className="empty-state">Nenhuma quadra cadastrada ainda.</p>
+            ) : (
+              <div className="card-list">
+                {quadras.map((q) => (
+                  <QuadraRow key={q.id} quadra={q} modalidades={modalidades} onSalva={carregar} />
+                ))}
+              </div>
+            )}
+          </section>
+
           {modalidades.length === 0 ? (
-            <p className="empty-state">Cadastre uma modalidade (Ver mais → Modalidades) antes de criar quadras.</p>
+            <section className="section">
+              <p className="empty-state">
+                Cadastre uma modalidade (Ver mais → Modalidades) antes de criar quadras.
+              </p>
+            </section>
           ) : (
-            <CriarQuadraForm modalidades={modalidades} onCriada={carregar} />
+            <section className="section">
+              <Link to="/admin-point/configuracoes/quadras/cadastrar" className="action-card">
+                <span className="action-card-icon">
+                  <Icon name="plus" />
+                </span>
+                <span className="action-card-info">
+                  <span className="action-card-title">Cadastrar quadra</span>
+                  <span className="action-card-subtitle">Nome e modalidades atendidas</span>
+                </span>
+                <span className="action-card-chevron" aria-hidden="true">
+                  →
+                </span>
+              </Link>
+            </section>
           )}
-        </section>
+        </>
       )}
     </Layout>
-  );
-}
-
-function CriarQuadraForm({
-  modalidades,
-  onCriada,
-}: {
-  modalidades: Modalidade[];
-  onCriada: () => void;
-}) {
-  const [nome, setNome] = useState("");
-  const [modalidadeIds, setModalidadeIds] = useState<number[]>([]);
-  const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-
-  function alternar(id: number) {
-    setModalidadeIds((atual) => (atual.includes(id) ? atual.filter((i) => i !== id) : [...atual, id]));
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setErro(null);
-    if (modalidadeIds.length === 0) {
-      setErro("Marque pelo menos uma modalidade que essa quadra atende.");
-      return;
-    }
-    setEnviando(true);
-    try {
-      await api.post("/quadras", { nome, modalidade_ids: modalidadeIds });
-      setNome("");
-      setModalidadeIds([]);
-      onCriada();
-    } catch {
-      setErro("Não foi possível cadastrar. Tente de novo.");
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  return (
-    <form className="form-card" onSubmit={handleSubmit}>
-      <label>
-        Nome da quadra
-        <input value={nome} onChange={(e) => setNome(e.target.value)} required />
-      </label>
-
-      <label>
-        Modalidades atendidas
-        <div className="toggle-grid">
-          {modalidades.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              className={modalidadeIds.includes(m.id) ? "toggle-chip active" : "toggle-chip"}
-              onClick={() => alternar(m.id)}
-            >
-              {m.nome}
-            </button>
-          ))}
-        </div>
-      </label>
-
-      {erro && <p className="form-error">{erro}</p>}
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Cadastrando..." : "Cadastrar quadra"}
-      </button>
-    </form>
   );
 }
 
