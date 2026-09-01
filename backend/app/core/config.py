@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # resend_api_key configurada, o envio vira um log no console em vez de
     # falhar — dá pra testar o fluxo de convite sem conta no Resend.
     resend_api_key: str = ""
-    resend_from: str = "Point <onboarding@resend.dev>"
+    resend_from: str = "OPoint <onboarding@resend.dev>"
     frontend_url: str = "http://localhost:5173"
 
     # Integração TotalPass (pedido do usuário, 2026-08-25: "quero fazer

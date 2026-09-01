@@ -1,8 +1,15 @@
-# Deploy em produção (point.taskhero.com.br)
+# Deploy em produção (opoint.com.br)
 
 Passo a passo pra rodar manualmente no VPS, assumindo Docker + Docker Compose
-já instalados e um nginx (ou Traefik) já rodando no host cuidando de outros
-subdomínios do TaskHero.
+já instalados. Domínio próprio (`opoint.com.br`, registrado 2026-09), mas
+no mesmo servidor compartilhado com outros serviços do TaskHero (era
+`point.taskhero.com.br` até o rebrand pra OPoint, 2026-09).
+
+**Importante sobre o nginx desse servidor**: quem expõe as portas 80/443 pra
+internet **não** é um nginx tradicional em `/etc/nginx` do host — é o nginx
+que já roda **dentro de outro container** (`adsops-frontend-1`, de um
+projeto não relacionado que chegou primeiro nessas portas). Ver seção 4 pra
+como isso funciona na prática.
 
 ## 0. Servidor compartilhado com pouca RAM — configure swap primeiro
 
@@ -70,24 +77,57 @@ troque a sua própria (dono do app) assim que logar.
 O script é idempotente — rodar de novo não duplica nem quebra nada, só pula
 quem já existe.
 
-## 4. Configurar o nginx do host
+## 4. DNS + nginx (rodando dentro do container `adsops-frontend-1`)
 
-`point.taskhero.com.br` inteiro num domínio só: `/api/` vai pra API (com o
-prefixo removido antes de chegar no FastAPI, que não conhece esse prefixo),
-o resto vai pro painel. Adicione um server block (ajuste os `proxy_pass`
-se preferir portas diferentes de 8001/8002, e o bloco de SSL conforme o
-que já for usado nos outros subdomínios):
+### 4.1 Apontar o DNS
 
-```nginx
+No painel onde `opoint.com.br` foi registrado, crie um registro **A**
+apontando pro IP público desse VPS (e o mesmo pra `www.opoint.com.br` se for
+usar, ou um CNAME pro domínio raiz). Espere propagar antes de pedir o
+certificado (seção 4.4) — `dig opoint.com.br` deve devolver o IP do servidor.
+
+### 4.2 Conectar o container do nginx à rede do Point
+
+O nginx que atende 80/443 roda dentro de `adsops-frontend-1` (projeto
+não relacionado). Pra ele conseguir falar com `point-api-1`/`point-web-1`
+pelo nome do container (em vez de depender de `127.0.0.1:PORTA`, que dentro
+de um container sibling não bate no host), conecte-o à rede do compose do
+Point (se ainda não estiver conectado):
+
+```bash
+docker network connect point_default adsops-frontend-1
+```
+
+### 4.3 Adicionar o server block
+
+A config desse nginx fica em `/etc/nginx/conf.d/*.conf` **dentro** do
+container (não é bind mount do host — só os volumes do certbot são). Crie
+o arquivo direto no container rodando:
+
+```bash
+docker exec -i adsops-frontend-1 sh -c 'cat > /etc/nginx/conf.d/opoint.conf' << 'EOF'
 server {
-    listen 443 ssl http2;
-    server_name point.taskhero.com.br;
+    listen 80;
+    server_name opoint.com.br;
 
-    # ssl_certificate / ssl_certificate_key — mesmo esquema já usado nos
-    # outros subdomínios do TaskHero (certbot, etc.)
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name opoint.com.br;
+
+    ssl_certificate /etc/letsencrypt/live/opoint.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/opoint.com.br/privkey.pem;
 
     location /api/ {
-        proxy_pass http://127.0.0.1:8001/;
+        proxy_pass http://point-api-1:8000/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -95,29 +135,57 @@ server {
     }
 
     location / {
-        proxy_pass http://127.0.0.1:8002/;
+        proxy_pass http://point-web-1:80/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
-
-server {
-    listen 80;
-    server_name point.taskhero.com.br;
-    return 301 https://$host$request_uri;
-}
+EOF
 ```
 
-Se usar Traefik em vez de nginx, o equivalente é dois routers (um pra
-`PathPrefix(/api)` com um middleware `StripPrefix` de `/api`, apontando pro
-serviço da API; outro catch-all apontando pro serviço do painel) — me avisa
-se for esse o caso que eu escrevo os labels certos.
+O bloco 443 só funciona depois que o certificado existir (próximo passo) —
+`nginx -t`/`reload` vai reclamar até lá, é esperado.
 
-Com `VITE_API_URL=https://point.taskhero.com.br/api` no `.env.production`
-(já é o padrão do `.env.production.example`), o painel já sabe bater nesse
-caminho — não precisa de outro subdomínio nem outra entrada de DNS.
+### 4.4 Emitir o certificado (Let's Encrypt / certbot)
+
+O host não tem `certbot` instalado — roda um container avulso, reaproveitando
+os volumes de certbot que o `adsops-frontend-1` já usa (`_data` é o caminho
+real por trás dos volumes nomeados; confirme com
+`docker volume inspect adsops_certbot_www adsops_certbot_conf`):
+
+```bash
+docker run --rm \
+  -v adsops_certbot_www:/var/www/certbot \
+  -v adsops_certbot_conf:/etc/letsencrypt \
+  certbot/certbot certonly --webroot -w /var/www/certbot -d opoint.com.br
+```
+
+Depois, recarregue o nginx pra ele pegar o certificado novo e o server block:
+
+```bash
+docker exec adsops-frontend-1 nginx -t
+docker exec adsops-frontend-1 nginx -s reload
+```
+
+Teste: `curl -I https://opoint.com.br/api/health` deve responder 200 com
+`{"api":"ok","database":"ok"}`.
+
+### 4.5 Limitação conhecida (ainda não resolvida)
+
+Esse arquivo `/etc/nginx/conf.d/opoint.conf` foi escrito direto na camada
+gravável do container `adsops-frontend-1` — **não sobrevive** se a imagem
+desse projeto (não relacionado) for reconstruída algum dia. O jeito certo
+seria achar o `nginx.conf`/Dockerfile de origem do projeto `adsops` no
+servidor e adicionar esse bloco lá de forma permanente, mas isso não foi
+feito ainda (fora do escopo do Point). Se o site cair sem motivo aparente
+depois de um deploy do `adsops`, é o primeiro lugar pra checar — só repetir
+o passo 4.3 resolve.
+
+Com `VITE_API_URL=https://opoint.com.br/api` no `.env.production` (já é o
+padrão do `.env.production.example`), o painel já sabe bater nesse
+caminho — não precisa de outro domínio nem outra entrada de DNS.
 
 ## 5. Atualizar depois de um `git push`
 

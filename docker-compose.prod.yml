@@ -55,7 +55,7 @@ services:
       DB_NAME: point
       JWT_SECRET: ${JWT_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      RESEND_FROM: ${RESEND_FROM:-Point <onboarding@resend.dev>}
+      RESEND_FROM: ${RESEND_FROM:-OPoint <onboarding@resend.dev>}
       FRONTEND_URL: ${FRONTEND_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
       TOTALPASS_PARTNER_API_KEY: ${TOTALPASS_PARTNER_API_KEY:-}
