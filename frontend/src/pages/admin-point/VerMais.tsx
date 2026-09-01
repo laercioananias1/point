@@ -33,7 +33,7 @@ export default function AdminPointVerMais() {
         <div className="quick-actions">
           <Link to="/admin-point/configuracoes/prazos" className="quick-action">
             <span className="quick-action-icon">
-              <Icon name="settings" />
+              <Icon name="clock" />
             </span>
             <span className="quick-action-label">Prazos</span>
           </Link>

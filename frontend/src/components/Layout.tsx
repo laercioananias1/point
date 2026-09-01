@@ -54,7 +54,7 @@ const NAV_LINKS: Record<string, { to: string; label: string; tab: string; icon: 
     // botão de configurações vamos transformar em um botão também no
     // rodapé chamado Ver Mais... assim fica um espaço pra criar mais
     // funcionalidades organizado").
-    { to: "/admin-point/mais", label: "Ver mais", tab: "Ver mais", icon: "settings" },
+    { to: "/admin-point/mais", label: "Ver mais", tab: "Ver mais", icon: "list" },
     { to: "/admin-point/perfil", label: "Perfil", tab: "Perfil", icon: "user" },
   ],
   aluno: [
@@ -100,7 +100,8 @@ export type IconName =
   | "link"
   | "pause"
   | "refresh"
-  | "check-circle";
+  | "check-circle"
+  | "list";
 
 export function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
@@ -247,6 +248,20 @@ export function Icon({ name }: { name: IconName }) {
       <>
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
         <polyline points="22 4 12 14.01 9 11.01" />
+      </>
+    ),
+    // "Ver mais" (pedido do usuário, 2026-09-01: "Ver mais e Prazos estão
+    // com o mesmo ícone [engrenagem]... Ver mais acho que deveria ser um
+    // ícone de list") — lista mesmo, não engrenagem: essa aba não é
+    // "configurações", é um hub de atalhos.
+    list: (
+      <>
+        <line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
       </>
     ),
   };
