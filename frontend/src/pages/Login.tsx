@@ -26,7 +26,7 @@ export default function Login() {
       <div>
         <div className="auth-brand">
           <LogoMark size={28} />
-          <span className="auth-brand-name">Point</span>
+          <span className="auth-brand-name">OPoint</span>
         </div>
 
         <form className="auth-card" onSubmit={handleSubmit}>

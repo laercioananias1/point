@@ -263,7 +263,7 @@ export function Layout({ children }: { children: ReactNode }) {
               ) : (
                 <LogoMark />
               )}
-              Point
+              OPoint
             </span>
             {links.length > 0 && (
               <nav className="app-nav">

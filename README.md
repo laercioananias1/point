@@ -1,8 +1,8 @@
-# Point
+# OPoint
 
 App de gestão de aulas de esporte de praia (beach tennis, futevôlei e afins) —
-Points, professores e alunos. MVP web em construção; app mobile entra depois de
-validado.
+Points (arenas), professores e alunos. MVP web em construção; app mobile entra
+depois de validado.
 
 Plano de arquitetura completo: ver o artefato publicado na conversa (stack,
 modelo de dados, roadmap de construção, decisões em aberto).
