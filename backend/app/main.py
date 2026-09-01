@@ -46,7 +46,7 @@ app.add_middleware(
     CORSMiddleware,
     # Configurável via CORS_ORIGINS no .env (pedido do usuário, 2026-08-30:
     # deploy em produção) — dev usa o padrão (só o Vite local); produção
-    # aponta pro domínio de verdade (ex.: https://point.taskhero.com.br).
+    # aponta pro domínio de verdade (ex.: https://opoint.com.br).
     allow_origins=get_settings().cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],

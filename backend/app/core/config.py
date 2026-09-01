@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
     # 2026-08-30: deploy em produção) — em dev é só o Vite local; em
     # produção, o domínio de verdade do painel (ex.:
-    # "https://point.taskhero.com.br"). Nunca deixa aberto pra qualquer
+    # "https://opoint.com.br"). Nunca deixa aberto pra qualquer
     # origem (allow_credentials=True não permite "*" mesmo se quisesse).
     cors_origins: str = "http://localhost:5173"
 

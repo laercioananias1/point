@@ -172,7 +172,33 @@ docker exec adsops-frontend-1 nginx -s reload
 Teste: `curl -I https://opoint.com.br/api/health` deve responder 200 com
 `{"api":"ok","database":"ok"}`.
 
-### 4.5 Limitação conhecida (ainda não resolvida)
+### 4.5 Desligar o domínio antigo (`point.taskhero.com.br`)
+
+Só depois de confirmar que `opoint.com.br` está respondendo em produção.
+Remove o server block antigo de dentro do mesmo container:
+
+```bash
+docker exec adsops-frontend-1 rm /etc/nginx/conf.d/point.conf
+docker exec adsops-frontend-1 nginx -t
+docker exec adsops-frontend-1 nginx -s reload
+```
+
+A partir daqui, `point.taskhero.com.br` para de responder (a conexão cai —
+não tem mais um `server_name` casando com ele nesse nginx). Opcional, só
+limpeza: apagar o certificado antigo, que não serve mais pra nada:
+
+```bash
+docker run --rm -v adsops_certbot_conf:/etc/letsencrypt \
+  certbot/certbot delete --cert-name point.taskhero.com.br
+```
+
+Se `point.taskhero.com.br` tiver um registro de DNS próprio (fora da zona
+gerenciada por você, ex.: um subdomínio criado no painel de outro serviço
+do TaskHero), esse registro continua existindo — só não aponta pra nada que
+responda mais. Remova-o lá também se quiser encerrar o domínio de vez, não
+só desativar o proxy.
+
+### 4.6 Limitação conhecida (ainda não resolvida)
 
 Esse arquivo `/etc/nginx/conf.d/opoint.conf` foi escrito direto na camada
 gravável do container `adsops-frontend-1` — **não sobrevive** se a imagem
