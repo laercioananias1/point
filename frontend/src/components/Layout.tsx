@@ -93,7 +93,14 @@ export type IconName =
   | "pin"
   | "plus"
   | "chevron-left"
-  | "chevron-right";
+  | "chevron-right"
+  | "help"
+  | "clock"
+  | "mail"
+  | "link"
+  | "pause"
+  | "refresh"
+  | "check-circle";
 
 export function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
@@ -194,6 +201,54 @@ export function Icon({ name }: { name: IconName }) {
     // espelhado, no lugar da seta "→" em texto que os action-card/
     // item-card-clickable usavam antes.
     "chevron-right": <path d="m9 18 6-6-6-6" />,
+    // Botão de Ajuda no cabeçalho (pedido do usuário, 2026-09-01: "não fica
+    // melhor se for online no app? tem um botão ajuda?") — leva pra
+    // /admin-point/ajuda ou /professor/ajuda, ver Layout abaixo.
+    help: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </>
+    ),
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </>
+    ),
+    mail: (
+      <>
+        <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+        <path d="m22 6-10 7L2 6" />
+      </>
+    ),
+    link: (
+      <>
+        <path d="M9 17H7A5 5 0 0 1 7 7h2" />
+        <path d="M15 7h2a5 5 0 1 1 0 10h-2" />
+        <path d="M8 12h8" />
+      </>
+    ),
+    pause: (
+      <>
+        <rect x="6" y="4" width="4" height="16" rx="1" />
+        <rect x="14" y="4" width="4" height="16" rx="1" />
+      </>
+    ),
+    refresh: (
+      <>
+        <polyline points="23 4 23 10 17 10" />
+        <polyline points="1 20 1 14 7 14" />
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+      </>
+    ),
+    "check-circle": (
+      <>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </>
+    ),
   };
   return (
     <svg
@@ -299,6 +354,22 @@ export function Layout({ children }: { children: ReactNode }) {
                 <span className="app-user-role">{rotuloArea}</span>
                 <span className="app-user-name">{user.nome}</span>
               </span>
+              {/* Botão de Ajuda (pedido do usuário, 2026-09-01: "não fica
+                  melhor se for online no app? tem um botão ajuda?") — só pra
+                  quem tem uma tela de Ajuda escrita (admin e professor por
+                  enquanto); sempre visível, não depende de estar na aba
+                  certa, porque quem precisa de ajuda pode estar em
+                  qualquer tela. */}
+              {(area === "admin_point" || area === "professor") && (
+                <button
+                  type="button"
+                  className="app-header-icon-btn"
+                  onClick={() => navigate(`${PREFIXO_ROTA[area]}/ajuda`)}
+                  aria-label="Ajuda"
+                >
+                  <Icon name="help" />
+                </button>
+              )}
               <button className="app-logout-btn" onClick={handleLogout} aria-label="Sair">
                 <span className="app-logout-label">Sair</span>
                 <Icon name="logout" />

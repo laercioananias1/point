@@ -26,11 +26,13 @@ import AdminPointCadastrarPlano from "./pages/admin-point/CadastrarPlano";
 import AdminPointTurmas from "./pages/admin-point/Turmas";
 import AdminPointOcupacao from "./pages/admin-point/Ocupacao";
 import AdminPointAgenda from "./pages/admin-point/Agenda";
+import AdminPointAjuda from "./pages/admin-point/Ajuda";
 import ProfessorInicio from "./pages/professor/Inicio";
 import ProfessorAgenda from "./pages/professor/Agenda";
 import ProfessorOcupacao from "./pages/professor/Ocupacao";
 import ProfessorTurmas from "./pages/professor/Turmas";
 import ProfessorPerfil from "./pages/professor/Perfil";
+import ProfessorAjuda from "./pages/professor/Ajuda";
 import AlunoInicio from "./pages/aluno/Inicio";
 import AlunoAgenda from "./pages/aluno/Agenda";
 import AlunoReagendarCredito from "./pages/aluno/ReagendarCredito";
@@ -252,6 +254,14 @@ export default function App() {
         }
       />
       <Route
+        path="/admin-point/ajuda"
+        element={
+          <ProtectedRoute>
+            <AdminPointAjuda />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/professor"
         element={
           <ProtectedRoute>
@@ -288,6 +298,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ProfessorPerfil />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/professor/ajuda"
+        element={
+          <ProtectedRoute>
+            <ProfessorAjuda />
           </ProtectedRoute>
         }
       />
