@@ -436,9 +436,14 @@ textarea:focus {
 }
 
 /* item-card inteiro clicável — ex.: pendências da home do admin (pedido do
-   usuário, 2026-08-25). Mesmo tratamento do item de calendário clicável. */
+   usuário, 2026-08-25). Mesmo tratamento do item de calendário clicável.
+   text-decoration/color aqui são pro caso de ser um <Link> (pedido do
+   usuário, 2026-09-01: lista de alunos virou link pra agenda de cada um) —
+   sem efeito num <div>, então não quebra os usos que já existiam. */
 .item-card-clickable {
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 

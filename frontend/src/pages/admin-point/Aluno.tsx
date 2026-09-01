@@ -98,7 +98,11 @@ export default function AdminPointAluno() {
             ) : (
               <div className="card-list">
                 {alunosUnicos.map((a) => (
-                  <div className="item-card" key={a.id}>
+                  <Link
+                    to={`/admin-point/aluno/${a.id}/agenda`}
+                    className="item-card item-card-clickable"
+                    key={a.id}
+                  >
                     <div className="item-card-info">
                       <span className="item-card-title">{a.nome}</span>
                       <span className="item-card-subtitle">
@@ -106,7 +110,8 @@ export default function AdminPointAluno() {
                         {a.email && ` · ${a.email}`}
                       </span>
                     </div>
-                  </div>
+                    <span aria-hidden="true">→</span>
+                  </Link>
                 ))}
               </div>
             )}

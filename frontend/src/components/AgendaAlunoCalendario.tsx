@@ -78,9 +78,14 @@ function ocorrenciasEmDatas(matriculas: Matricula[], datas: Date[]): Map<string,
 export function AgendaAlunoCalendario({
   matriculas,
   onCancelar,
+  paraAdmin = false,
 }: {
   matriculas: Matricula[];
   onCancelar: (ocorrencia: Ocorrencia) => void;
+  // Admin ajustando a agenda de um aluno (pedido do usuário, 2026-09-01) —
+  // ignora o prazo mínimo de cancelamento, então o aviso não deve
+  // mencionar prazo nenhum (ver admin-point/AgendaAluno.tsx).
+  paraAdmin?: boolean;
 }) {
   const [diaSelecionado, setDiaSelecionado] = useState(new Date());
   const [diasVisiveis, setDiasVisiveis] = useState<Date[]>([]);
@@ -146,8 +151,9 @@ export function AgendaAlunoCalendario({
               {oc.tipo === "mensal" && (
                 <div className="info-box">
                   <span>
-                    Precisa de pelo menos {oc.prazoCancelamentoHoras}h de antecedência pra cancelar —
-                    toque aqui pra cancelar e ganhar crédito de reposição.
+                    {paraAdmin
+                      ? "Toque aqui pra cancelar essa aula do aluno (crédito é opcional)."
+                      : `Precisa de pelo menos ${oc.prazoCancelamentoHoras}h de antecedência pra cancelar — toque aqui pra cancelar e ganhar crédito de reposição.`}
                   </span>
                 </div>
               )}

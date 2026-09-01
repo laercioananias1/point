@@ -22,7 +22,13 @@ from app.models.turma import Turma
 from app.models.user import User
 from app.models.vinculo import Vinculo
 from app.schemas.credito import CreditoOut
-from app.schemas.matricula import MatriculaCreate, MatriculaOut, RepasseOverrideUpdate
+from app.schemas.matricula import (
+    AulaCanceladaOut,
+    CancelarAulaAdminRequest,
+    MatriculaCreate,
+    MatriculaOut,
+    RepasseOverrideUpdate,
+)
 from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario
 from app.services.email import enviar_lembrete_mensalidade_email
 
@@ -123,26 +129,16 @@ def listar_matriculas_do_point(
     )
 
 
-@router.post("/{matricula_id}/aulas/{data_aula}/cancelar", response_model=CreditoOut, status_code=201)
-def cancelar_aula_matricula(
-    matricula_id: int,
-    data_aula: date,
-    db: Annotated[Session, Depends(get_db)],
-    aluno: Annotated[User, Depends(require_role(Role.ALUNO))],
-) -> CreditoReposicao:
-    """Cancelamento antecipado de UMA aula específica (pedido do usuário,
-    2026-08-20: "mostra a agenda e faz o fluxo pro aluno cancelar aula com
-    antecedência e gerar crédito") — a matrícula/Assinatura continua ativa,
-    só essa data vira exceção (MatriculaExcecao, só pra esse aluno — a turma
-    continua normal pros outros) e gera crédito de reposição. Só serve pra
-    matrícula mensal — avulsa cancela pelo endpoint acima, que encerra a
-    matrícula inteira (não tem 'uma aula' pra cancelar à parte). Respeita
-    a antecedência mínima configurada no Point (`prazo_cancelamento_horas`,
-    padrão 2h — pedido do usuário, 2026-08-21; cada Point pode ajustar o
-    seu em PATCH /points/me/configuracoes)."""
-    matricula = db.get(Matricula, matricula_id)
-    if matricula is None or matricula.aluno_id != aluno.aluno_id:
-        raise HTTPException(404, "Matrícula não encontrada")
+def _cancelar_aula(
+    db: Session, matricula: Matricula, data_aula: date, *, gerar_credito: bool, ignorar_prazo: bool
+) -> CreditoReposicao | None:
+    """Núcleo compartilhado do cancelamento de UMA aula específica (pedido
+    do usuário, 2026-08-20) — usado tanto pelo aluno cancelando a própria
+    aula (sempre com crédito, sempre respeitando o prazo) quanto pelo admin
+    ajustando a agenda por ele (pedido do usuário, 2026-09-01: "editar as
+    aulas, remover... fazer ajustes na agenda do aluno" — crédito
+    opcional, prazo ignorado, ver os dois `cancelar_aula_matricula*`
+    abaixo)."""
     if matricula.status != MatriculaStatus.ATIVA:
         raise HTTPException(422, "Só é possível cancelar aula de uma matrícula ativa")
     if matricula.tipo != MatriculaTipo.MENSAL:
@@ -153,21 +149,22 @@ def cancelar_aula_matricula(
     turma = matricula.turma
     # O dia precisa ser um dos que ESSE aluno frequenta na turma (pedido do
     # usuário, 2026-08-21) — a turma pode ter mais dias que outros alunos
-    # usam, mas esse aluno só pode cancelar o que é dele.
+    # usam, mas só pode cancelar o que é dessa matrícula.
     if DIAS_SEMANA[data_aula.weekday()] not in matricula.dias_semana:
-        raise HTTPException(422, "Você não tem aula nessa turma nesse dia da semana")
+        raise HTTPException(422, "Não há aula nessa turma nesse dia da semana pra essa matrícula")
 
     if data_aula < matricula.data_inicio_efetiva or (
         turma.periodo_fim is not None and data_aula > turma.periodo_fim
     ):
-        raise HTTPException(422, "Essa data está fora do período da sua matrícula")
+        raise HTTPException(422, "Essa data está fora do período da matrícula")
 
-    prazo_horas = turma.vinculo.point.prazo_cancelamento_horas
-    horario_aula = datetime.combine(data_aula, time.fromisoformat(turma.horario))
-    if horario_aula <= datetime.now() + timedelta(hours=prazo_horas):
-        raise HTTPException(
-            422, f"Esse Point exige pelo menos {prazo_horas}h de antecedência pra cancelar"
-        )
+    if not ignorar_prazo:
+        prazo_horas = turma.vinculo.point.prazo_cancelamento_horas
+        horario_aula = datetime.combine(data_aula, time.fromisoformat(turma.horario))
+        if horario_aula <= datetime.now() + timedelta(hours=prazo_horas):
+            raise HTTPException(
+                422, f"Esse Point exige pelo menos {prazo_horas}h de antecedência pra cancelar"
+            )
 
     ja_cancelada = (
         db.query(MatriculaExcecao)
@@ -182,6 +179,9 @@ def cancelar_aula_matricula(
         Aula.matricula_id == matricula.id, Aula.data == data_aula
     ).delete(synchronize_session=False)
 
+    if not gerar_credito:
+        return None
+
     prazo_dias = turma.vinculo.point.prazo_credito_dias
     credito = CreditoReposicao(
         matricula_id=matricula.id,
@@ -191,9 +191,81 @@ def cancelar_aula_matricula(
         status=CreditoStatus.DISPONIVEL,
     )
     db.add(credito)
+    return credito
+
+
+@router.post("/{matricula_id}/aulas/{data_aula}/cancelar", response_model=CreditoOut, status_code=201)
+def cancelar_aula_matricula(
+    matricula_id: int,
+    data_aula: date,
+    db: Annotated[Session, Depends(get_db)],
+    aluno: Annotated[User, Depends(require_role(Role.ALUNO))],
+) -> CreditoReposicao:
+    """Cancelamento antecipado de UMA aula específica pelo próprio aluno
+    (pedido do usuário, 2026-08-20: "mostra a agenda e faz o fluxo pro
+    aluno cancelar aula com antecedência e gerar crédito") — a matrícula/
+    Assinatura continua ativa, só essa data vira exceção (MatriculaExcecao,
+    só pra esse aluno — a turma continua normal pros outros) e sempre gera
+    crédito de reposição. Respeita a antecedência mínima configurada no
+    Point (`prazo_cancelamento_horas`, padrão 2h — pedido do usuário,
+    2026-08-21)."""
+    matricula = db.get(Matricula, matricula_id)
+    if matricula is None or matricula.aluno_id != aluno.aluno_id:
+        raise HTTPException(404, "Matrícula não encontrada")
+
+    credito = _cancelar_aula(db, matricula, data_aula, gerar_credito=True, ignorar_prazo=False)
     db.commit()
     db.refresh(credito)
     return credito
+
+
+@router.post(
+    "/{matricula_id}/aulas/{data_aula}/cancelar-admin", response_model=AulaCanceladaOut, status_code=201
+)
+def cancelar_aula_matricula_admin(
+    matricula_id: int,
+    data_aula: date,
+    payload: CancelarAulaAdminRequest,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> AulaCanceladaOut:
+    """Admin fazendo ajuste na agenda de um aluno (pedido do usuário,
+    2026-09-01: "permitir editar as aulas, remover... fazer ajustes na
+    agenda do aluno" — normalmente por telefone/presencial, quando o aluno
+    pede pro Point resolver). Duas diferenças do cancelamento que o próprio
+    aluno faz: ignora o prazo mínimo de antecedência (pedido do usuário —
+    "faz sentido o admin resolver uma exceção mesmo em cima da hora") e o
+    crédito é opcional (pedido do usuário — "pode ser q o cadastro de
+    aulas esteja errado e vai fazer um novo", nesse caso não é uma aula de
+    verdade perdida)."""
+    matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
+    credito = _cancelar_aula(
+        db, matricula, data_aula, gerar_credito=payload.gerar_credito, ignorar_prazo=True
+    )
+    db.commit()
+    if credito is not None:
+        db.refresh(credito)
+    return AulaCanceladaOut(credito=credito)
+
+
+@router.get("/creditos", response_model=list[CreditoOut])
+def listar_creditos_do_point(
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> list[CreditoReposicao]:
+    """Créditos de reposição de qualquer aluno do Point, em qualquer status
+    (pedido do usuário, 2026-09-01: agenda do aluno pro admin precisa
+    mostrar os créditos disponíveis, pra poder reagendar por ele) — mesmo
+    padrão de GET /matriculas: devolve tudo do Point, o frontend filtra
+    por aluno na tela."""
+    return (
+        db.query(CreditoReposicao)
+        .join(Matricula, CreditoReposicao.matricula_id == Matricula.id)
+        .join(Turma)
+        .join(Vinculo)
+        .filter(Vinculo.point_id == admin.point_id)
+        .all()
+    )
 
 
 @router.post("/{matricula_id}/lembrete-pagamento", status_code=204)

@@ -3,6 +3,7 @@ from datetime import date
 from app.models.enums import MatriculaStatus, MatriculaTipo, ModeloRepasse, PagamentoMeio
 from app.schemas.aluno import AlunoOut
 from app.schemas.common import ORMModel
+from app.schemas.credito import CreditoOut
 from app.schemas.pagamento import PagamentoResumo
 from app.schemas.turma import TurmaOut
 
@@ -15,6 +16,22 @@ class MatriculaCreate(ORMModel):
     # calendário de dias, seleciona o horário e confirma a compra") — o
     # router valida isso; nulo/ignorado pra mensal, que não usa data única.
     data_aula: date | None = None
+
+
+class CancelarAulaAdminRequest(ORMModel):
+    """Admin cancelando uma aula específica de um aluno (pedido do usuário,
+    2026-09-01: "permitir editar as aulas, remover... a informacao de
+    reagendar com credito tem q ser opcional, pq pode ser q o cadastro de
+    aulas esteja errado e vai fazer um novo") — mesmo padrão já usado em
+    TurmaRemocao.gerar_credito: às vezes o cancelamento é só correção de um
+    cadastro errado (turma/dia trocado por engano), não uma aula de
+    verdade perdida, então não deveria gerar crédito."""
+
+    gerar_credito: bool = True
+
+
+class AulaCanceladaOut(ORMModel):
+    credito: CreditoOut | None = None
 
 
 class RepasseOverrideUpdate(ORMModel):

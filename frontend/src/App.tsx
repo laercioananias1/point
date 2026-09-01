@@ -7,6 +7,7 @@ import ConviteVinculoAceite from "./pages/ConviteVinculoAceite";
 import ConviteAdminAceite from "./pages/ConviteAdminAceite";
 import AdminPointInicio from "./pages/admin-point/Inicio";
 import AdminPointAluno from "./pages/admin-point/Aluno";
+import AdminPointAgendaAluno from "./pages/admin-point/AgendaAluno";
 import AdminPointConvidarAluno from "./pages/admin-point/ConvidarAluno";
 import AdminPointProfessor from "./pages/admin-point/Professor";
 import AdminPointConvidarProfessor from "./pages/admin-point/ConvidarProfessor";
@@ -95,6 +96,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointAluno />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/aluno/:alunoId/agenda"
+        element={
+          <ProtectedRoute>
+            <AdminPointAgendaAluno />
           </ProtectedRoute>
         }
       />
