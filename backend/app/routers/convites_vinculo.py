@@ -70,21 +70,35 @@ def criar_convite_vinculo(
     if convite_pendente is not None and not convite_pendente.expirado:
         raise HTTPException(409, "Já existe um convite pendente pra esse e-mail")
 
-    # Pedido do usuário, 2026-08-21: se o professor já faz parte deste Point
-    # (vínculo ativo), não faz sentido mandar um novo convite pra ele.
     usuario_existente = db.query(User).filter(User.email == payload.email).first()
-    if usuario_existente is not None and usuario_existente.professor_id is not None:
-        vinculo_ativo = (
-            db.query(Vinculo)
-            .filter(
-                Vinculo.professor_id == usuario_existente.professor_id,
-                Vinculo.point_id == admin.point_id,
-                Vinculo.status == VinculoStatus.ATIVO,
+    if usuario_existente is not None:
+        # Aluno e dono do app não viram professor (pedido do usuário,
+        # 2026-09-01: "convite para professor se ele ja for aluno ou dono
+        # de sistema") — o aceite (aceitar_convite_vinculo) já exige papel
+        # professor ou admin_point pra confirmar, então um convite pra
+        # esses dois e-mails nunca teria como ser aceito; bloqueia aqui, na
+        # criação, em vez de deixar o convite pendente sem jeito de virar
+        # nada. admin_point continua liberado — é o caso já existente de
+        # "dono do Point que também é professor".
+        if usuario_existente.tem_role(Role.ALUNO) or usuario_existente.tem_role(Role.SUPER_ADMIN):
+            raise HTTPException(
+                409, "Esse e-mail já é aluno ou dono do app — não pode virar professor"
             )
-            .first()
-        )
-        if vinculo_ativo is not None:
-            raise HTTPException(409, "Esse professor já faz parte deste Point")
+
+        # Pedido do usuário, 2026-08-21: se o professor já faz parte deste
+        # Point (vínculo ativo), não faz sentido mandar um novo convite.
+        if usuario_existente.professor_id is not None:
+            vinculo_ativo = (
+                db.query(Vinculo)
+                .filter(
+                    Vinculo.professor_id == usuario_existente.professor_id,
+                    Vinculo.point_id == admin.point_id,
+                    Vinculo.status == VinculoStatus.ATIVO,
+                )
+                .first()
+            )
+            if vinculo_ativo is not None:
+                raise HTTPException(409, "Esse professor já faz parte deste Point")
 
     convite = ConviteVinculo(
         token=secrets.token_urlsafe(24),

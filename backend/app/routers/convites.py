@@ -110,6 +110,23 @@ def criar_convite(
     if convite_pendente is not None and not convite_pendente.expirado:
         raise HTTPException(409, "Já existe um convite pendente pra esse e-mail")
 
+    # Professor, admin de Point e dono do app não viram aluno (pedido do
+    # usuário, 2026-09-01: "nao pode permitir enviar convite de aluno para
+    # emails q sao professores, donos de points ou dono de sistemas" — viu
+    # isso na prática convidando o próprio e-mail de dono do app, que deu
+    # "Sem permissão" no aceite: aceitar_convite exige papel aluno pra
+    # confirmar, então esse convite nunca teria como ser aceito). Bloqueia
+    # aqui, na criação, em vez de deixar pendente sem jeito de virar nada.
+    usuario_existente = db.query(User).filter(User.email == payload.email).first()
+    if usuario_existente is not None and (
+        usuario_existente.tem_role(Role.PROFESSOR)
+        or usuario_existente.tem_role(Role.ADMIN_POINT)
+        or usuario_existente.tem_role(Role.SUPER_ADMIN)
+    ):
+        raise HTTPException(
+            409, "Esse e-mail já é professor, admin de Point ou dono do app — não pode virar aluno"
+        )
+
     convite = Convite(
         token=secrets.token_urlsafe(24),
         point_id=admin.point_id,
