@@ -117,14 +117,13 @@ export default function AdminPointAgendaAluno() {
       {pronto && (
         <>
           <section className="section">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <h2>Calendário</h2>
-              {ativas.length > 0 && (
+            {ativas.length > 0 && (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
                 <button type="button" className="secondary" onClick={() => setPausando(true)}>
                   Pausar um período
                 </button>
-              )}
-            </div>
+              </div>
+            )}
             {ativas.length === 0 ? (
               <p className="empty-state">Esse aluno não tem matrícula mensal ativa.</p>
             ) : (
@@ -306,6 +305,7 @@ function PausarPeriodoModal({
                 type="checkbox"
                 checked={gerarCredito}
                 onChange={(e) => setGerarCredito(e.target.checked)}
+                style={{ width: "auto" }}
               />
               Gerar crédito de reposição pra cada aula pausada
             </label>
@@ -384,7 +384,12 @@ function CancelarAulaModalAdmin({
         </div>
 
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-          <input type="checkbox" checked={gerarCredito} onChange={(e) => setGerarCredito(e.target.checked)} />
+          <input
+            type="checkbox"
+            checked={gerarCredito}
+            onChange={(e) => setGerarCredito(e.target.checked)}
+            style={{ width: "auto" }}
+          />
           Gerar crédito de reposição pro aluno
         </label>
         <p className="empty-state" style={{ padding: 0 }}>

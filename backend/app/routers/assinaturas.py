@@ -8,7 +8,8 @@ from app.core.database import get_db
 from app.core.deps import require_role
 from app.models.assinatura import Assinatura
 from app.models.aula import Aula
-from app.models.enums import MatriculaStatus, Role
+from app.models.credito_reposicao import CreditoReposicao
+from app.models.enums import CreditoStatus, MatriculaStatus, Role
 from app.models.user import User
 from app.schemas.assinatura import AssinaturaOut
 
@@ -42,11 +43,16 @@ def cancelar_assinatura(
     a assinatura e todas as matrículas que vieram dela, o que já é suficiente
     pra geração mensal de aulas parar de gerar (ela só olha matrícula ativa).
 
-    Também apaga as Aula futuras já geradas dessas matrículas (pedido do
-    usuário, 2026-09-01: "cancelamento de matricula, limpa tudo") — sem
-    isso, aula do mês corrente já gerada antes do cancelamento ficaria
-    "presa" no banco (embora o calendário do frontend já não mostre mais
-    nada de uma matrícula não-ativa, ver AgendaAlunoCalendario.tsx)."""
+    Também apaga as Aula futuras já geradas dessas matrículas e expira os
+    créditos de reposição ainda disponíveis vindos delas (pedido do
+    usuário, 2026-09-01: "cancelamento de matricula, limpa tudo" / depois
+    "cancelamento de assinatura tambem remove os creditos") — sem isso,
+    aula do mês corrente já gerada antes do cancelamento ficaria "presa"
+    no banco, e um crédito de reposição sobreviveria fazendo o aluno achar
+    que ainda pode reagendar uma aula de um plano que ele já cancelou.
+    Marca como EXPIRADO em vez de apagar a linha — mantém o histórico
+    (mesmo padrão de matrícula/assinatura: status muda, nada é excluído,
+    exceto Aula, que é só a ocorrência futura, sem valor de histórico)."""
     assinatura = db.get(Assinatura, assinatura_id)
     if assinatura is None:
         raise HTTPException(404, "Assinatura não encontrada")
@@ -64,6 +70,10 @@ def cancelar_assinatura(
         db.query(Aula).filter(
             Aula.matricula_id == matricula.id, Aula.data >= date.today()
         ).delete(synchronize_session=False)
+        db.query(CreditoReposicao).filter(
+            CreditoReposicao.matricula_id == matricula.id,
+            CreditoReposicao.status == CreditoStatus.DISPONIVEL,
+        ).update({"status": CreditoStatus.EXPIRADO}, synchronize_session=False)
 
     db.commit()
     db.refresh(assinatura)
