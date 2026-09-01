@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import type { ModeloRepasse, ProfessorResumo } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
+import { formatarCelular } from "../../lib/formato";
 
 /** Tela própria pra convidar professor (pedido do usuário, 2026-08-30:
  * "essa lista de professores leva pro início da tela, depois embaixo
@@ -157,7 +158,7 @@ function ConvidarProfessorForm() {
       <BuscarProfessorInline
         onSelecionar={(p) => {
           setNome(p.nome);
-          setCelular(p.contato);
+          setCelular(formatarCelular(p.contato));
           setEmail(p.email);
         }}
       />
@@ -173,7 +174,13 @@ function ConvidarProfessorForm() {
         </label>
         <label>
           Celular
-          <input value={celular} onChange={(e) => setCelular(e.target.value)} required />
+          <input
+            type="tel"
+            placeholder="(11) 91234-5678"
+            value={celular}
+            onChange={(e) => setCelular(formatarCelular(e.target.value))}
+            required
+          />
         </label>
         <label>
           E-mail

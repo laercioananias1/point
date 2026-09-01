@@ -4,7 +4,7 @@ import { api, ApiError } from "../../api/client";
 import type { ConviteAdmin, PointRanking } from "../../api/types";
 import { useAuth, type User } from "../../auth/AuthContext";
 import { Icon, Layout } from "../../components/Layout";
-import { formatarReais } from "../../lib/formato";
+import { formatarCelular, formatarReais } from "../../lib/formato";
 
 /** Points da plataforma (pedido do usuário, 2026-08-26: "pode fazer" — a
  * tela de cadastrar Point/admin que faltava). Criar Point virou tela
@@ -206,7 +206,13 @@ function ConvidarAdminForm({ pointId, onEnviado }: { pointId: number; onEnviado:
         </label>
         <label>
           Celular
-          <input value={celular} onChange={(e) => setCelular(e.target.value)} required />
+          <input
+            type="tel"
+            placeholder="(11) 91234-5678"
+            value={celular}
+            onChange={(e) => setCelular(formatarCelular(e.target.value))}
+            required
+          />
         </label>
       </div>
       <label>

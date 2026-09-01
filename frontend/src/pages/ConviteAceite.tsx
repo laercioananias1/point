@@ -5,7 +5,7 @@ import { useAuth, type User } from "../auth/AuthContext";
 import { LogoMark } from "../components/LogoMark";
 import type { Convite } from "../api/types";
 import { rotuloTurma } from "../lib/dias";
-import { formatarReais } from "../lib/formato";
+import { formatarCelular, formatarReais } from "../lib/formato";
 
 /** Tela pública (sem login) que a pessoa abre a partir do link do e-mail
  * de convite (pedido do usuário, 2026-08-20). Se ainda não tem conta, cria
@@ -145,8 +145,10 @@ function AceitarNovo({
       <label htmlFor="celular">Celular</label>
       <input
         id="celular"
+        type="tel"
+        placeholder="(11) 91234-5678"
         value={celular}
-        onChange={(e) => setCelular(e.target.value)}
+        onChange={(e) => setCelular(formatarCelular(e.target.value))}
         required
       />
 
