@@ -67,9 +67,17 @@ def matricula_inadimplente(matricula: Matricula, referencia: date | None = None)
     entrou nesse mesmo mês ainda não completou um ciclo, não deve nada.
     Usada tanto pra travar a geração de aulas quanto pro badge "em atraso"
     no frontend (Matricula.inadimplente)."""
-    from app.models.enums import MatriculaStatus, MatriculaTipo, PagamentoStatus
+    from app.models.enums import MatriculaStatus, MatriculaTipo, PagamentoMeio, PagamentoStatus
 
     if matricula.tipo != MatriculaTipo.MENSAL or matricula.status != MatriculaStatus.ATIVA:
+        return False
+
+    # Wellhub/TotalPass não passam pelo fluxo de Pix (pedido do usuário,
+    # 2026-09-01) — não existe Pagamento a lançar/confirmar pra um
+    # benefício, então nunca fica "em atraso" por essa via. Sem integração
+    # nenhuma ainda pra checar de verdade se o benefício segue ativo (fica
+    # pra quando existir); por ora, aula continua gerando sempre.
+    if matricula.fonte_pagamento != PagamentoMeio.PIX:
         return False
 
     referencia = referencia or date.today()

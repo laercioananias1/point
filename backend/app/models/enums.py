@@ -53,7 +53,19 @@ class MatriculaStatus(str, enum.Enum):
 class PagamentoMeio(str, enum.Enum):
     PIX = "pix"
     DINHEIRO = "dinheiro"
-    # BENEFICIO entra na Fase 2 (integração Wellhub/TotalPass, seção 5)
+    # Wellhub/TotalPass como forma de pagamento de matrícula (pedido do
+    # usuário, 2026-09-01: "ja vamos aceitar matriculas com essas formas")
+    # — só o cadastro, sem integração nenhuma ainda (isso é outra coisa,
+    # ver CheckinOrigem/app/services/totalpass.py, que trata check-in, não
+    # forma de pagamento). Matrícula/Convite com uma dessas duas fica
+    # isenta da cobrança de mensalidade via Pix — ver
+    # app/services/aulas.py::matricula_inadimplente e
+    # Matricula.mes_atual_pago/pagamento_pendente_atual — porque não existe
+    # "pagamento" a lançar/confirmar pra um benefício, e sem essa isenção a
+    # matrícula ficaria marcada inadimplente pra sempre e pararia de gerar
+    # aula depois do primeiro mês.
+    WELLHUB = "wellhub"
+    TOTALPASS = "totalpass"
 
 
 class PagamentoStatus(str, enum.Enum):

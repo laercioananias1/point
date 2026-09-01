@@ -2,7 +2,7 @@ export type ModeloRepasse = "percentual" | "valor_fixo_mensal" | "valor_fixo_por
 export type VinculoStatus = "pendente" | "ativo" | "inativo" | "recusado";
 export type MatriculaStatus = "em_analise" | "ativa" | "recusada" | "cancelada";
 export type MatriculaTipo = "avulsa" | "mensal";
-export type PagamentoMeio = "pix" | "dinheiro";
+export type PagamentoMeio = "pix" | "dinheiro" | "wellhub" | "totalpass";
 export type PagamentoStatus = "pendente" | "confirmado" | "estornado";
 export type CreditoMotivo = "forca_maior" | "cancelamento_aluno";
 export type CreditoStatus = "disponivel" | "usado" | "expirado";
@@ -102,7 +102,7 @@ export interface AlunoResumo {
   nome: string;
   contato: string;
   email: string | null;
-  forma_pagamento_preferida: PagamentoMeio | "wellhub" | "totalpass";
+  forma_pagamento_preferida: PagamentoMeio;
 }
 
 export interface Vinculo {

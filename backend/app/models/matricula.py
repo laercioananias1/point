@@ -110,7 +110,14 @@ class Matricula(TimestampMixin, Base):
         """Mensalidade recorrente de verdade (pedido do usuário, 2026-08-21):
         matrícula mensal só conta como paga se tem um Pagamento CONFIRMADO
         do mês corrente — o mês anterior pago não vale pra este mês.
-        Avulsa continua com a regra antiga (qualquer confirmado, sem mês)."""
+        Avulsa continua com a regra antiga (qualquer confirmado, sem mês).
+
+        Wellhub/TotalPass conta como sempre paga (pedido do usuário,
+        2026-09-01) — não existe Pagamento pra um benefício, então "mês
+        pago" não se aplica; sem isso o frontend mostraria um "pagar"
+        que não devia existir pra essas matrículas."""
+        if self.fonte_pagamento != PagamentoMeio.PIX:
+            return True
         if self.tipo != MatriculaTipo.MENSAL:
             return any(p.status == PagamentoStatus.CONFIRMADO for p in self.pagamentos)
         mes_atual = date.today().replace(day=1)
@@ -125,7 +132,12 @@ class Matricula(TimestampMixin, Base):
         não foi confirmado pelo admin do Point (pedido do usuário,
         2026-08-21: Pix deixou de confirmar sozinho na hora — agora passa
         pela mesma conferência manual do dinheiro). Pro frontend saber
-        quando mostrar "aguardando confirmação" em vez do botão de pagar."""
+        quando mostrar "aguardando confirmação" em vez do botão de pagar.
+
+        Sempre False pra Wellhub/TotalPass (pedido do usuário, 2026-09-01) —
+        não tem pagamento nenhum sendo lançado/aguardando confirmação."""
+        if self.fonte_pagamento != PagamentoMeio.PIX:
+            return False
         if self.tipo != MatriculaTipo.MENSAL:
             return any(p.status == PagamentoStatus.PENDENTE for p in self.pagamentos)
         mes_atual = date.today().replace(day=1)

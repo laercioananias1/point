@@ -5,20 +5,13 @@ import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 import { TrocarArea } from "../../components/TrocarArea";
 import { rotuloTurma } from "../../lib/dias";
-import { formatarReais } from "../../lib/formato";
+import { formatarReais, rotuloPagamentoMeio } from "../../lib/formato";
 
 const PERIODOS_DIA: { value: PeriodoDia; label: string }[] = [
   { value: "manha", label: "Manhã" },
   { value: "tarde", label: "Tarde" },
   { value: "noite", label: "Noite" },
 ];
-
-const ROTULO_FORMA_PAGAMENTO: Record<string, string> = {
-  pix: "Pix",
-  dinheiro: "Dinheiro",
-  wellhub: "Wellhub",
-  totalpass: "TotalPass",
-};
 
 /** Perfil do aluno (pedido do usuário, 2026-08-25) — dados da conta e
  * gestão dos planos mensais (assinatura); pagar/cancelar aula avulsa e
@@ -69,9 +62,7 @@ export default function AlunoPerfil() {
                 <span className="item-card-subtitle">{perfil.email}</span>
                 <span className="item-card-subtitle">{perfil.contato}</span>
                 <span className="item-card-subtitle">
-                  Pagamento preferido:{" "}
-                  {ROTULO_FORMA_PAGAMENTO[perfil.forma_pagamento_preferida] ??
-                    perfil.forma_pagamento_preferida}
+                  Pagamento preferido: {rotuloPagamentoMeio(perfil.forma_pagamento_preferida)}
                 </span>
               </div>
             </div>
@@ -157,6 +148,11 @@ function AssinaturaRow({
         )}
         {assinatura.plano && (
           <span className="item-card-subtitle">{formatarReais(assinatura.plano.preco)} / mês</span>
+        )}
+        {assinatura.fonte_pagamento !== "pix" && (
+          <span className="item-card-subtitle">
+            Pagamento: {rotuloPagamentoMeio(assinatura.fonte_pagamento)}
+          </span>
         )}
       </div>
       <div className="item-card-actions">

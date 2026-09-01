@@ -74,10 +74,12 @@ def criar_convite(
     — o aluno cadastra a própria conta, o admin não cria senha por ele).
     Valida tudo já aqui pra dar erro cedo — revalida de novo no aceite,
     porque turma/plano podem ter mudado nesse meio-tempo."""
-    # Só Pix é aceito (pedido do usuário, 2026-08-26: "vou retirar do
-    # sistema a forma de pagamento em dinheiro").
-    if payload.fonte_pagamento != PagamentoMeio.PIX:
-        raise HTTPException(422, "Este Point só aceita pagamento via Pix")
+    # Dinheiro não é aceito (pedido do usuário, 2026-08-26: "vou retirar do
+    # sistema a forma de pagamento em dinheiro"); Wellhub/TotalPass entraram
+    # depois (pedido do usuário, 2026-09-01) — só como forma de pagamento
+    # da matrícula, sem integração nenhuma ainda (ver PagamentoMeio).
+    if payload.fonte_pagamento not in (PagamentoMeio.PIX, PagamentoMeio.WELLHUB, PagamentoMeio.TOTALPASS):
+        raise HTTPException(422, "Forma de pagamento não aceita — use Pix, Wellhub ou TotalPass")
 
     modalidade = db.get(Modalidade, payload.modalidade_id)
     if modalidade is None or modalidade.point_id != admin.point_id:

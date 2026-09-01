@@ -1,10 +1,25 @@
-import type { ModeloRepasse } from "../api/types";
+import type { ModeloRepasse, PagamentoMeio } from "../api/types";
 
 const ROTULO_MODELO_REPASSE: Record<ModeloRepasse, string> = {
   percentual: "Percentual",
   valor_fixo_mensal: "Valor fixo mensal",
   valor_fixo_por_aula: "Valor fixo por aula",
 };
+
+// Wellhub/TotalPass entraram como forma de pagamento de matrícula (pedido
+// do usuário, 2026-09-01: "ja vamos aceitar matriculas com essas formas")
+// — compartilhado entre a tela de convidar aluno, o perfil do aluno e a
+// listagem de assinaturas do admin, pra não duplicar o rótulo em 3 lugares.
+const ROTULO_PAGAMENTO_MEIO: Record<PagamentoMeio, string> = {
+  pix: "Pix",
+  dinheiro: "Dinheiro",
+  wellhub: "Wellhub",
+  totalpass: "TotalPass",
+};
+
+export function rotuloPagamentoMeio(meio: PagamentoMeio): string {
+  return ROTULO_PAGAMENTO_MEIO[meio] ?? meio;
+}
 
 /** R$ 1.234,56 — formato brasileiro (pedido do usuário, 2026-08-21). */
 export function formatarReais(valor: number): string {

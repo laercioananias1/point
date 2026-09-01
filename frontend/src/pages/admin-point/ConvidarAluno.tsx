@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Modalidade, PeriodoDia, Plano, TurmaResumo } from "../../api/types";
+import type { Modalidade, PagamentoMeio, PeriodoDia, Plano, TurmaResumo } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA, rotuloTurma } from "../../lib/dias";
 import { formatarReais } from "../../lib/formato";
@@ -75,6 +75,12 @@ function ConvidarForm({ pointId }: { pointId: number }) {
   // escolhida, guarda quais dias esse aluno vai frequentar.
   const [diasPorTurma, setDiasPorTurma] = useState<Record<number, string[]>>({});
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
+  // Wellhub/TotalPass como forma de pagamento da matrícula (pedido do
+  // usuário, 2026-09-01: "ja vamos aceitar matriculas com essas formas") —
+  // só o cadastro; sem integração nenhuma ainda, nem cobrança de
+  // mensalidade via Pix pra quem escolher uma dessas duas (ver backend
+  // Matricula.mes_atual_pago).
+  const [fontePagamento, setFontePagamento] = useState<PagamentoMeio>("pix");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -149,7 +155,7 @@ function ConvidarForm({ pointId }: { pointId: number }) {
         email,
         modalidade_id: modalidadeId,
         periodo_dia_desejado: primeiraTurma ? periodoDaHora(primeiraTurma.horario) : "noite",
-        fonte_pagamento: "pix",
+        fonte_pagamento: fontePagamento,
         plano_id: planoId,
         turmas,
         data_inicio: dataInicio,
@@ -214,15 +220,28 @@ function ConvidarForm({ pointId }: { pointId: number }) {
         </label>
       </div>
 
-      <label>
-        Data de início
-        <input
-          type="date"
-          value={dataInicio}
-          onChange={(e) => setDataInicio(e.target.value)}
-          required
-        />
-      </label>
+      <div className="form-row">
+        <label>
+          Data de início
+          <input
+            type="date"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Forma de pagamento
+          <select
+            value={fontePagamento}
+            onChange={(e) => setFontePagamento(e.target.value as PagamentoMeio)}
+          >
+            <option value="pix">Pix</option>
+            <option value="wellhub">Wellhub</option>
+            <option value="totalpass">TotalPass</option>
+          </select>
+        </label>
+      </div>
 
       <label>
         Turmas ({diasEscolhidos} de {frequenciaAlvo} dia(s) por semana escolhidos)

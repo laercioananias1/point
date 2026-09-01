@@ -5,7 +5,7 @@ import type { Assinatura, Convite, Matricula } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 import { rotuloTurma } from "../../lib/dias";
-import { formatarReais } from "../../lib/formato";
+import { formatarReais, rotuloPagamentoMeio } from "../../lib/formato";
 
 /** Gestão de alunos do Point (pedido do usuário, 2026-08-25: "seguindo o
  * mesmo padrão" — virou aba própria). Convite → matrícula → assinatura →
@@ -240,6 +240,11 @@ function AssinaturaAtivaRow({
           {assinatura.turmas.map((t) => rotuloTurma(t.dias_semana, t.turma.horario)).join(" · ")} · desde{" "}
           {assinatura.data_inicio}
         </span>
+        {assinatura.fonte_pagamento !== "pix" && (
+          <span className="item-card-subtitle">
+            Pagamento: {rotuloPagamentoMeio(assinatura.fonte_pagamento)}
+          </span>
+        )}
       </div>
       <button className="secondary" disabled={cancelando} onClick={cancelar}>
         {cancelando ? "Cancelando..." : "Cancelar"}

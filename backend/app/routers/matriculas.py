@@ -58,10 +58,13 @@ def solicitar_matricula(
     acontecem aqui embaixo, iguais às de creditos.py::reagendar_credito —
     o que garantia a integridade da matrícula nunca foi a aprovação manual,
     foi essa validação."""
-    # Só Pix é aceito (pedido do usuário, 2026-08-26: "vou retirar do
-    # sistema a forma de pagamento em dinheiro").
-    if payload.fonte_pagamento != PagamentoMeio.PIX:
-        raise HTTPException(422, "Este Point só aceita pagamento via Pix")
+    # Dinheiro não é aceito (pedido do usuário, 2026-08-26: "vou retirar do
+    # sistema a forma de pagamento em dinheiro"); Wellhub/TotalPass entraram
+    # depois (pedido do usuário, 2026-09-01) — ver PagamentoMeio. Sem tela
+    # pra escolher isso na compra avulsa ainda (ComprarAvulsa.tsx manda só
+    # "pix"), mas a validação já aceita pra quando existir.
+    if payload.fonte_pagamento not in (PagamentoMeio.PIX, PagamentoMeio.WELLHUB, PagamentoMeio.TOTALPASS):
+        raise HTTPException(422, "Forma de pagamento não aceita — use Pix, Wellhub ou TotalPass")
 
     turma = db.get(Turma, payload.turma_id)
     if turma is None:
