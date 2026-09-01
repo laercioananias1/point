@@ -5,7 +5,7 @@ import { useAuth, type User } from "../auth/AuthContext";
 import { LogoMark } from "../components/LogoMark";
 import type { Convite } from "../api/types";
 import { rotuloTurma } from "../lib/dias";
-import { formatarCelular, formatarReais } from "../lib/formato";
+import { formatarCelular, formatarReais, rotuloPagamentoMeio } from "../lib/formato";
 
 /** Tela pública (sem login) que a pessoa abre a partir do link do e-mail
  * de convite (pedido do usuário, 2026-08-20). Se ainda não tem conta, cria
@@ -87,7 +87,9 @@ function ResumoConvite({ convite }: { convite: Convite }) {
       <p className="auth-subtitle">Olá, {convite.nome}!</p>
       <p>
         {convite.modalidade.nome} · {convite.plano.frequencia_semanal}x por semana ·{" "}
-        {formatarReais(convite.plano.preco)}/mês
+        {convite.fonte_pagamento === "pix"
+          ? `${formatarReais(convite.plano.preco)}/mês`
+          : `via ${rotuloPagamentoMeio(convite.fonte_pagamento)}`}
       </p>
       <p className="empty-state" style={{ padding: 0 }}>
         {convite.turmas.map((t) => rotuloTurma(t.dias_semana, t.turma.horario)).join(" · ")}

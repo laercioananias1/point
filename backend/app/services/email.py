@@ -1,6 +1,12 @@
 import httpx
 
 from app.core.config import get_settings
+from app.models.enums import PagamentoMeio
+
+# Wellhub/TotalPass não cobram do aluno pelo Point — o valor do plano não
+# se aplica (pedido do usuário, 2026-09-01: "quando o plano é wellhub ou
+# totalpass nao pode mostrar o valor do plano... Informe o beneficio").
+_ROTULO_BENEFICIO = {PagamentoMeio.WELLHUB: "Wellhub", PagamentoMeio.TOTALPASS: "TotalPass"}
 
 
 def _enviar(*, email: str, assunto: str, html: str, link_fallback: str = "") -> None:
@@ -29,16 +35,28 @@ def _enviar(*, email: str, assunto: str, html: str, link_fallback: str = "") -> 
 
 
 def enviar_convite_email(
-    *, nome: str, email: str, link: str, point_nome: str, modalidade_nome: str, frequencia: int, preco: float
+    *,
+    nome: str,
+    email: str,
+    link: str,
+    point_nome: str,
+    modalidade_nome: str,
+    frequencia: int,
+    preco: float,
+    fonte_pagamento: PagamentoMeio,
 ) -> None:
-    """E-mail de convite de assinatura (aluno) — pedido do usuário, 2026-08-20."""
+    """E-mail de convite de assinatura (aluno) — pedido do usuário, 2026-08-20.
+    Wellhub/TotalPass mostra o benefício em vez do valor (pedido do usuário,
+    2026-09-01) — quem paga é o benefício, não o aluno via Pix pro Point."""
+    beneficio = _ROTULO_BENEFICIO.get(fonte_pagamento)
+    condicao = f"via {beneficio}" if beneficio else f"(R$ {preco:.2f}/mês)"
     html = f"""
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
       <h2>Você foi convidado(a) pra um plano no {point_nome}</h2>
       <p>Olá, {nome}!</p>
       <p>
         O {point_nome} te convidou pra assinar o plano de <strong>{modalidade_nome}</strong>,
-        {frequencia}x por semana (R$ {preco:.2f}/mês).
+        {frequencia}x por semana {condicao}.
       </p>
       <p>
         <a href="{link}" style="display:inline-block;padding:10px 20px;background:#0e9594;

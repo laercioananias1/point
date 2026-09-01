@@ -45,6 +45,11 @@ class ConviteOut(ORMModel):
     point: PointResumo
     modalidade: ModalidadeOut
     plano: PlanoOut
+    # Pedido do usuário, 2026-09-01: "quando o plano é wellhub ou totalpass
+    # nao pode mostrar o valor do plano... Informe o beneficio" — a tela de
+    # aceite (e o e-mail do convite) precisam saber disso pra decidir o que
+    # mostrar no lugar do preço.
+    fonte_pagamento: PagamentoMeio
     turmas: list[ConviteTurmaEscolhaOut]
     data_inicio: date
     status: ConviteStatus

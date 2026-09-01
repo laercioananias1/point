@@ -54,6 +54,7 @@ def _para_out(db: Session, convite: Convite) -> ConviteOut:
         point=convite.point,
         modalidade=convite.modalidade,
         plano=convite.plano,
+        fonte_pagamento=convite.fonte_pagamento,
         turmas=turmas_escolhidas,
         data_inicio=convite.data_inicio,
         status=convite.status,
@@ -140,6 +141,7 @@ def criar_convite(
         modalidade_nome=modalidade.nome,
         frequencia=plano.frequencia_semanal,
         preco=float(plano.preco),
+        fonte_pagamento=convite.fonte_pagamento,
     )
 
     return _para_out(db, convite)

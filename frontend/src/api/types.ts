@@ -240,6 +240,10 @@ export interface Convite {
   point: PointResumo;
   modalidade: Modalidade;
   plano: Plano;
+  // Wellhub/TotalPass mostra o benefício em vez do preço na tela de aceite
+  // (pedido do usuário, 2026-09-01) — quem paga é o benefício, não o
+  // aluno via Pix pro Point.
+  fonte_pagamento: PagamentoMeio;
   turmas: ConviteTurmaEscolha[];
   data_inicio: string;
   status: ConviteStatus;
