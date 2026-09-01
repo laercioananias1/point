@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { ModeloRepasse, ProfessorResumo } from "../../api/types";
+import type { ModeloRepasse } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
 import { formatarCelular } from "../../lib/formato";
 
@@ -34,84 +34,6 @@ export default function AdminPointConvidarProfessor() {
 
       <ConvidarProfessorForm />
     </Layout>
-  );
-}
-
-/** Busca professor já cadastrado em QUALQUER Point da plataforma, pra
- * preencher o convite com o e-mail certo (pedido do usuário, 2026-08-21 —
- * "e se eu já tenho um professor na plataforma e quero convidá-lo?": o
- * convite reconhece pelo e-mail — é o único dado que precisa bater com a
- * conta que a pessoa já tem; celular pode ser diferente). */
-function BuscarProfessorInline({
-  onSelecionar,
-}: {
-  onSelecionar: (p: ProfessorResumo) => void;
-}) {
-  const [termo, setTermo] = useState("");
-  const [resultados, setResultados] = useState<ProfessorResumo[]>([]);
-  const [buscando, setBuscando] = useState(false);
-  const [buscou, setBuscou] = useState(false);
-
-  async function buscar() {
-    setBuscando(true);
-    try {
-      const res = await api.get<ProfessorResumo[]>(`/professores?busca=${encodeURIComponent(termo)}`);
-      setResultados(res);
-      setBuscou(true);
-    } finally {
-      setBuscando(false);
-    }
-  }
-
-  return (
-    <div style={{ marginBottom: "4px" }}>
-      <div className="form-row">
-        <label style={{ flex: 1 }}>
-          Nome ou celular
-          <input
-            value={termo}
-            onChange={(e) => setTermo(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                buscar();
-              }
-            }}
-            placeholder="Busque pelo nome ou telefone"
-          />
-        </label>
-        <button
-          type="button"
-          disabled={buscando}
-          onClick={buscar}
-          style={{ alignSelf: "flex-end" }}
-        >
-          {buscando ? "Buscando..." : "Buscar"}
-        </button>
-      </div>
-      {buscou && resultados.length === 0 && (
-        <p className="empty-state" style={{ padding: "4px 0" }}>
-          Nenhum professor encontrado.
-        </p>
-      )}
-      {resultados.length > 0 && (
-        <div className="card-list">
-          {resultados.map((p) => (
-            <div className="item-card" key={p.id}>
-              <div className="item-card-info">
-                <span className="item-card-title">{p.nome}</span>
-                <span className="item-card-subtitle">
-                  {p.contato} · {p.email}
-                </span>
-              </div>
-              <button type="button" onClick={() => onSelecionar(p)}>
-                Usar
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -154,19 +76,6 @@ function ConvidarProfessorForm() {
 
   return (
     <form className="form-card" onSubmit={handleSubmit} style={{ maxWidth: "none" }}>
-      <label>Professor já cadastrado na plataforma?</label>
-      <BuscarProfessorInline
-        onSelecionar={(p) => {
-          setNome(p.nome);
-          setCelular(formatarCelular(p.contato));
-          setEmail(p.email);
-        }}
-      />
-      <p className="empty-state" style={{ padding: 0 }}>
-        Encontrou? Selecionar preenche os dados — o e-mail é o que precisa bater com a conta que
-        ele já tem (celular pode ser diferente). Se não encontrar, é só preencher do zero abaixo.
-      </p>
-
       <div className="form-row">
         <label>
           Nome do professor

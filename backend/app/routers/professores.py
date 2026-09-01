@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -19,23 +18,10 @@ from app.schemas.vinculo import VinculoOut
 
 router = APIRouter(prefix="/professores", tags=["professores"])
 
-
-@router.get("", response_model=list[ProfessorOut])
-def buscar_professores(
-    db: Annotated[Session, Depends(get_db)],
-    _admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
-    busca: str = "",
-) -> list[Professor]:
-    """Busca de professor já cadastrado na plataforma, por nome ou contato —
-    pro admin achar o celular/e-mail certos antes de convidar pro seu Point
-    (pedido do usuário, 2026-08-21: "e se eu já tenho um professor na
-    plataforma e quero convidá-lo?" — o convite exige o contato exato de
-    quem já tem conta, essa busca evita o admin ter que adivinhar)."""
-    query = db.query(Professor)
-    if busca:
-        termo = f"%{busca}%"
-        query = query.filter(or_(Professor.nome.ilike(termo), Professor.contato.ilike(termo)))
-    return query.order_by(Professor.nome).limit(20).all()
+# A busca de professor já cadastrado (GET "", pra preencher o convite de
+# vínculo com o contato certo) saiu daqui (pedido do usuário, 2026-09-01:
+# "retire a busca de professor que faz no convite de professores") — o
+# admin preenche do zero em ConvidarProfessor.tsx agora.
 
 
 @router.post("", response_model=ProfessorOut, status_code=201)
