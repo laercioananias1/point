@@ -91,7 +91,8 @@ export type IconName =
   | "x"
   | "ticket"
   | "pin"
-  | "plus";
+  | "plus"
+  | "chevron-left";
 
 export function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
@@ -181,6 +182,11 @@ export function Icon({ name }: { name: IconName }) {
         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </>
     ),
+    // Voltar de uma tela cheia que veio de outra tela dentro do fluxo
+    // (pedido do usuário, 2026-08-31: "troque esse X de fechar pelo
+    // simbolo < de voltar" — em "Reagendar crédito", que substitui a tela
+    // anterior em vez de fechar uma caixinha, o "<" comunica melhor).
+    "chevron-left": <path d="m15 18-6-6 6-6" />,
   };
   return (
     <svg
