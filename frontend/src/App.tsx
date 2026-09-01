@@ -36,6 +36,7 @@ import AlunoNovoAgendamento from "./pages/aluno/NovoAgendamento";
 import AlunoPerfil from "./pages/aluno/Perfil";
 import DonoAppInicio from "./pages/dono-app/Inicio";
 import DonoAppPoints from "./pages/dono-app/Points";
+import DonoAppCriarPoint from "./pages/dono-app/CriarPoint";
 import DonoAppPerfil from "./pages/dono-app/Perfil";
 import EsqueciSenha from "./pages/EsqueciSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
@@ -323,6 +324,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DonoAppPoints />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dono-app/points/criar"
+        element={
+          <ProtectedRoute>
+            <DonoAppCriarPoint />
           </ProtectedRoute>
         }
       />

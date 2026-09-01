@@ -1,20 +1,24 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import type { ConviteAdmin, PointRanking } from "../../api/types";
 import { useAuth, type User } from "../../auth/AuthContext";
-import { Layout } from "../../components/Layout";
+import { Icon, Layout } from "../../components/Layout";
 import { formatarReais } from "../../lib/formato";
 
 /** Points da plataforma (pedido do usuário, 2026-08-26: "pode fazer" — a
- * tela de cadastrar Point/admin que faltava). Criar Point + convidar o
- * admin dele por e-mail (pedido do usuário, 2026-08-26: "não quero criar
- * senha de admin, faça o mesmo padrão de aluno e professor" — mesmo
- * padrão de convite por link, o dono do app não define senha por
- * ninguém) + a lista comparativa que antes vivia sozinha na home. */
+ * tela de cadastrar Point/admin que faltava). Criar Point virou tela
+ * própria (CriarPoint.tsx, pedido do usuário, 2026-08-31: "pode juntar
+ * tudo... no padrao de convidar aluno") que já junta o convite do
+ * primeiro admin — aqui na lista fica só o gatilho pra abrir aquela tela,
+ * mais o "Convidar admin" por Point (ainda útil pra quando um Point fica
+ * sem admin depois — convite cancelado/expirado, ou trocou de dono) e a
+ * lista comparativa que antes vivia sozinha na home. */
 export default function DonoAppPoints() {
   const { entrarComoSuporte } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const criado = (location.state as { criado?: string } | null)?.criado;
   const [ranking, setRanking] = useState<PointRanking[]>([]);
   const [convites, setConvites] = useState<ConviteAdmin[]>([]);
   const [pronto, setPronto] = useState(false);
@@ -70,17 +74,26 @@ export default function DonoAppPoints() {
       <h1>Points</h1>
 
       {erro && <p className="form-error">{erro}</p>}
+      {criado && <p className="form-success">Point "{criado}" criado — convite de admin enviado.</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
       {pronto && (
         <>
           <section className="section">
-            <h2>Criar Point</h2>
-            <p className="empty-state" style={{ paddingTop: 0 }}>
-              Só o essencial pra nascer — prazos, dias/horários de funcionamento e formas de
-              pagamento o admin do Point ajusta depois (Configurações).
-            </p>
-            <CriarPointForm onCriado={carregar} />
+            <Link to="/dono-app/points/criar" className="action-card">
+              <span className="action-card-icon">
+                <Icon name="plus" />
+              </span>
+              <span className="action-card-info">
+                <span className="action-card-title">Criar Point</span>
+                <span className="action-card-subtitle">
+                  Cadastra a arena e já manda o convite de admin por e-mail
+                </span>
+              </span>
+              <span className="action-card-chevron" aria-hidden="true">
+                →
+              </span>
+            </Link>
           </section>
 
           <section className="section">
@@ -151,54 +164,6 @@ export default function DonoAppPoints() {
         </>
       )}
     </Layout>
-  );
-}
-
-function CriarPointForm({ onCriado }: { onCriado: () => void }) {
-  const [nome, setNome] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState<string | null>(null);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setErro(null);
-    setSucesso(null);
-    setEnviando(true);
-    try {
-      await api.post("/points", { nome, endereco });
-      setSucesso(`Point "${nome}" criado.`);
-      setNome("");
-      setEndereco("");
-      onCriado();
-    } catch (e) {
-      setErro(e instanceof ApiError ? e.message : "Não foi possível criar. Confira os dados.");
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  return (
-    <form className="form-card" onSubmit={handleSubmit}>
-      <div className="form-row">
-        <label>
-          Nome do Point
-          <input value={nome} onChange={(e) => setNome(e.target.value)} required />
-        </label>
-        <label>
-          Endereço
-          <input value={endereco} onChange={(e) => setEndereco(e.target.value)} required />
-        </label>
-      </div>
-
-      {erro && <p className="form-error">{erro}</p>}
-      {sucesso && <p className="form-success">{sucesso}</p>}
-
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Criando..." : "Criar Point"}
-      </button>
-    </form>
   );
 }
 
