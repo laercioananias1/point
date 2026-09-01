@@ -80,7 +80,6 @@ export interface Modalidade {
   nome: string;
   duracao_padrao_minutos: number;
   preco_avulso: number;
-  preco_plano: number;
 }
 
 export interface Quadra {
@@ -310,4 +309,7 @@ export interface Matricula {
   // (pedido do usuário, 2026-08-21) — Pix também passa por conferência
   // manual agora.
   pagamento_pendente_atual: boolean;
+  // Preço da mensalidade, vindo do Plano da assinatura (pedido do usuário,
+  // 2026-09-01) — null pra avulsa, que não tem mensalidade recorrente.
+  valor_mensalidade: number | null;
 }

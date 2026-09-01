@@ -165,7 +165,7 @@ export default function AdminPointAluno() {
                   <div className="item-card" key={m.id}>
                     <div className="item-card-info">
                       <span className="item-card-title">
-                        {m.aluno.nome} · {formatarReais(m.turma.modalidade.preco_plano)}
+                        {m.aluno.nome} · {formatarReais(m.valor_mensalidade ?? 0)}
                         {m.inadimplente && " "}
                         {m.inadimplente && <StatusPill status="em_atraso" />}
                       </span>

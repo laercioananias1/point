@@ -72,7 +72,6 @@ function CriarModalidadeForm({ onCriada }: { onCriada: () => void }) {
   const [nome, setNome] = useState("");
   const [duracao, setDuracao] = useState("60");
   const [precoAvulso, setPrecoAvulso] = useState("");
-  const [precoPlano, setPrecoPlano] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -85,11 +84,9 @@ function CriarModalidadeForm({ onCriada }: { onCriada: () => void }) {
         nome,
         duracao_padrao_minutos: Number(duracao),
         preco_avulso: Number(precoAvulso),
-        preco_plano: Number(precoPlano),
       });
       setNome("");
       setPrecoAvulso("");
-      setPrecoPlano("");
       onCriada();
     } catch {
       setErro("Não foi possível cadastrar. Tente de novo.");
@@ -123,33 +120,21 @@ function CriarModalidadeForm({ onCriada }: { onCriada: () => void }) {
         </label>
       </div>
       <p className="empty-state" style={{ padding: 0 }}>
-        Tabela de preço do Point pra essa modalidade — vale pra qualquer professor que der aula
-        dela aqui; com o professor você combina só o repasse.
+        Preço da aula avulsa dessa modalidade — vale pra qualquer professor que der aula dela aqui;
+        com o professor você combina só o repasse. Preço do plano mensal é por frequência semanal,
+        cadastrado em Planos (Configurações), não aqui.
       </p>
-      <div className="form-row">
-        <label>
-          Preço da aula avulsa (R$)
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={precoAvulso}
-            onChange={(e) => setPrecoAvulso(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Preço do plano mensal (R$)
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={precoPlano}
-            onChange={(e) => setPrecoPlano(e.target.value)}
-            required
-          />
-        </label>
-      </div>
+      <label>
+        Preço da aula avulsa (R$)
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={precoAvulso}
+          onChange={(e) => setPrecoAvulso(e.target.value)}
+          required
+        />
+      </label>
       {erro && <p className="form-error">{erro}</p>}
       <button type="submit" disabled={enviando}>
         {enviando ? "Cadastrando..." : "Cadastrar modalidade"}
@@ -168,7 +153,6 @@ function ModalidadeRow({
   const [editando, setEditando] = useState(false);
   const [duracao, setDuracao] = useState(String(modalidade.duracao_padrao_minutos));
   const [precoAvulso, setPrecoAvulso] = useState(String(modalidade.preco_avulso));
-  const [precoPlano, setPrecoPlano] = useState(String(modalidade.preco_plano));
   const [salvando, setSalvando] = useState(false);
 
   async function salvar() {
@@ -177,7 +161,6 @@ function ModalidadeRow({
       await api.patch(`/modalidades/${modalidade.id}`, {
         duracao_padrao_minutos: Number(duracao),
         preco_avulso: Number(precoAvulso),
-        preco_plano: Number(precoPlano),
       });
       setEditando(false);
       onSalva();
@@ -212,16 +195,6 @@ function ModalidadeRow({
                 onChange={(e) => setPrecoAvulso(e.target.value)}
               />
             </label>
-            <label>
-              Plano (R$)
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={precoPlano}
-                onChange={(e) => setPrecoPlano(e.target.value)}
-              />
-            </label>
           </div>
         </div>
         <div className="item-card-actions">
@@ -242,7 +215,7 @@ function ModalidadeRow({
         <span className="item-card-title">{modalidade.nome}</span>
         <span className="item-card-subtitle">
           aula padrão de {modalidade.duracao_padrao_minutos} min · avulsa{" "}
-          {formatarReais(modalidade.preco_avulso)} · plano {formatarReais(modalidade.preco_plano)}
+          {formatarReais(modalidade.preco_avulso)}
         </span>
       </div>
       <button className="secondary" onClick={() => setEditando(true)}>

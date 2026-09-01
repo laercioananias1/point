@@ -74,6 +74,18 @@ class Matricula(TimestampMixin, Base):
     aulas: Mapped[list["Aula"]] = relationship()  # noqa: F821
 
     @property
+    def valor_mensalidade(self) -> float | None:
+        """Preço da mensalidade dessa matrícula (pedido do usuário,
+        2026-09-01) — vem do Plano da Assinatura (por frequência semanal,
+        1x/2x/3x...), não de um preço fixo por modalidade (Modalidade não
+        tem mais preco_plano). None pra matrícula avulsa, que não tem
+        mensalidade recorrente — usa Modalidade.preco_avulso, não isso
+        aqui."""
+        if self.assinatura is None or self.assinatura.plano is None:
+            return None
+        return float(self.assinatura.plano.preco)
+
+    @property
     def excecoes(self) -> list[date]:
         """Datas que ESSE aluno cancelou com antecedência (pedido do
         usuário, 2026-08-20) — pra MatriculaOut expor direto, e pro

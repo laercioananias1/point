@@ -216,7 +216,11 @@ def enviar_lembrete_pagamento(
         email=matricula.aluno.email,
         point_nome=matricula.turma.vinculo.point.nome,
         modalidade_nome=matricula.turma.modalidade.nome,
-        valor=float(matricula.turma.modalidade.preco_plano),
+        # Preço vem do Plano da assinatura, não mais de um preço fixo por
+        # modalidade (pedido do usuário, 2026-09-01 — ver Matricula.
+        # valor_mensalidade). Matrícula mensal ativa sempre tem assinatura
+        # com plano; 0 aqui só seria alcançado por um dado inconsistente.
+        valor=matricula.valor_mensalidade or 0,
         mes_referencia=mes_referencia.strftime("%m/%Y"),
     )
 

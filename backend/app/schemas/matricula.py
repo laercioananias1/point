@@ -60,3 +60,6 @@ class MatriculaOut(ORMModel):
     # (pedido do usuário, 2026-08-21) — Pix também passa por conferência
     # manual agora, não confirma mais sozinho na hora.
     pagamento_pendente_atual: bool = False
+    # Preço da mensalidade, vindo do Plano da Assinatura (pedido do usuário,
+    # 2026-09-01) — None pra avulsa, que não tem mensalidade recorrente.
+    valor_mensalidade: float | None = None

@@ -45,8 +45,8 @@ def atualizar_modalidade(
     db: Annotated[Session, Depends(get_db)],
     admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
 ) -> Modalidade:
-    """Ajustar nome/duração/preços da tabela do Point (pedido do usuário,
-    2026-08-21) — preço de aula avulsa/plano vive aqui, não no vínculo."""
+    """Ajustar nome/duração/preço da tabela do Point (pedido do usuário,
+    2026-08-21) — preço de aula avulsa vive aqui, não no vínculo."""
     modalidade = db.get(Modalidade, modalidade_id)
     if modalidade is None or modalidade.point_id != admin.point_id:
         raise HTTPException(404, "Modalidade não encontrada")
