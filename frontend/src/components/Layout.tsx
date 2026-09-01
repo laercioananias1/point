@@ -92,7 +92,8 @@ export type IconName =
   | "ticket"
   | "pin"
   | "plus"
-  | "chevron-left";
+  | "chevron-left"
+  | "chevron-right";
 
 export function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
@@ -187,6 +188,12 @@ export function Icon({ name }: { name: IconName }) {
     // simbolo < de voltar" — em "Reagendar crédito", que substitui a tela
     // anterior em vez de fechar uma caixinha, o "<" comunica melhor).
     "chevron-left": <path d="m15 18-6-6 6-6" />,
+    // Avançar/entrar numa tela (pedido do usuário, 2026-09-01: "ajusta em
+    // todo o app essa setinha de avancar, deixa ela igual a seta de
+    // voltar das telas de cadastro") — mesmo traço do chevron-left,
+    // espelhado, no lugar da seta "→" em texto que os action-card/
+    // item-card-clickable usavam antes.
+    "chevron-right": <path d="m9 18 6-6-6-6" />,
   };
   return (
     <svg

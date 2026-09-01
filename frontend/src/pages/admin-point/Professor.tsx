@@ -89,7 +89,7 @@ export default function AdminPointProfessor() {
                 </span>
               </span>
               <span className="action-card-chevron" aria-hidden="true">
-                →
+                <Icon name="chevron-right" />
               </span>
             </Link>
           </section>

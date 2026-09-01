@@ -77,7 +77,7 @@ export default function AdminPointModalidades() {
                 <span className="action-card-subtitle">Nome, duração padrão da aula e preço da avulsa</span>
               </span>
               <span className="action-card-chevron" aria-hidden="true">
-                →
+                <Icon name="chevron-right" />
               </span>
             </Link>
           </section>

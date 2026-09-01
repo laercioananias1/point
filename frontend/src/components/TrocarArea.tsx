@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth, type Role } from "../auth/AuthContext";
+import { Icon } from "./Layout";
 
 const ROTA_POR_PAPEL: Record<Role, string> = {
   super_admin: "/dono-app",
@@ -49,7 +50,9 @@ export function TrocarArea({ papelAtual }: { papelAtual: Role }) {
             <div className="item-card-info">
               <span className="item-card-title">{ROTULO_POR_PAPEL[papel]}</span>
             </div>
-            <span aria-hidden="true">→</span>
+            <span aria-hidden="true">
+              <Icon name="chevron-right" />
+            </span>
           </div>
         ))}
       </div>

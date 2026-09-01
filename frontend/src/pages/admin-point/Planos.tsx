@@ -87,7 +87,7 @@ export default function AdminPointPlanos() {
                   <span className="action-card-subtitle">Frequência semanal e preço mensal</span>
                 </span>
                 <span className="action-card-chevron" aria-hidden="true">
-                  →
+                  <Icon name="chevron-right" />
                 </span>
               </Link>
             </section>

@@ -110,7 +110,9 @@ export default function AdminPointAluno() {
                         {a.email && ` · ${a.email}`}
                       </span>
                     </div>
-                    <span aria-hidden="true">→</span>
+                    <span aria-hidden="true">
+                      <Icon name="chevron-right" />
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -129,7 +131,7 @@ export default function AdminPointAluno() {
                 </span>
               </span>
               <span className="action-card-chevron" aria-hidden="true">
-                →
+                <Icon name="chevron-right" />
               </span>
             </Link>
           </section>
