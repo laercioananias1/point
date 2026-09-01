@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import require_role
 from app.models.assinatura import Assinatura
+from app.models.aula import Aula
 from app.models.enums import MatriculaStatus, Role
 from app.models.user import User
 from app.schemas.assinatura import AssinaturaOut
@@ -38,7 +40,13 @@ def cancelar_assinatura(
     (2026-08-20 — agora é ele quem cuida da assinatura de ponta a ponta, faz
     sentido poder encerrar também se o aluno avisar por fora do app). Cancela
     a assinatura e todas as matrículas que vieram dela, o que já é suficiente
-    pra geração mensal de aulas parar de gerar (ela só olha matrícula ativa)."""
+    pra geração mensal de aulas parar de gerar (ela só olha matrícula ativa).
+
+    Também apaga as Aula futuras já geradas dessas matrículas (pedido do
+    usuário, 2026-09-01: "cancelamento de matricula, limpa tudo") — sem
+    isso, aula do mês corrente já gerada antes do cancelamento ficaria
+    "presa" no banco (embora o calendário do frontend já não mostre mais
+    nada de uma matrícula não-ativa, ver AgendaAlunoCalendario.tsx)."""
     assinatura = db.get(Assinatura, assinatura_id)
     if assinatura is None:
         raise HTTPException(404, "Assinatura não encontrada")
@@ -53,6 +61,9 @@ def cancelar_assinatura(
     for matricula in assinatura.matriculas:
         if matricula.status == MatriculaStatus.ATIVA:
             matricula.status = MatriculaStatus.CANCELADA
+        db.query(Aula).filter(
+            Aula.matricula_id == matricula.id, Aula.data >= date.today()
+        ).delete(synchronize_session=False)
 
     db.commit()
     db.refresh(assinatura)

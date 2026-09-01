@@ -34,6 +34,23 @@ class AulaCanceladaOut(ORMModel):
     credito: CreditoOut | None = None
 
 
+class PausarAgendaRequest(ORMModel):
+    """Admin pausando um período de aulas de um aluno (pedido do usuário,
+    2026-09-01: "ter opcao de pausar um periodo... O aluno volta depois
+    normalmente") — cancela cada ocorrência entre as duas datas (inclusive);
+    fora desse intervalo a matrícula segue ativa e gerando aula sozinha,
+    sem precisar "reativar" nada depois."""
+
+    data_inicio: date
+    data_fim: date
+    gerar_credito: bool = True
+
+
+class PausarAgendaOut(ORMModel):
+    datas_canceladas: list[date]
+    creditos_gerados: int
+
+
 class RepasseOverrideUpdate(ORMModel):
     """None em ambos os campos remove a exceção — volta a usar o padrão do
     Vínculo (seção 3.2)."""

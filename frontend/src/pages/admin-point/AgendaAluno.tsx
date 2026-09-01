@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { Credito, Matricula, TurmaResumo } from "../../api/types";
+import type { Assinatura, Credito, Matricula, TurmaResumo } from "../../api/types";
 import { diaSemanaDeData, somarDias, toISODate } from "../../components/Calendar";
 import { AgendaAlunoCalendario, type Ocorrencia } from "../../components/AgendaAlunoCalendario";
 import { Icon, Layout } from "../../components/Layout";
@@ -25,20 +25,24 @@ export default function AdminPointAgendaAluno() {
   const navigate = useNavigate();
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [creditos, setCreditos] = useState<Credito[]>([]);
+  const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<Ocorrencia | null>(null);
   const [reagendandoCredito, setReagendandoCredito] = useState<Credito | null>(null);
+  const [pausando, setPausando] = useState(false);
 
   const carregar = useCallback(async () => {
     setErro(null);
     try {
-      const [matriculasRes, creditosRes] = await Promise.all([
+      const [matriculasRes, creditosRes, assinaturasRes] = await Promise.all([
         api.get<Matricula[]>("/matriculas"),
         api.get<Credito[]>("/matriculas/creditos"),
+        api.get<Assinatura[]>("/assinaturas"),
       ]);
       setMatriculas(matriculasRes);
       setCreditos(creditosRes);
+      setAssinaturas(assinaturasRes);
       setPronto(true);
     } catch {
       setErro("Não foi possível carregar a agenda desse aluno. Tente novamente.");
@@ -56,6 +60,9 @@ export default function AdminPointAgendaAluno() {
   const creditosDoAluno = creditos.filter((c) => idsMatriculasDoAluno.has(c.matricula_id));
   const creditosDisponiveis = creditosDoAluno.filter((c) => c.status === "disponivel");
   const nomeAluno = matriculasDoAluno[0]?.aluno.nome ?? "";
+  const assinaturasAtivasDoAluno = assinaturas.filter(
+    (a) => a.aluno.id === idAluno && a.status === "ativa",
+  );
 
   return (
     <Layout>
@@ -96,16 +103,45 @@ export default function AdminPointAgendaAluno() {
         />
       )}
 
+      {pausando && (
+        <PausarPeriodoModal
+          matriculas={ativas}
+          onFechar={() => setPausando(false)}
+          onPausado={() => {
+            setPausando(false);
+            carregar();
+          }}
+        />
+      )}
+
       {pronto && (
         <>
           <section className="section">
-            <h2>Calendário</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <h2>Calendário</h2>
+              {ativas.length > 0 && (
+                <button type="button" className="secondary" onClick={() => setPausando(true)}>
+                  Pausar um período
+                </button>
+              )}
+            </div>
             {ativas.length === 0 ? (
               <p className="empty-state">Esse aluno não tem matrícula mensal ativa.</p>
             ) : (
               <AgendaAlunoCalendario matriculas={ativas} onCancelar={setCancelando} paraAdmin />
             )}
           </section>
+
+          {assinaturasAtivasDoAluno.length > 0 && (
+            <section className="section">
+              <h2>Assinatura</h2>
+              <div className="card-list">
+                {assinaturasAtivasDoAluno.map((a) => (
+                  <AssinaturaRowAdmin key={a.id} assinatura={a} onCancelada={carregar} />
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="section">
             <h2>Créditos disponíveis ({creditosDisponiveis.length})</h2>
@@ -133,6 +169,161 @@ export default function AdminPointAgendaAluno() {
         </>
       )}
     </Layout>
+  );
+}
+
+/** Encerrar a assinatura de vez (pedido do usuário, 2026-09-01: "tem que
+ * ter as 2 opcoes: cancelamento de matricula, limpa tudo") — mesma ação
+ * de AssinaturaAtivaRow em admin-point/Aluno.tsx, só que reaproveitada
+ * aqui pra não precisar sair da Agenda do aluno pra encerrar o plano. */
+function AssinaturaRowAdmin({
+  assinatura,
+  onCancelada,
+}: {
+  assinatura: Assinatura;
+  onCancelada: () => void;
+}) {
+  const [cancelando, setCancelando] = useState(false);
+
+  async function cancelar() {
+    if (!confirm(`Cancelar a assinatura de ${assinatura.aluno.nome}? Isso encerra o plano de vez.`)) {
+      return;
+    }
+    setCancelando(true);
+    try {
+      await api.patch(`/assinaturas/${assinatura.id}/cancelar`);
+      onCancelada();
+    } finally {
+      setCancelando(false);
+    }
+  }
+
+  return (
+    <div className="item-card">
+      <div className="item-card-info">
+        <span className="item-card-title">
+          {assinatura.modalidade.nome} · {assinatura.plano?.frequencia_semanal}x/semana
+        </span>
+        <span className="item-card-subtitle">desde {assinatura.data_inicio}</span>
+      </div>
+      <button className="secondary" disabled={cancelando} onClick={cancelar}>
+        {cancelando ? "Cancelando..." : "Cancelar assinatura"}
+      </button>
+    </div>
+  );
+}
+
+/** Pausar um período de aulas, mantendo a matrícula ativa (pedido do
+ * usuário, 2026-09-01: "opcao de pausar um periodo... o aluno volta
+ * depois normalmente" — diferente de cancelar a assinatura de vez).
+ * Aplica em todas as matrículas mensais ativas do aluno de uma vez (ex.:
+ * aluno viajando, para todas as modalidades que ele frequenta). */
+function PausarPeriodoModal({
+  matriculas,
+  onFechar,
+  onPausado,
+}: {
+  matriculas: Matricula[];
+  onFechar: () => void;
+  onPausado: () => void;
+}) {
+  const hoje = toISODate(new Date());
+  const [dataInicio, setDataInicio] = useState(hoje);
+  const [dataFim, setDataFim] = useState(hoje);
+  const [gerarCredito, setGerarCredito] = useState(true);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<{ datas: number; creditos: number } | null>(null);
+
+  useEffect(() => {
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") onFechar();
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [onFechar]);
+
+  async function confirmar() {
+    setEnviando(true);
+    setErro(null);
+    try {
+      let datas = 0;
+      let creditosGerados = 0;
+      for (const m of matriculas) {
+        const res = await api.post<{ datas_canceladas: string[]; creditos_gerados: number }>(
+          `/matriculas/${m.id}/aulas/pausar`,
+          { data_inicio: dataInicio, data_fim: dataFim, gerar_credito: gerarCredito },
+        );
+        datas += res.datas_canceladas.length;
+        creditosGerados += res.creditos_gerados;
+      }
+      setResultado({ datas, creditos: creditosGerados });
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível pausar. Tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onFechar}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="item-card-info">
+          <span className="item-card-title">Pausar um período</span>
+        </div>
+
+        {resultado ? (
+          <>
+            <p className="form-success">
+              {resultado.datas} aula(s) pausada(s)
+              {resultado.creditos > 0 ? `, ${resultado.creditos} crédito(s) gerado(s)` : ""}. Fora desse
+              período, a agenda volta ao normal sozinha.
+            </p>
+            <div className="modal-actions">
+              <button onClick={onPausado}>Fechar</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="empty-state" style={{ padding: 0 }}>
+              Cancela todas as aulas do aluno (em todas as turmas mensais ativas) entre as duas datas.
+              Depois desse período, a agenda volta ao normal sozinha — não precisa reativar nada.
+            </p>
+
+            <div className="form-row">
+              <label>
+                De
+                <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+              </label>
+              <label>
+                Até
+                <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+              </label>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+              <input
+                type="checkbox"
+                checked={gerarCredito}
+                onChange={(e) => setGerarCredito(e.target.checked)}
+              />
+              Gerar crédito de reposição pra cada aula pausada
+            </label>
+
+            {erro && <p className="form-error">{erro}</p>}
+
+            <div className="modal-actions">
+              <button disabled={enviando || dataFim < dataInicio} onClick={confirmar}>
+                {enviando ? "Pausando..." : "Confirmar pausa"}
+              </button>
+              <button className="secondary" disabled={enviando} onClick={onFechar}>
+                Cancelar
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

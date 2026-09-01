@@ -27,6 +27,8 @@ from app.schemas.matricula import (
     CancelarAulaAdminRequest,
     MatriculaCreate,
     MatriculaOut,
+    PausarAgendaOut,
+    PausarAgendaRequest,
     RepasseOverrideUpdate,
 )
 from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario
@@ -246,6 +248,62 @@ def cancelar_aula_matricula_admin(
     if credito is not None:
         db.refresh(credito)
     return AulaCanceladaOut(credito=credito)
+
+
+@router.post("/{matricula_id}/aulas/pausar", response_model=PausarAgendaOut, status_code=201)
+def pausar_aulas_matricula(
+    matricula_id: int,
+    payload: PausarAgendaRequest,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> PausarAgendaOut:
+    """Cancela de uma vez todas as ocorrências de uma matrícula mensal
+    dentro de um período (pedido do usuário, 2026-09-01: "falta alguma
+    coisa que cancele as datas futuras de uma vez" — depois esclarecido:
+    "ter opcao de pausar um periodo... o aluno volta depois normalmente",
+    diferente de cancelar a matrícula/assinatura de vez). Fora do período
+    escolhido, a matrícula continua ativa e gerando aula sozinha — não
+    precisa "reativar" nada quando a pausa acaba.
+
+    Só afeta dias que já teriam aula de verdade pra essa matrícula (dia da
+    semana bate, dentro do período da turma, ainda não cancelado) — os
+    outros dias do intervalo são ignorados silenciosamente, não é erro."""
+    matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
+    if matricula.status != MatriculaStatus.ATIVA:
+        raise HTTPException(422, "Só é possível pausar aulas de uma matrícula ativa")
+    if matricula.tipo != MatriculaTipo.MENSAL:
+        raise HTTPException(422, "Só matrícula mensal tem aulas recorrentes pra pausar")
+    if payload.data_fim < payload.data_inicio:
+        raise HTTPException(422, "A data final precisa ser igual ou depois da data inicial")
+
+    turma = matricula.turma
+    datas_ja_canceladas = {
+        e.data
+        for e in db.query(MatriculaExcecao).filter(MatriculaExcecao.matricula_id == matricula.id)
+    }
+
+    datas_canceladas: list[date] = []
+    creditos_gerados = 0
+    data_atual = payload.data_inicio
+    while data_atual <= payload.data_fim:
+        dentro_do_periodo = data_atual >= matricula.data_inicio_efetiva and (
+            turma.periodo_fim is None or data_atual <= turma.periodo_fim
+        )
+        if (
+            DIAS_SEMANA[data_atual.weekday()] in matricula.dias_semana
+            and dentro_do_periodo
+            and data_atual not in datas_ja_canceladas
+        ):
+            credito = _cancelar_aula(
+                db, matricula, data_atual, gerar_credito=payload.gerar_credito, ignorar_prazo=True
+            )
+            datas_canceladas.append(data_atual)
+            if credito is not None:
+                creditos_gerados += 1
+        data_atual += timedelta(days=1)
+
+    db.commit()
+    return PausarAgendaOut(datas_canceladas=datas_canceladas, creditos_gerados=creditos_gerados)
 
 
 @router.get("/creditos", response_model=list[CreditoOut])
