@@ -47,9 +47,9 @@ export default function AdminPointOcupacao() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/admin-point")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Ocupação de quadra</h1>
       </div>

@@ -43,9 +43,9 @@ export default function ProfessorOcupacao() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/professor")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Ocupação de quadra</h1>
       </div>

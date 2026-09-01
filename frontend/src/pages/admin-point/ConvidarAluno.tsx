@@ -36,9 +36,9 @@ export default function AdminPointConvidarAluno() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/admin-point/aluno")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Convidar aluno</h1>
       </div>

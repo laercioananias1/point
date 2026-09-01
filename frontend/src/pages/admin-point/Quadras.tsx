@@ -44,9 +44,9 @@ export default function AdminPointQuadras() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/admin-point/mais")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Quadras {!loading && `(${quadras.length})`}</h1>
       </div>

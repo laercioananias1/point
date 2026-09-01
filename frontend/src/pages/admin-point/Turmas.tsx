@@ -66,9 +66,9 @@ export default function AdminPointTurmas() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/admin-point")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Turmas {pronto && `(${turmasFiltradas.length})`}</h1>
       </div>

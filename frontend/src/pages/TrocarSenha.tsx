@@ -44,8 +44,8 @@ export default function TrocarSenha() {
   return (
     <Layout>
       <div className="screen-header">
-        <button type="button" className="close-btn" onClick={() => navigate(-1)} aria-label="Fechar">
-          <Icon name="x" />
+        <button type="button" className="close-btn" onClick={() => navigate(-1)} aria-label="Voltar">
+          <Icon name="chevron-left" />
         </button>
         <h1>Trocar senha</h1>
       </div>

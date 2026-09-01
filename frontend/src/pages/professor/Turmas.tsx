@@ -63,9 +63,9 @@ export default function ProfessorTurmas() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/professor")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Turmas</h1>
       </div>

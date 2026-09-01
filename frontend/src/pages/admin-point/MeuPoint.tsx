@@ -46,9 +46,9 @@ export default function AdminPointMeuPoint() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/admin-point/mais")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Meu Point</h1>
       </div>

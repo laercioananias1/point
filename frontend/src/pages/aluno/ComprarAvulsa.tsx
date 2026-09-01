@@ -86,9 +86,9 @@ export default function AlunoComprarAvulsa() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/aluno/creditos")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Comprar aula avulsa</h1>
       </div>

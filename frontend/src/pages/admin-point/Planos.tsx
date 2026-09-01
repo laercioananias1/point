@@ -40,9 +40,9 @@ export default function AdminPointPlanos() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/admin-point/mais")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Planos mensais {!loading && `(${planos.length})`}</h1>
       </div>

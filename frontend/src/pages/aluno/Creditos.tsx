@@ -39,9 +39,9 @@ export default function AlunoCreditos() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/aluno")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Meus créditos</h1>
       </div>

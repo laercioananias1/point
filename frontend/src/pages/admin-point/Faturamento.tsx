@@ -54,9 +54,9 @@ export default function AdminPointFaturamento() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/admin-point/mais")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Faturamento</h1>
       </div>

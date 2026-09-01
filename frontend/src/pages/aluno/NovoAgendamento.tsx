@@ -18,9 +18,9 @@ export default function AlunoNovoAgendamento() {
           type="button"
           className="close-btn"
           onClick={() => navigate("/aluno")}
-          aria-label="Fechar"
+          aria-label="Voltar"
         >
-          <Icon name="x" />
+          <Icon name="chevron-left" />
         </button>
         <h1>Novo agendamento</h1>
       </div>
