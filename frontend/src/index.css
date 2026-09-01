@@ -38,6 +38,85 @@
   color-scheme: light;
 }
 
+/* Modo escuro (pedido do usuário, 2026-09-01: "já aproveita e faz o modo
+   dark também") — 3 estados possíveis (ver src/theme.ts): "Sistema" (sem
+   atributo, só essa media query decide), "Claro" (`data-theme="light"`,
+   sobrepõe o SO ficando de fora do bloco abaixo) e "Escuro"
+   (`data-theme="dark"`, repete os mesmos tokens fora da media query pra
+   ganhar de um SO em modo claro). --navy* fica quase igual nos dois temas
+   de propósito — o cabeçalho já é o "âncora" escura do app mesmo no claro,
+   não precisa ficar mais escuro ainda; só afunda um pouco pra não virar a
+   superfície mais clara da tela num fundo já escuro. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a1a22;
+    --surface: #13293a;
+    --surface-sunk: #0e2029;
+    --line: #234253;
+
+    --ink: #eaf1f4;
+    --ink-muted: #9fb9c4;
+
+    --navy: #081c29;
+    --navy-ink: #051119;
+    --navy-line: #1c3a4d;
+    --navy-text: #eaf1f4;
+    --navy-text-muted: #9fb9c4;
+
+    --accent: #17a8a0;
+    --accent-strong: #5eead4;
+    --accent-soft: #123c3b;
+
+    --coral: #ff6b45;
+
+    --good: #34d399;
+    --good-soft: #113828;
+    --warn: #f0a93a;
+    --warn-soft: #3a2c10;
+    --risk: #f0776a;
+    --risk-soft: #3a1712;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px -8px rgba(0, 0, 0, 0.45);
+    --shadow-pop: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0a1a22;
+  --surface: #13293a;
+  --surface-sunk: #0e2029;
+  --line: #234253;
+
+  --ink: #eaf1f4;
+  --ink-muted: #9fb9c4;
+
+  --navy: #081c29;
+  --navy-ink: #051119;
+  --navy-line: #1c3a4d;
+  --navy-text: #eaf1f4;
+  --navy-text-muted: #9fb9c4;
+
+  --accent: #17a8a0;
+  --accent-strong: #5eead4;
+  --accent-soft: #123c3b;
+
+  --coral: #ff6b45;
+
+  --good: #34d399;
+  --good-soft: #113828;
+  --warn: #f0a93a;
+  --warn-soft: #3a2c10;
+  --risk: #f0776a;
+  --risk-soft: #3a1712;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px -8px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }

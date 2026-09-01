@@ -1,5 +1,6 @@
 import { useAuth } from "../../auth/AuthContext";
 import { Layout } from "../../components/Layout";
+import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
 /** Perfil do dono do app (pedido do usuário, 2026-08-26: "seguindo o mesmo
@@ -20,6 +21,8 @@ export default function DonoAppPerfil() {
           </div>
         </div>
       </section>
+
+      <TemaToggle />
 
       <TrocarArea papelAtual="super_admin" />
     </Layout>

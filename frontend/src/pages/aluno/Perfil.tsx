@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { AlunoResumo, Assinatura, PeriodoDia } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 import { rotuloTurma } from "../../lib/dias";
 import { formatarReais, rotuloPagamentoMeio } from "../../lib/formato";
@@ -102,6 +103,8 @@ export default function AlunoPerfil() {
               </>
             )}
           </section>
+
+          <TemaToggle />
 
           <TrocarArea papelAtual="aluno" />
         </>

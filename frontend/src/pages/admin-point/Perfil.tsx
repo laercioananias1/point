@@ -3,6 +3,7 @@ import { api, ApiError } from "../../api/client";
 import type { ModeloRepasse } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { Layout } from "../../components/Layout";
+import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
 /** Perfil do admin do Point (pedido do usuário, 2026-08-25: "seguindo o
@@ -30,6 +31,8 @@ export default function AdminPointPerfil() {
       </section>
 
       {!user?.roles.includes("professor") && <VirarProfessorSection onVirou={atualizarUser} />}
+
+      <TemaToggle />
 
       <TrocarArea papelAtual="admin_point" />
     </Layout>

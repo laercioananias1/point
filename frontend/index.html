@@ -11,6 +11,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>OPoint</title>
+    <!-- Aplica o modo escuro antes do CSS/React carregarem (pedido do
+         usuário, 2026-09-01) — sem isso, a tela pisca clara por uma
+         fração de segundo antes de escurecer. Espelha src/theme.ts
+         (mesma chave de localStorage), mas precisa estar duplicado aqui
+         porque roda antes de qualquer módulo JS ser importado. -->
+    <script>
+      (function () {
+        try {
+          var tema = localStorage.getItem("opoint-tema");
+          if (tema === "escuro") document.documentElement.setAttribute("data-theme", "dark");
+          else if (tema === "claro") document.documentElement.setAttribute("data-theme", "light");
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

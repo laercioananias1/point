@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { ProfessorResumo, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
 /** Perfil do professor (pedido do usuário, 2026-08-25: "seguindo o mesmo
@@ -81,6 +82,8 @@ export default function ProfessorPerfil() {
               </div>
             )}
           </section>
+
+          <TemaToggle />
 
           <TrocarArea papelAtual="professor" />
         </>
