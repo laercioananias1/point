@@ -71,7 +71,7 @@ export default function DonoAppPoints() {
 
   return (
     <Layout>
-      <h1>Points</h1>
+      <h1>Points ({ranking.length})</h1>
 
       {erro && <p className="form-error">{erro}</p>}
       {criado && <p className="form-success">Point "{criado}" criado — convite de admin enviado.</p>}
@@ -80,37 +80,6 @@ export default function DonoAppPoints() {
       {pronto && (
         <>
           <section className="section">
-            <Link to="/dono-app/points/criar" className="action-card">
-              <span className="action-card-icon">
-                <Icon name="plus" />
-              </span>
-              <span className="action-card-info">
-                <span className="action-card-title">Criar Point</span>
-                <span className="action-card-subtitle">
-                  Cadastra a arena e já manda o convite de admin por e-mail
-                </span>
-              </span>
-              <span className="action-card-chevron" aria-hidden="true">
-                →
-              </span>
-            </Link>
-          </section>
-
-          <section className="section">
-            <h2>Convites de admin pendentes ({convitesPendentes.length})</h2>
-            {convitesPendentes.length === 0 ? (
-              <p className="empty-state">Nenhum convite aguardando aceite.</p>
-            ) : (
-              <div className="card-list">
-                {convitesPendentes.map((c) => (
-                  <ConviteAdminPendenteRow key={c.id} convite={c} onMudanca={carregar} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="section">
-            <h2>Points ({ranking.length})</h2>
             {ranking.length === 0 ? (
               <p className="empty-state">Nenhum Point cadastrado ainda.</p>
             ) : (
@@ -157,6 +126,36 @@ export default function DonoAppPoints() {
                       </button>
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <Link to="/dono-app/points/criar" className="action-card">
+              <span className="action-card-icon">
+                <Icon name="plus" />
+              </span>
+              <span className="action-card-info">
+                <span className="action-card-title">Criar Point</span>
+                <span className="action-card-subtitle">
+                  Cadastra a arena e já manda o convite de admin por e-mail
+                </span>
+              </span>
+              <span className="action-card-chevron" aria-hidden="true">
+                →
+              </span>
+            </Link>
+          </section>
+
+          <section className="section">
+            <h2>Convites de admin pendentes ({convitesPendentes.length})</h2>
+            {convitesPendentes.length === 0 ? (
+              <p className="empty-state">Nenhum convite aguardando aceite.</p>
+            ) : (
+              <div className="card-list">
+                {convitesPendentes.map((c) => (
+                  <ConviteAdminPendenteRow key={c.id} convite={c} onMudanca={carregar} />
                 ))}
               </div>
             )}
