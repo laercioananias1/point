@@ -20,6 +20,7 @@ import AdminPointModalidades from "./pages/admin-point/Modalidades";
 import AdminPointCadastrarModalidade from "./pages/admin-point/CadastrarModalidade";
 import AdminPointQuadras from "./pages/admin-point/Quadras";
 import AdminPointPlanos from "./pages/admin-point/Planos";
+import AdminPointCadastrarPlano from "./pages/admin-point/CadastrarPlano";
 import AdminPointTurmas from "./pages/admin-point/Turmas";
 import AdminPointOcupacao from "./pages/admin-point/Ocupacao";
 import AdminPointAgenda from "./pages/admin-point/Agenda";
@@ -221,6 +222,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointPlanos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/planos/cadastrar"
+        element={
+          <ProtectedRoute>
+            <AdminPointCadastrarPlano />
           </ProtectedRoute>
         }
       />
