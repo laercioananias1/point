@@ -363,7 +363,7 @@ export function Layout({ children }: { children: ReactNode }) {
               {(area === "admin_point" || area === "professor") && (
                 <button
                   type="button"
-                  className="app-header-icon-btn"
+                  className="app-help-btn"
                   onClick={() => navigate(`${PREFIXO_ROTA[area]}/ajuda`)}
                   aria-label="Ajuda"
                 >

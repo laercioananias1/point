@@ -367,6 +367,28 @@ textarea:focus {
   color: #fff;
 }
 
+/* Botão de Ajuda no cabeçalho (pedido do usuário, 2026-09-01) — círculo
+   cheio da cor de destaque, não só um contorno fino: o .app-header-icon-btn
+   (contorno + ícone fino, cor do texto do header) ficava "muito apagado"
+   ao lado do botão de Sair, que tem texto em negrito pesando a favor dele.
+   Sólido de propósito, pra chamar atenção como uma ação nova. */
+.app-help-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 100px;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+}
+
+.app-help-btn:hover {
+  background: var(--accent-strong);
+}
+
 /* Tela de Ajuda (pedido do usuário, 2026-09-01: "documentação fácil de
    leitura... perguntas frequentes" — direto no app, não um documento à
    parte). Cada pergunta é um <details>, com a cara de .action-card
