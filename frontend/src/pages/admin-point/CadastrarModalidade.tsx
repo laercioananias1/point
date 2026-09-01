@@ -73,7 +73,7 @@ export default function AdminPointCadastrarModalidade() {
         <p className="empty-state" style={{ padding: 0 }}>
           Preço da aula avulsa dessa modalidade — vale pra qualquer professor que der aula dela aqui;
           com o professor você combina só o repasse. Preço do plano mensal é por frequência semanal,
-          cadastrado em Planos (Configurações), não aqui.
+          cadastrado em Planos (Ver mais), não aqui.
         </p>
         <label>
           Preço da aula avulsa (R$)

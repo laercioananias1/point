@@ -118,7 +118,7 @@ function BuscarProfessorInline({
 /** O admin decide o acordo de repasse e convida o professor por e-mail
  * (pedido do usuário, 2026-08-21 — mesmo padrão do convite de assinatura
  * do aluno: o professor não solicita mais vínculo). Preço de aula avulsa/
- * plano é tabela do Point por modalidade (Configurações), não entra aqui —
+ * plano é tabela do Point por modalidade (Ver mais), não entra aqui —
  * com o professor só tem o acordo de repasse. */
 function ConvidarProfessorForm() {
   const navigate = useNavigate();

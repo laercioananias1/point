@@ -58,7 +58,7 @@ export default function DonoAppCriarPoint() {
       </div>
       <p className="empty-state" style={{ paddingTop: 0 }}>
         Só o essencial pra nascer — prazos, dias/horários de funcionamento e formas de pagamento o
-        admin do Point ajusta depois (Configurações). O admin não cria senha por convite seu: manda o
+        admin do Point ajusta depois (Ver mais). O admin não cria senha por convite seu: manda o
         convite por e-mail, e a pessoa escolhe a própria senha ao aceitar.
       </p>
 

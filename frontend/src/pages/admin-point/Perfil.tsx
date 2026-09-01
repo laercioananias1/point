@@ -8,8 +8,9 @@ import { TrocarArea } from "../../components/TrocarArea";
 
 /** Perfil do admin do Point (pedido do usuário, 2026-08-25: "seguindo o
  * mesmo padrão" — virou aba própria). Dados de quem administra + do Point;
- * ajustar prazos/dias/preços fica em Configurações (ícone de engrenagem no
- * cabeçalho), não aqui — Perfil é só leitura da própria conta. Banners
+ * ajustar prazos/dias/preços fica em Ver mais (o ícone de engrenagem no
+ * cabeçalho virou essa aba, pedido do usuário, 2026-08-30), não aqui —
+ * Perfil é só leitura da própria conta. Banners
  * também aparecem aqui (pedido do usuário, 2026-08-30: "perfil de
  * professor e adm tb aparece os banners") — o resto dos dados do Point
  * (endereço, horários, sobre...) não repete aqui porque o admin já
