@@ -9,8 +9,11 @@ from app.core.deps import require_role
 from app.models.assinatura import Assinatura
 from app.models.aula import Aula
 from app.models.credito_reposicao import CreditoReposicao
-from app.models.enums import CreditoStatus, MatriculaStatus, Role
+from app.models.enums import CreditoStatus, MatriculaStatus, MatriculaTipo, Role
+from app.models.matricula import Matricula
+from app.models.turma import Turma
 from app.models.user import User
+from app.models.vinculo import Vinculo
 from app.schemas.assinatura import AssinaturaOut
 
 router = APIRouter(prefix="/assinaturas", tags=["assinaturas"])
@@ -52,7 +55,15 @@ def cancelar_assinatura(
     que ainda pode reagendar uma aula de um plano que ele já cancelou.
     Marca como EXPIRADO em vez de apagar a linha — mantém o histórico
     (mesmo padrão de matrícula/assinatura: status muda, nada é excluído,
-    exceto Aula, que é só a ocorrência futura, sem valor de histórico)."""
+    exceto Aula, que é só a ocorrência futura, sem valor de histórico).
+
+    Também cancela outras matrículas AVULSAS futuras desse mesmo aluno
+    nesse mesmo Point (pedido do usuário, 2026-09-01: "o cancelamento de
+    aulas nao cancela as avulsas?... se to cancelando assinatura, pq
+    deixar as avulsas" — avulsa nunca pertence a uma Assinatura, então
+    ficava de fora do laço acima mesmo sendo, na prática, o aluno saindo
+    do Point de vez). Só as com data futura — uma avulsa de uma aula que
+    já aconteceu fica como estava, não é "cancelamento" retroativo."""
     assinatura = db.get(Assinatura, assinatura_id)
     if assinatura is None:
         raise HTTPException(404, "Assinatura não encontrada")
@@ -74,6 +85,22 @@ def cancelar_assinatura(
             CreditoReposicao.matricula_id == matricula.id,
             CreditoReposicao.status == CreditoStatus.DISPONIVEL,
         ).update({"status": CreditoStatus.EXPIRADO}, synchronize_session=False)
+
+    outras_avulsas = (
+        db.query(Matricula)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Matricula.aluno_id == assinatura.aluno_id,
+            Vinculo.point_id == assinatura.point_id,
+            Matricula.tipo == MatriculaTipo.AVULSA,
+            Matricula.status == MatriculaStatus.ATIVA,
+            Matricula.data_avulsa >= date.today(),
+        )
+        .all()
+    )
+    for avulsa in outras_avulsas:
+        avulsa.status = MatriculaStatus.CANCELADA
 
     db.commit()
     db.refresh(assinatura)
