@@ -367,7 +367,13 @@ export function Layout({ children }: { children: ReactNode }) {
                   onClick={() => navigate(`${PREFIXO_ROTA[area]}/ajuda`)}
                   aria-label="Ajuda"
                 >
-                  <Icon name="help" />
+                  {/* Ponto de interrogação como texto, não ícone de linha
+                      (pedido do usuário, 2026-09-01: "só tá aparecendo uma
+                      bolinha... algo que entende que ali chama ajuda") — o
+                      traço fino do ícone sumia nesse botão pequeno; texto
+                      em negrito, igual o "Sair" ao lado, renderiza sempre
+                      nítido. */}
+                  <span aria-hidden="true">?</span>
                 </button>
               )}
               <button className="app-logout-btn" onClick={handleLogout} aria-label="Sair">

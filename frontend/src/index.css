@@ -462,6 +462,11 @@ textarea:focus {
   background: var(--accent);
   border: none;
   color: #fff;
+  font-family: "Archivo", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
 }
 
 .app-help-btn:hover {
