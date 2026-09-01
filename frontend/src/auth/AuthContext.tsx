@@ -49,6 +49,10 @@ interface AuthContextValue {
    * pra sempre voltar com dados frescos (papel pode ter mudado nesse
    * meio-tempo). Não faz nada se não estiver em modo suporte. */
   sairDoSuporte: () => Promise<void>;
+  /** Rebusca /auth/me e atualiza o `user` em memória (pedido do usuário,
+   * 2026-09-01: admin virando professor do próprio Point sem convite —
+   * `roles` muda no backend na hora, mas o front só sabe se rebuscar). */
+  atualizarUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -114,6 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function atualizarUser() {
+    const me = await api.get<User>("/auth/me");
+    setUser(me);
+  }
+
   function logout() {
     clearToken();
     // Sair de vez também encerra qualquer suporte em andamento (pedido do
@@ -136,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         estaComoSuporte,
         entrarComoSuporte,
         sairDoSuporte,
+        atualizarUser,
       }}
     >
       {children}
