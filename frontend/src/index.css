@@ -1435,7 +1435,7 @@ button.danger:hover:not(:disabled) {
   font-size: 24px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--navy);
+  color: var(--ink);
 }
 
 /* Toggle chips — dias/horários selecionáveis na criação de turma */
@@ -1523,7 +1523,7 @@ button.danger:hover:not(:disabled) {
   font-weight: 700;
   font-size: 12.5px;
   letter-spacing: 0.02em;
-  color: var(--navy);
+  color: var(--ink);
   background: var(--surface-sunk);
 }
 
@@ -1734,7 +1734,7 @@ button.danger:hover:not(:disabled) {
   font-family: "Archivo", sans-serif;
   font-weight: 700;
   font-size: 15px;
-  color: var(--navy);
+  color: var(--ink);
   margin-left: 4px;
 }
 
@@ -1781,7 +1781,7 @@ button.danger:hover:not(:disabled) {
   font-family: "Archivo", sans-serif;
   font-weight: 700;
   font-size: 12.5px;
-  color: var(--navy);
+  color: var(--ink);
   background: var(--surface-sunk);
   border-bottom: 1px solid var(--line);
 }
