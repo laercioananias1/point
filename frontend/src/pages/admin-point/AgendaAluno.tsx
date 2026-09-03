@@ -62,7 +62,8 @@ export default function AdminPointAgendaAluno() {
   const idsMatriculasDoAluno = new Set(matriculasDoAluno.map((m) => m.id));
   const creditosDoAluno = creditos.filter((c) => idsMatriculasDoAluno.has(c.matricula_id));
   const creditosDisponiveis = creditosDoAluno.filter((c) => c.status === "disponivel");
-  const nomeAluno = matriculasDoAluno[0]?.aluno.nome ?? "";
+  const alunoResumo = matriculasDoAluno[0]?.aluno ?? null;
+  const nomeAluno = alunoResumo?.nome ?? "";
   const assinaturasAtivasDoAluno = assinaturas.filter(
     (a) => a.aluno.id === idAluno && a.status === "ativa",
   );
@@ -81,6 +82,16 @@ export default function AdminPointAgendaAluno() {
         </button>
         <h1>Agenda {nomeAluno && `— ${nomeAluno}`}</h1>
       </div>
+
+      {/* Contato/e-mail saíram da lista de Alunos (pedido do usuário,
+          2026-09-01: "deixe somente o nome nessa lista, os detalhes abre
+          na outra página") — moram aqui agora. */}
+      {alunoResumo && (
+        <p className="empty-state" style={{ paddingTop: 0 }}>
+          {alunoResumo.contato}
+          {alunoResumo.email && ` · ${alunoResumo.email}`}
+        </p>
+      )}
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}

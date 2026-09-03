@@ -104,11 +104,11 @@ export default function AdminPointAluno() {
                     key={a.id}
                   >
                     <div className="item-card-info">
+                      {/* Só o nome aqui (pedido do usuário, 2026-09-01:
+                          "deixe somente o nome nessa lista, os detalhes
+                          abre na outra página") — telefone/e-mail
+                          passaram pra Agenda do aluno. */}
                       <span className="item-card-title">{a.nome}</span>
-                      <span className="item-card-subtitle">
-                        {a.contato}
-                        {a.email && ` · ${a.email}`}
-                      </span>
                     </div>
                     <span aria-hidden="true">
                       <Icon name="chevron-right" />
