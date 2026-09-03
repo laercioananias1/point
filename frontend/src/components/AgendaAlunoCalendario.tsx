@@ -121,17 +121,35 @@ export function AgendaAlunoCalendario({
     buscarFeriadosPorPoint(pointIds).then(setFeriadosPorPoint);
   }, [pointIds]);
 
+  // Mapa data→nome, independente de ter aula ou não nesse dia (pedido do
+  // usuário, 2026-09-01, depois de reparar que 25/12 não tinha ícone: "o
+  // sistema... não pode criar [aula] nesses dias de feriados" não pode
+  // depender de já existir uma ocorrência pra aparecer — um feriado num
+  // dia da semana que esse aluno nem tem aula precisa aparecer do mesmo
+  // jeito).
+  const feriadosPorData = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const id of pointIds) {
+      for (const f of feriadosPorPoint[id] ?? []) mapa.set(f.data, f.nome);
+    }
+    return mapa;
+  }, [pointIds, feriadosPorPoint]);
+
   const ocorrenciasPorDia = useMemo(
     () => ocorrenciasEmDatas(matriculas, diasVisiveis, feriadosPorPoint),
     [matriculas, diasVisiveis, feriadosPorPoint],
   );
 
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
+  const nomeFeriadoDoDia = feriadosPorData.get(toISODate(diaSelecionado)) ?? null;
 
   // Prioriza o caso mais fora do padrão quando o dia tem mais de um
-  // (raro, mas possível): reposição > avulsa comprada > recorrente normal.
+  // (raro, mas possível): feriado > reposição > avulsa comprada >
+  // recorrente normal.
   function marcadorDoDia(data: Date): MarcadorDia {
-    const ocs = ocorrenciasPorDia.get(toISODate(data));
+    const iso = toISODate(data);
+    if (feriadosPorData.has(iso)) return "feriado";
+    const ocs = ocorrenciasPorDia.get(iso);
     if (!ocs || ocs.length === 0) return null;
     if (ocs.some((oc) => oc.tipo === "avulsa" && oc.eReposicao)) return "reposicao";
     if (ocs.some((oc) => oc.tipo === "avulsa")) return "avulsa";
@@ -159,10 +177,26 @@ export function AgendaAlunoCalendario({
         <span style={{ color: "var(--warn)" }}>
           <Icon name="refresh" size={12} /> Reposição
         </span>
+        <span style={{ color: "var(--good)" }}>
+          <Icon name="flag" size={12} /> Feriado
+        </span>
       </div>
 
+      {nomeFeriadoDoDia && (
+        <div className="item-card" style={{ marginBottom: 8 }}>
+          <div className="item-card-info">
+            <span
+              className="item-card-title"
+              style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--good)" }}
+            >
+              <Icon name="flag" /> Feriado: {nomeFeriadoDoDia}
+            </span>
+          </div>
+        </div>
+      )}
+
       {ocorrenciasDoDia.length === 0 ? (
-        <p className="empty-state">Nenhuma aula nesse dia.</p>
+        !nomeFeriadoDoDia && <p className="empty-state">Nenhuma aula nesse dia.</p>
       ) : (
         <div className="card-list">
           {ocorrenciasDoDia.map((oc, i) => (

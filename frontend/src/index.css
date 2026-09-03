@@ -1310,8 +1310,12 @@ button.danger:hover:not(:disabled) {
   color: var(--warn);
 }
 
+/* var(--good), não var(--navy) (pedido do usuário, 2026-09-01: "modo dark
+   tá muito escuro o texto") — --navy é a cor do cabeçalho, propositalmente
+   quase preta no escuro (ver comentário em :root sobre isso); serve bem
+   pra fundo, mal pra texto solto num card, que é o caso aqui. */
 .mini-calendar-marcador.feriado {
-  color: var(--navy);
+  color: var(--good);
 }
 
 /* Pontinho genérico (pedido do usuário, 2026-09-01: "esses ícones mostra

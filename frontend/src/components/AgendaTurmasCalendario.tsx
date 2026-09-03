@@ -24,30 +24,43 @@ interface OcorrenciaTurma {
   // agora viram uma ocorrência "cancelada" em vez de sumir.
   cancelada: boolean;
   motivoCancelamento: string | null;
-  // Feriado — campo à parte de "cancelada" de propósito (pedido do
-  // usuário, 2026-09-01: "faz um ícone diferenciado para feriado, não
-  // vamos misturar com dia que tem aula cancelada") — mesmo efeito na
-  // prática (sem Aula gerada), mas motivo diferente: um é decisão humana
-  // pontual (chuva, ventos fortes...), o outro é o calendário nacional/
-  // local, sabido de antemão.
-  feriado: boolean;
-  nomeFeriado: string | null;
+}
+
+/** Feriados (nacional + local) de todos os Points envolvidos, num único
+ * mapa data→nome — pedido do usuário, 2026-09-01, depois de reparar que
+ * 25/12 não tinha ícone nenhum: feriado precisa aparecer no calendário
+ * MESMO quando nenhuma turma tem aula programada naquele dia da semana
+ * (ex.: Natal cai numa sexta, mas nenhuma turma dá aula às sextas) — não
+ * dá pra depender só de "essa turma tinha aula aqui e foi cancelada",
+ * porque aí um feriado sem turma nenhuma naquele dia simplesmente some. */
+function feriadosNoMapa(
+  turmas: TurmaResumo[],
+  feriadosPorPoint: Record<number, Feriado[]>,
+): Map<string, string> {
+  const mapa = new Map<string, string>();
+  const pointIds = new Set(turmas.map((t) => t.vinculo.point_id));
+  for (const id of pointIds) {
+    for (const f of feriadosPorPoint[id] ?? []) {
+      mapa.set(f.data, f.nome);
+    }
+  }
+  return mapa;
 }
 
 /** Ocorrências de todas as turmas passadas dentro das datas visíveis —
  * mesma ideia de app.services.aulas (dia_semana × período), só que
  * calculado no cliente pra alimentar os pontinhos do calendário.
  *
- * `feriadosPorPoint` (pedido do usuário, 2026-09-01: "o sistema... não
- * pode criar [aula] nesses dias de feriados") — o backend
- * (gerar_aulas_do_mes) nunca gera Aula num feriado; aqui é só pra não
- * mostrar uma aula "fantasma" no calendário que nunca vai virar Aula de
- * verdade. Por point_id porque um professor pode dar aula em mais de um
- * Point, cada um com feriados locais diferentes. */
+ * Feriado (pedido do usuário, 2026-09-01: "o sistema... não pode criar
+ * [aula] nesses dias de feriados") não vira uma ocorrência "cancelada"
+ * aqui — o backend (gerar_aulas_do_mes) nunca gera Aula num feriado, então
+ * a turma simplesmente não aparece nesse dia (igual sempre fez com
+ * exceção sem motivo); o aviso "hoje é feriado" é mostrado à parte, via
+ * `feriadosNoMapa` acima, independente de ter turma rodando ou não. */
 function ocorrenciasEmDatas(
   turmas: TurmaResumo[],
   datas: Date[],
-  feriadosPorPoint: Record<number, Feriado[]>,
+  feriadosPorData: Map<string, string>,
 ): Map<string, OcorrenciaTurma[]> {
   const mapa = new Map<string, OcorrenciaTurma[]>();
   const adicionar = (iso: string, oc: OcorrenciaTurma) => {
@@ -58,21 +71,16 @@ function ocorrenciasEmDatas(
 
   for (const t of turmas) {
     const cancelamentosPorData = new Map(t.cancelamentos.map((c) => [c.data, c.motivo]));
-    const feriadosPorData = new Map(
-      (feriadosPorPoint[t.vinculo.point_id] ?? []).map((f) => [f.data, f.nome]),
-    );
     for (const data of datas) {
       const iso = toISODate(data);
       if (iso < t.periodo_inicio) continue;
       if (t.periodo_fim !== null && iso > t.periodo_fim) continue;
       if (!t.dias_semana.includes(diaSemanaDeData(data))) continue;
+      if (feriadosPorData.has(iso)) continue;
 
-      const nomeFeriado = feriadosPorData.get(iso) ?? null;
-      const cancelada = nomeFeriado === null && t.excecoes.includes(iso);
+      const cancelada = t.excecoes.includes(iso);
       const motivoCancelamento = cancelamentosPorData.get(iso) ?? null;
-      // Feriado sempre aparece (é informativo, sabido de antemão); exceção
-      // manual antiga sem motivo registrado some como sempre fez.
-      if (cancelada && motivoCancelamento === null) continue;
+      if (cancelada && motivoCancelamento === null) continue; // exceção antiga, sem motivo — some como antes
 
       adicionar(iso, {
         turmaId: t.id,
@@ -86,8 +94,6 @@ function ocorrenciasEmDatas(
         capacidade: t.capacidade,
         cancelada,
         motivoCancelamento,
-        feriado: nomeFeriado !== null,
-        nomeFeriado,
       });
     }
   }
@@ -147,11 +153,16 @@ export function AgendaTurmasCalendario({
     buscarFeriadosPorPoint(pointIds).then(setFeriadosPorPoint);
   }, [pointIds]);
 
+  const feriadosPorData = useMemo(
+    () => feriadosNoMapa(turmas, feriadosPorPoint),
+    [turmas, feriadosPorPoint],
+  );
   const ocorrenciasPorDia = useMemo(
-    () => ocorrenciasEmDatas(turmas, diasVisiveis, feriadosPorPoint),
-    [turmas, diasVisiveis, feriadosPorPoint],
+    () => ocorrenciasEmDatas(turmas, diasVisiveis, feriadosPorData),
+    [turmas, diasVisiveis, feriadosPorData],
   );
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
+  const nomeFeriadoDoDia = feriadosPorData.get(toISODate(diaSelecionado)) ?? null;
 
   if (turmas.length === 0) {
     return <p className="empty-state">Nenhuma turma ainda.</p>;
@@ -181,9 +192,14 @@ export function AgendaTurmasCalendario({
         // 2026-09-01: "não vamos misturar com dia que tem aula
         // cancelada").
         marcadorDoDia={(data) => {
-          const ocs = ocorrenciasPorDia.get(toISODate(data));
+          const iso = toISODate(data);
+          // Feriado é incondicional (pedido do usuário, 2026-09-01: "por
+          // que 25 dezembro não tem nenhum ícone?" — nenhuma turma tinha
+          // aula numa sexta, então o feriado não aparecia) — marca o dia
+          // mesmo sem nenhuma turma rodando nele.
+          if (feriadosPorData.has(iso)) return "feriado";
+          const ocs = ocorrenciasPorDia.get(iso);
           if (!ocs || ocs.length === 0) return null;
-          if (ocs.some((oc) => oc.feriado)) return "feriado";
           return ocs.some((oc) => oc.cancelada) ? "cancelada" : "aula";
         }}
         diaSelecionado={diaSelecionado}
@@ -191,43 +207,24 @@ export function AgendaTurmasCalendario({
         onDiasVisiveisChange={onDiasVisiveisChange}
       />
 
+      {nomeFeriadoDoDia && (
+        <div className="item-card" style={{ marginBottom: 8 }}>
+          <div className="item-card-info">
+            <span
+              className="item-card-title"
+              style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--good)" }}
+            >
+              <Icon name="flag" /> Feriado: {nomeFeriadoDoDia}
+            </span>
+          </div>
+        </div>
+      )}
+
       {ocorrenciasDoDia.length === 0 ? (
-        <p className="empty-state">Nenhuma aula nesse dia.</p>
+        !nomeFeriadoDoDia && <p className="empty-state">Nenhuma aula nesse dia.</p>
       ) : (
         <div className="card-list">
           {ocorrenciasDoDia.map((oc, i) => {
-            if (oc.feriado) {
-              return (
-                <div
-                  key={i}
-                  className="item-card"
-                  style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
-                >
-                  <div className="item-card-info">
-                    <span
-                      className="item-card-title"
-                      style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--navy)" }}
-                    >
-                      <Icon name="flag" /> {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}{" "}
-                      não tem aula (feriado)
-                    </span>
-                    <span className="item-card-subtitle">
-                      {oc.modalidadeNome} · com {oc.professorNome}
-                    </span>
-                    <span
-                      className="item-card-subtitle"
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      <Icon name="pin" /> {oc.pointNome} · {oc.quadraNome}
-                    </span>
-                  </div>
-                  <div className="info-box" style={{ borderColor: "var(--navy)" }}>
-                    <span>Feriado: {oc.nomeFeriado}</span>
-                  </div>
-                </div>
-              );
-            }
-
             if (oc.cancelada) {
               return (
                 <div
