@@ -1,5 +1,7 @@
 from datetime import date
 
+from pydantic import Field
+
 from app.models.enums import MatriculaStatus, MatriculaTipo, ModeloRepasse, PagamentoMeio
 from app.schemas.aluno import AlunoOut
 from app.schemas.common import ORMModel
@@ -19,15 +21,19 @@ class MatriculaCreate(ORMModel):
 
 
 class CancelarAulaAdminRequest(ORMModel):
-    """Admin cancelando uma aula específica de um aluno (pedido do usuário,
-    2026-09-01: "permitir editar as aulas, remover... a informacao de
-    reagendar com credito tem q ser opcional, pq pode ser q o cadastro de
-    aulas esteja errado e vai fazer um novo") — mesmo padrão já usado em
-    TurmaRemocao.gerar_credito: às vezes o cancelamento é só correção de um
-    cadastro errado (turma/dia trocado por engano), não uma aula de
-    verdade perdida, então não deveria gerar crédito."""
+    """Admin OU professor da turma cancelando uma aula específica de um
+    aluno (pedido do usuário, 2026-09-01: "permitir editar as aulas,
+    remover... a informacao de reagendar com credito tem q ser opcional,
+    pq pode ser q o cadastro de aulas esteja errado e vai fazer um novo" —
+    depois, "o professor pode cancelar uma aula de um determinado aluno de
+    última hora, precisa informar o motivo e opção de gerar crédito ou
+    não") — mesmo padrão já usado em TurmaRemocao.gerar_credito: às vezes
+    o cancelamento é só correção de um cadastro errado (turma/dia trocado
+    por engano), não uma aula de verdade perdida, então não deveria gerar
+    crédito. motivo é obrigatório (min_length evita string vazia)."""
 
     gerar_credito: bool = True
+    motivo: str = Field(min_length=1)
 
 
 class AulaCanceladaOut(ORMModel):

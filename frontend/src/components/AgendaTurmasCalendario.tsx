@@ -136,6 +136,15 @@ export function AgendaTurmasCalendario({
   const [removendo, setRemovendo] = useState<{ ocorrencia: OcorrenciaTurma; alunosCount: number } | null>(
     null,
   );
+  // Cancelar a aula de UM aluno específico (pedido do usuário,
+  // 2026-09-01: "o professor pode cancelar uma aula de um determinado
+  // aluno de última hora") — diferente de `removendo`, que cancela a
+  // turma inteira nessa data.
+  const [cancelandoAluno, setCancelandoAluno] = useState<{
+    matriculaId: number;
+    nome: string;
+    ocorrencia: OcorrenciaTurma;
+  } | null>(null);
   const [diaSelecionado, setDiaSelecionado] = useState(new Date());
   const [diasVisiveis, setDiasVisiveis] = useState<Date[]>([]);
   const onDiasVisiveisChange = useCallback((dias: Date[]) => setDiasVisiveis(dias), []);
@@ -177,6 +186,19 @@ export function AgendaTurmasCalendario({
           onFechar={() => setRemovendo(null)}
           onRemovido={() => {
             setRemovendo(null);
+            onMudanca();
+          }}
+        />
+      )}
+
+      {cancelandoAluno && (
+        <CancelarAulaAlunoModal
+          nomeAluno={cancelandoAluno.nome}
+          matriculaId={cancelandoAluno.matriculaId}
+          ocorrencia={cancelandoAluno.ocorrencia}
+          onFechar={() => setCancelandoAluno(null)}
+          onCancelado={() => {
+            setCancelandoAluno(null);
             onMudanca();
           }}
         />
@@ -299,7 +321,14 @@ export function AgendaTurmasCalendario({
                   </button>
                 </div>
 
-                <PresencaLista turmaId={oc.turmaId} data={oc.data} alunos={alunos} />
+                <PresencaLista
+                  turmaId={oc.turmaId}
+                  data={oc.data}
+                  alunos={alunos}
+                  onCancelarAluno={(matriculaId, nome) =>
+                    setCancelandoAluno({ matriculaId, nome, ocorrencia: oc })
+                  }
+                />
               </div>
             );
           })}
@@ -318,10 +347,16 @@ function PresencaLista({
   turmaId,
   data,
   alunos,
+  onCancelarAluno,
 }: {
   turmaId: number;
   data: Date;
   alunos: { matriculaId: number; nome: string }[];
+  // Cancelar a aula de UM aluno específico, não a turma inteira (pedido
+  // do usuário, 2026-09-01: "o professor pode cancelar uma aula de um
+  // determinado aluno de última hora, precisa informar o motivo e opção
+  // de gerar crédito ou não").
+  onCancelarAluno: (matriculaId: number, nome: string) => void;
 }) {
   const iso = toISODate(data);
   const [presentes, setPresentes] = useState<Set<number>>(new Set());
@@ -381,19 +416,29 @@ function PresencaLista({
         Presença {carregado && `(${presentes.size}/${alunos.length})`}
       </span>
       {alunos.map((a) => (
-        <label
+        <div
           key={a.matriculaId}
-          style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
         >
-          <input
-            type="checkbox"
-            style={{ width: "auto" }}
-            checked={presentes.has(a.matriculaId)}
-            disabled={!carregado || alterando === a.matriculaId}
-            onChange={() => alternar(a.matriculaId)}
-          />
-          {a.nome}
-        </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              style={{ width: "auto" }}
+              checked={presentes.has(a.matriculaId)}
+              disabled={!carregado || alterando === a.matriculaId}
+              onChange={() => alternar(a.matriculaId)}
+            />
+            {a.nome}
+          </label>
+          <button
+            type="button"
+            className="link-btn"
+            style={{ padding: 0, fontSize: 12.5 }}
+            onClick={() => onCancelarAluno(a.matriculaId, a.nome)}
+          >
+            Cancelar aula dele
+          </button>
+        </div>
       ))}
     </div>
   );
@@ -536,6 +581,138 @@ function GerenciarAulaModal({
           </button>
           <button className="secondary" disabled={enviando !== null} onClick={onFechar}>
             Desistir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Cancelar a aula de UM aluno específico dentro dessa ocorrência de
+ * turma, pelo professor ou pelo admin (pedido do usuário, 2026-09-01: "o
+ * professor pode cancelar uma aula de um determinado aluno de última
+ * hora, precisa informar o motivo e opção de gerar crédito ou não") —
+ * diferente do GerenciarAulaModal acima, que cancela a turma inteira
+ * (todo mundo) nessa data; mesma API (POST .../cancelar-admin, agora
+ * também aberta pra professor da turma), mesmo padrão de motivo em chips
+ * já usado ali e no cancelamento por turma. */
+function CancelarAulaAlunoModal({
+  nomeAluno,
+  matriculaId,
+  ocorrencia,
+  onFechar,
+  onCancelado,
+}: {
+  nomeAluno: string;
+  matriculaId: number;
+  ocorrencia: OcorrenciaTurma;
+  onFechar: () => void;
+  onCancelado: () => void;
+}) {
+  const [motivoSelecionado, setMotivoSelecionado] = useState<string | null>(null);
+  const [motivoOutro, setMotivoOutro] = useState("");
+  const usandoOutro = motivoSelecionado === "outro";
+  const motivoFinal = (usandoOutro ? motivoOutro : motivoSelecionado)?.trim() || null;
+  const [gerarCredito, setGerarCredito] = useState(true);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") onFechar();
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [onFechar]);
+
+  const rotuloData = ocorrencia.data.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+
+  async function cancelar() {
+    if (!motivoFinal) return;
+    setEnviando(true);
+    setErro(null);
+    try {
+      await api.post(`/matriculas/${matriculaId}/aulas/${toISODate(ocorrencia.data)}/cancelar-admin`, {
+        gerar_credito: gerarCredito,
+        motivo: motivoFinal,
+      });
+      onCancelado();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível cancelar. Tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onFechar}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="item-card-info">
+          <span className="item-card-title">Cancelar aula de {nomeAluno}</span>
+          <span className="item-card-subtitle">
+            {rotuloData} · {ocorrencia.horario} · {ocorrencia.modalidadeNome}
+          </span>
+        </div>
+
+        <div style={{ marginTop: 10 }}>
+          <span style={{ fontWeight: 600, fontSize: 14, display: "block", marginBottom: 6 }}>
+            Motivo do cancelamento
+          </span>
+          <div className="toggle-grid">
+            {["Chuva", "Ventos fortes"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={motivoSelecionado === m ? "toggle-chip active" : "toggle-chip"}
+                onClick={() => setMotivoSelecionado(m)}
+              >
+                {m}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={usandoOutro ? "toggle-chip active" : "toggle-chip"}
+              onClick={() => setMotivoSelecionado("outro")}
+            >
+              Outro
+            </button>
+          </div>
+          {usandoOutro && (
+            <input
+              style={{ marginTop: 8 }}
+              placeholder="Descreva o motivo"
+              value={motivoOutro}
+              onChange={(e) => setMotivoOutro(e.target.value)}
+            />
+          )}
+        </div>
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+          <input
+            type="checkbox"
+            checked={gerarCredito}
+            onChange={(e) => setGerarCredito(e.target.checked)}
+            style={{ width: "auto" }}
+          />
+          Gerar crédito de reposição pro aluno
+        </label>
+        <p className="empty-state" style={{ padding: 0 }}>
+          Desmarque se for só correção de um cadastro errado — nesse caso o aluno não perdeu uma aula
+          de verdade.
+        </p>
+
+        {erro && <p className="form-error">{erro}</p>}
+
+        <div className="modal-actions">
+          <button disabled={enviando || !motivoFinal} onClick={cancelar}>
+            {enviando ? "Cancelando..." : "Cancelar esta aula"}
+          </button>
+          <button className="secondary" disabled={enviando} onClick={onFechar}>
+            Voltar
           </button>
         </div>
       </div>

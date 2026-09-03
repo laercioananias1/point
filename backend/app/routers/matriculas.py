@@ -145,6 +145,7 @@ def _cancelar_aula(
     gerar_credito: bool,
     ignorar_prazo: bool,
     cancelado_por: User,
+    motivo: str | None = None,
 ) -> CreditoReposicao | None:
     """Núcleo compartilhado do cancelamento de UMA aula específica (pedido
     do usuário, 2026-08-20) — usado tanto pelo aluno cancelando a própria
@@ -188,7 +189,14 @@ def _cancelar_aula(
     if ja_cancelada:
         raise HTTPException(409, "Essa aula já tinha sido cancelada")
 
-    db.add(MatriculaExcecao(matricula_id=matricula.id, data=data_aula, cancelado_por_id=cancelado_por.id))
+    db.add(
+        MatriculaExcecao(
+            matricula_id=matricula.id,
+            data=data_aula,
+            cancelado_por_id=cancelado_por.id,
+            motivo=motivo,
+        )
+    )
     db.query(Aula).filter(
         Aula.matricula_id == matricula.id, Aula.data == data_aula
     ).delete(synchronize_session=False)
@@ -235,6 +243,24 @@ def cancelar_aula_matricula(
     return credito
 
 
+def _get_matricula_do_professor_ou_admin(db: Session, matricula_id: int, user: User) -> Matricula:
+    """Mesmo padrão de dupla checagem já usado em turmas.py::remover_turma
+    (pedido do usuário, 2026-09-01: "o professor pode cancelar uma aula de
+    um determinado aluno de última hora") — professor só se for turma dele
+    mesmo (qualquer Point que dê aula); admin só se for do próprio Point."""
+    matricula = (
+        db.query(Matricula).join(Turma).join(Vinculo).filter(Matricula.id == matricula_id).first()
+    )
+    if matricula is None:
+        raise HTTPException(404, "Matrícula não encontrada")
+    pode = (
+        user.tem_role(Role.PROFESSOR) and matricula.turma.vinculo.professor_id == user.professor_id
+    ) or (user.tem_role(Role.ADMIN_POINT) and matricula.turma.vinculo.point_id == user.point_id)
+    if not pode:
+        raise HTTPException(404, "Matrícula não encontrada")
+    return matricula
+
+
 @router.post(
     "/{matricula_id}/aulas/{data_aula}/cancelar-admin", response_model=AulaCanceladaOut, status_code=201
 )
@@ -243,25 +269,31 @@ def cancelar_aula_matricula_admin(
     data_aula: date,
     payload: CancelarAulaAdminRequest,
     db: Annotated[Session, Depends(get_db)],
-    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+    user: Annotated[User, Depends(require_role(Role.ADMIN_POINT, Role.PROFESSOR))],
 ) -> AulaCanceladaOut:
-    """Admin fazendo ajuste na agenda de um aluno (pedido do usuário,
-    2026-09-01: "permitir editar as aulas, remover... fazer ajustes na
-    agenda do aluno" — normalmente por telefone/presencial, quando o aluno
-    pede pro Point resolver). Duas diferenças do cancelamento que o próprio
-    aluno faz: ignora o prazo mínimo de antecedência (pedido do usuário —
-    "faz sentido o admin resolver uma exceção mesmo em cima da hora") e o
-    crédito é opcional (pedido do usuário — "pode ser q o cadastro de
-    aulas esteja errado e vai fazer um novo", nesse caso não é uma aula de
-    verdade perdida)."""
-    matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
+    """Admin OU professor da turma fazendo ajuste na agenda de um aluno
+    (pedido do usuário, 2026-09-01: "permitir editar as aulas, remover...
+    fazer ajustes na agenda do aluno" — normalmente por telefone/
+    presencial, quando o aluno pede pro Point resolver; depois, "o
+    professor pode cancelar uma aula de um determinado aluno de última
+    hora, precisa informar o motivo e opção de gerar crédito ou não").
+
+    Duas diferenças do cancelamento que o próprio aluno faz: ignora o
+    prazo mínimo de antecedência (pedido do usuário — "faz sentido o
+    admin resolver uma exceção mesmo em cima da hora") e o crédito é
+    opcional (pedido do usuário — "pode ser q o cadastro de aulas esteja
+    errado e vai fazer um novo", nesse caso não é uma aula de verdade
+    perdida). Motivo é obrigatório aqui (schema já valida), diferente do
+    aluno cancelando a própria aula."""
+    matricula = _get_matricula_do_professor_ou_admin(db, matricula_id, user)
     credito = _cancelar_aula(
         db,
         matricula,
         data_aula,
         gerar_credito=payload.gerar_credito,
         ignorar_prazo=True,
-        cancelado_por=admin,
+        cancelado_por=user,
+        motivo=payload.motivo,
     )
     db.commit()
     if credito is not None:
@@ -380,7 +412,8 @@ def listar_historico_cancelamentos(
                 aluno_id=e.matricula.aluno_id,
                 aluno_nome=e.matricula.aluno.nome,
                 modalidade_nome=e.matricula.turma.modalidade.nome,
-                detalhe=f"Aula de {e.data.isoformat()} cancelada",
+                detalhe=f"Aula de {e.data.isoformat()} cancelada"
+                + (f" — {e.motivo}" if e.motivo else ""),
                 cancelado_por_nome=e.cancelado_por_nome,
             )
         )

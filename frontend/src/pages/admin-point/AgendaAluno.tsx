@@ -383,6 +383,14 @@ function CancelarAulaModalAdmin({
 }) {
   const { matriculaId, data } = ocorrencia;
   const [gerarCredito, setGerarCredito] = useState(true);
+  // Motivo do cancelamento (pedido do usuário, 2026-09-01: "o professor
+  // pode cancelar uma aula de um determinado aluno de última hora,
+  // precisa informar o motivo") — mesmo padrão de chips já usado no
+  // cancelamento por turma (GerenciarAulaModal em AgendaTurmasCalendario).
+  const [motivoSelecionado, setMotivoSelecionado] = useState<string | null>(null);
+  const [motivoOutro, setMotivoOutro] = useState("");
+  const usandoOutro = motivoSelecionado === "outro";
+  const motivoFinal = (usandoOutro ? motivoOutro : motivoSelecionado)?.trim() || null;
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -401,11 +409,13 @@ function CancelarAulaModalAdmin({
   });
 
   async function cancelar() {
+    if (!motivoFinal) return;
     setEnviando(true);
     setErro(null);
     try {
       await api.post(`/matriculas/${matriculaId}/aulas/${toISODate(data)}/cancelar-admin`, {
         gerar_credito: gerarCredito,
+        motivo: motivoFinal,
       });
       onCancelado();
     } catch (e) {
@@ -425,6 +435,39 @@ function CancelarAulaModalAdmin({
           </span>
         </div>
 
+        <div style={{ marginTop: 10 }}>
+          <span style={{ fontWeight: 600, fontSize: 14, display: "block", marginBottom: 6 }}>
+            Motivo do cancelamento
+          </span>
+          <div className="toggle-grid">
+            {["Chuva", "Ventos fortes"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={motivoSelecionado === m ? "toggle-chip active" : "toggle-chip"}
+                onClick={() => setMotivoSelecionado(m)}
+              >
+                {m}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={usandoOutro ? "toggle-chip active" : "toggle-chip"}
+              onClick={() => setMotivoSelecionado("outro")}
+            >
+              Outro
+            </button>
+          </div>
+          {usandoOutro && (
+            <input
+              style={{ marginTop: 8 }}
+              placeholder="Descreva o motivo"
+              value={motivoOutro}
+              onChange={(e) => setMotivoOutro(e.target.value)}
+            />
+          )}
+        </div>
+
         <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
           <input
             type="checkbox"
@@ -442,7 +485,7 @@ function CancelarAulaModalAdmin({
         {erro && <p className="form-error">{erro}</p>}
 
         <div className="modal-actions">
-          <button disabled={enviando} onClick={cancelar}>
+          <button disabled={enviando || !motivoFinal} onClick={cancelar}>
             {enviando ? "Cancelando..." : "Cancelar esta aula"}
           </button>
           <button className="secondary" disabled={enviando} onClick={onFechar}>
