@@ -1277,11 +1277,18 @@ button.danger:hover:not(:disabled) {
   font-weight: 700;
 }
 
+/* Pedido do usuário, 2026-09-01: "acho que a visualização está errada...
+   deveria mostrar somente a agenda do aluno em questão" — não era bug de
+   dado (o filtro por dia já era certo), era visual: todo dia tinha um
+   pontinho cinza (só de espaçador, pra não pular o número quando não tem
+   aula), quase do mesmo tamanho/peso do pontinho de verdade — parecia
+   que tinha aula todo santo dia. Transparente por padrão: só aparece
+   pontinho em dia que realmente tem aula. */
 .mini-calendar-dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--line);
+  background: transparent;
 }
 
 .mini-calendar-dot.ativo {
