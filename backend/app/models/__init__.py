@@ -9,6 +9,7 @@ from app.models.convite_dia_escolhido import ConviteDiaEscolhido
 from app.models.convite_vinculo import ConviteVinculo
 from app.models.credito_reposicao import CreditoReposicao
 from app.models.fechamento import Fechamento, RepasseFechamento
+from app.models.feriado import Feriado
 from app.models.matricula import Matricula
 from app.models.matricula_dia_semana import MatriculaDiaSemana
 from app.models.matricula_excecao import MatriculaExcecao
@@ -37,6 +38,7 @@ __all__ = [
     "ConviteVinculo",
     "CreditoReposicao",
     "Fechamento",
+    "Feriado",
     "Matricula",
     "MatriculaDiaSemana",
     "MatriculaExcecao",

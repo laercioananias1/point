@@ -34,6 +34,7 @@ from app.schemas.matricula import (
     RepasseOverrideUpdate,
 )
 from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario
+from app.services.feriados import eh_feriado
 from app.services.email import enviar_lembrete_mensalidade_email
 
 router = APIRouter(prefix="/matriculas", tags=["matriculas"])
@@ -95,6 +96,9 @@ def solicitar_matricula(
             raise HTTPException(422, "Essa data está fora do período dessa turma")
         if data_aula in turma.excecoes:
             raise HTTPException(422, "Essa data foi cancelada nessa turma")
+        feriado = eh_feriado(db, turma.vinculo.point_id, data_aula)
+        if feriado is not None:
+            raise HTTPException(422, f"Essa data é feriado ({feriado}) — escolha outra")
 
         if aluno_tem_conflito_horario(
             db,

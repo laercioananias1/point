@@ -15,6 +15,7 @@ from app.models.vinculo import Vinculo
 from app.schemas.credito import ReagendarCredito
 from app.schemas.matricula import MatriculaOut
 from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario
+from app.services.feriados import eh_feriado
 
 router = APIRouter(prefix="/creditos", tags=["creditos"])
 
@@ -58,6 +59,9 @@ def _reagendar_credito(db: Session, credito: CreditoReposicao, payload: Reagenda
         raise HTTPException(422, "Essa data está fora do período dessa turma")
     if data_aula in nova_turma.excecoes:
         raise HTTPException(422, "Essa data foi cancelada nessa turma")
+    feriado = eh_feriado(db, nova_turma.vinculo.point_id, data_aula)
+    if feriado is not None:
+        raise HTTPException(422, f"Essa data é feriado ({feriado}) — escolha outra")
 
     aluno_id = credito.matricula.aluno_id
     if aluno_tem_conflito_horario(

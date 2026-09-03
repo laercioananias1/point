@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api/client";
-import type { Checkin, Matricula, TurmaResumo } from "../api/types";
+import type { Checkin, Feriado, Matricula, TurmaResumo } from "../api/types";
 import { Icon } from "./Layout";
 import { diaSemanaDeData, toISODate } from "./Calendar";
 import { MiniCalendario } from "./MiniCalendario";
 import { horarioFim } from "../lib/dias";
+import { buscarFeriadosPorPoint } from "../lib/feriados";
 
 interface OcorrenciaTurma {
   turmaId: number;
@@ -27,8 +28,19 @@ interface OcorrenciaTurma {
 
 /** Ocorrências de todas as turmas passadas dentro das datas visíveis —
  * mesma ideia de app.services.aulas (dia_semana × período), só que
- * calculado no cliente pra alimentar os pontinhos do calendário. */
-function ocorrenciasEmDatas(turmas: TurmaResumo[], datas: Date[]): Map<string, OcorrenciaTurma[]> {
+ * calculado no cliente pra alimentar os pontinhos do calendário.
+ *
+ * `feriadosPorPoint` (pedido do usuário, 2026-09-01: "o sistema... não
+ * pode criar [aula] nesses dias de feriados") — o backend
+ * (gerar_aulas_do_mes) nunca gera Aula num feriado; aqui é só pra não
+ * mostrar uma aula "fantasma" no calendário que nunca vai virar Aula de
+ * verdade. Por point_id porque um professor pode dar aula em mais de um
+ * Point, cada um com feriados locais diferentes. */
+function ocorrenciasEmDatas(
+  turmas: TurmaResumo[],
+  datas: Date[],
+  feriadosPorPoint: Record<number, Feriado[]>,
+): Map<string, OcorrenciaTurma[]> {
   const mapa = new Map<string, OcorrenciaTurma[]>();
   const adicionar = (iso: string, oc: OcorrenciaTurma) => {
     const lista = mapa.get(iso);
@@ -38,13 +50,18 @@ function ocorrenciasEmDatas(turmas: TurmaResumo[], datas: Date[]): Map<string, O
 
   for (const t of turmas) {
     const cancelamentosPorData = new Map(t.cancelamentos.map((c) => [c.data, c.motivo]));
+    const feriadosPorData = new Map(
+      (feriadosPorPoint[t.vinculo.point_id] ?? []).map((f) => [f.data, f.nome]),
+    );
     for (const data of datas) {
       const iso = toISODate(data);
       if (iso < t.periodo_inicio) continue;
       if (t.periodo_fim !== null && iso > t.periodo_fim) continue;
       if (!t.dias_semana.includes(diaSemanaDeData(data))) continue;
-      const cancelada = t.excecoes.includes(iso);
-      if (cancelada && !cancelamentosPorData.has(iso)) continue; // exceção antiga, sem motivo — some como antes
+      const motivoFeriado = feriadosPorData.get(iso);
+      const cancelada = t.excecoes.includes(iso) || motivoFeriado !== undefined;
+      const motivo = cancelamentosPorData.get(iso) ?? motivoFeriado;
+      if (cancelada && motivo === undefined) continue; // exceção antiga, sem motivo — some como antes
       adicionar(iso, {
         turmaId: t.id,
         data,
@@ -56,7 +73,7 @@ function ocorrenciasEmDatas(turmas: TurmaResumo[], datas: Date[]): Map<string, O
         professorNome: t.vinculo.professor.nome,
         capacidade: t.capacidade,
         cancelada,
-        motivoCancelamento: cancelamentosPorData.get(iso) ?? null,
+        motivoCancelamento: motivo ?? null,
       });
     }
   }
@@ -103,9 +120,22 @@ export function AgendaTurmasCalendario({
   const [diasVisiveis, setDiasVisiveis] = useState<Date[]>([]);
   const onDiasVisiveisChange = useCallback((dias: Date[]) => setDiasVisiveis(dias), []);
 
+  // Feriados (pedido do usuário, 2026-09-01) — busca própria, mesmo
+  // padrão já usado por PresencaLista logo abaixo neste arquivo. Por
+  // point_id: um professor pode dar aula em mais de um Point.
+  const pointIds = useMemo(
+    () => Array.from(new Set(turmas.map((t) => t.vinculo.point_id))),
+    [turmas],
+  );
+  const [feriadosPorPoint, setFeriadosPorPoint] = useState<Record<number, Feriado[]>>({});
+  useEffect(() => {
+    if (pointIds.length === 0) return;
+    buscarFeriadosPorPoint(pointIds).then(setFeriadosPorPoint);
+  }, [pointIds]);
+
   const ocorrenciasPorDia = useMemo(
-    () => ocorrenciasEmDatas(turmas, diasVisiveis),
-    [turmas, diasVisiveis],
+    () => ocorrenciasEmDatas(turmas, diasVisiveis, feriadosPorPoint),
+    [turmas, diasVisiveis, feriadosPorPoint],
   );
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
 

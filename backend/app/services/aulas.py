@@ -1,13 +1,14 @@
 import calendar
 from datetime import date, timedelta
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, object_session
 
 from app.models.assinatura import Assinatura
 from app.models.aula import Aula
 from app.models.enums import MatriculaStatus
 from app.models.matricula import Matricula
 from app.models.turma import Turma
+from app.services.feriados import eh_feriado, feriados_do_periodo
 
 # Mesma ordem/valores usados no front (frontend/src/lib/dias.ts) — Python
 # date.weekday() já vem 0=segunda..6=domingo, então o índice bate direto.
@@ -33,9 +34,11 @@ def matricula_tem_aula_em(matricula: Matricula, data: date) -> bool:
     """Essa matrícula tem mesmo aula na turma dela nessa data específica —
     pedido do usuário, 2026-08-26 (marcar presença): mensal expande
     dias_semana × período (excluindo exceções, da turma e da própria
-    matrícula); avulsa é só a data única (data_avulsa/data_inicio_efetiva).
-    Mesma checagem usada em vários lugares (reagendar_credito,
-    solicitar_matricula), centralizada aqui pra não reescrever de novo."""
+    matrícula, e feriados — pedido do usuário, 2026-09-01); avulsa é só a
+    data única (data_avulsa/data_inicio_efetiva), já validada contra
+    feriado na criação (não precisa checar nova aqui). Mesma checagem
+    usada em vários lugares (reagendar_credito, solicitar_matricula),
+    centralizada aqui pra não reescrever de novo."""
     from app.models.enums import MatriculaStatus, MatriculaTipo
 
     if matricula.status != MatriculaStatus.ATIVA:
@@ -50,7 +53,14 @@ def matricula_tem_aula_em(matricula: Matricula, data: date) -> bool:
         if _dia_semana_str(data) not in matricula.dias_semana:
             return False
         excluidas = {e.data for e in turma.excecoes_rel} | {e.data for e in matricula.excecoes_rel}
-        return data not in excluidas
+        if data in excluidas:
+            return False
+        # object_session em vez de exigir um parâmetro `db` novo em toda
+        # chamada já existente desta função (checkins.py, creditos.py...).
+        sessao = object_session(matricula)
+        if sessao is not None and eh_feriado(sessao, turma.vinculo.point_id, data) is not None:
+            return False
+        return True
 
     return matricula.data_avulsa == data
 
@@ -137,8 +147,12 @@ def gerar_aulas_do_mes(db: Session, matricula: Matricula, referencia: date | Non
     # Datas removidas (pedido do usuário, 2026-08-20) — a série continua,
     # essa(s) data(s) específica(s) só não geram aula. TurmaExcecao afeta
     # todos os alunos da turma (força maior); MatriculaExcecao é só desse
-    # aluno (cancelamento antecipado dele, com crédito).
+    # aluno (cancelamento antecipado dele, com crédito). Feriado (pedido do
+    # usuário, 2026-09-01: "o sistema... não pode criar [aula] nesses dias
+    # de feriados") entra no mesmo balaio — nacional ou local do Point,
+    # nunca gera Aula num feriado.
     excluidas = {e.data for e in turma.excecoes_rel} | {e.data for e in matricula.excecoes_rel}
+    excluidas |= set(feriados_do_periodo(db, turma.vinculo.point_id, inicio, fim))
 
     novas: list[Aula] = []
     dia_atual = inicio

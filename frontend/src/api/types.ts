@@ -202,6 +202,18 @@ export interface HistoricoEvento {
   cancelado_por_nome: string | null;
 }
 
+// Feriado nacional (calculado) ou local (cadastrado pelo admin) — pedido
+// do usuário, 2026-09-01: "preciso ter um cadastro de feriados... o
+// sistema nesse caso não pode criar [aula] nesses dias". id null =
+// nacional (não é uma linha no banco, só dá pra remover quando não é
+// null).
+export interface Feriado {
+  id: number | null;
+  data: string;
+  nome: string;
+  nacional: boolean;
+}
+
 export interface RepasseFechamento {
   professor_id: number;
   professor_nome: string;

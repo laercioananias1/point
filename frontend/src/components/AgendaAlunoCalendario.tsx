@@ -1,6 +1,7 @@
-import { useMemo, useState, useCallback } from "react";
-import type { Matricula } from "../api/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Feriado, Matricula } from "../api/types";
 import { diaSemanaDeData, toISODate } from "./Calendar";
+import { buscarFeriadosPorPoint } from "../lib/feriados";
 import { horarioFim } from "../lib/dias";
 import { Icon } from "./Layout";
 import { MiniCalendario, type MarcadorDia } from "./MiniCalendario";
@@ -29,7 +30,11 @@ export interface Ocorrencia {
  * (igual ao Calendar.tsx genérico); avulsa é só a data única
  * (data_inicio_efetiva, que agora é a data real escolhida na compra, não
  * mais o início da turma). */
-function ocorrenciasEmDatas(matriculas: Matricula[], datas: Date[]): Map<string, Ocorrencia[]> {
+function ocorrenciasEmDatas(
+  matriculas: Matricula[],
+  datas: Date[],
+  feriadosPorPoint: Record<number, Feriado[]>,
+): Map<string, Ocorrencia[]> {
   const mapa = new Map<string, Ocorrencia[]>();
   const isos = new Set(datas.map(toISODate));
 
@@ -55,7 +60,14 @@ function ocorrenciasEmDatas(matriculas: Matricula[], datas: Date[]): Map<string,
     };
 
     if (m.tipo === "mensal") {
-      const excluidas = new Set([...m.turma.excecoes, ...m.excecoes]);
+      // Feriado (pedido do usuário, 2026-09-01: "o sistema... não pode
+      // criar [aula] nesses dias de feriados") — o backend nunca gera
+      // essa Aula (gerar_aulas_do_mes), então nem mostra aqui: sem ícone
+      // de cancelamento nessa agenda (diferente da agenda por turma), só
+      // some como uma exceção normal, mesmo tratamento que já dava pras
+      // datas removidas por força maior.
+      const feriados = (feriadosPorPoint[m.turma.vinculo.point_id] ?? []).map((f) => f.data);
+      const excluidas = new Set([...m.turma.excecoes, ...m.excecoes, ...feriados]);
       for (const data of datas) {
         const iso = toISODate(data);
         if (iso < m.data_inicio_efetiva) continue;
@@ -97,9 +109,21 @@ export function AgendaAlunoCalendario({
   const [diasVisiveis, setDiasVisiveis] = useState<Date[]>([]);
   const onDiasVisiveisChange = useCallback((dias: Date[]) => setDiasVisiveis(dias), []);
 
+  // Feriados (pedido do usuário, 2026-09-01) — busca própria, por
+  // point_id (o aluno pode ter matrícula em mais de um Point).
+  const pointIds = useMemo(
+    () => Array.from(new Set(matriculas.map((m) => m.turma.vinculo.point_id))),
+    [matriculas],
+  );
+  const [feriadosPorPoint, setFeriadosPorPoint] = useState<Record<number, Feriado[]>>({});
+  useEffect(() => {
+    if (pointIds.length === 0) return;
+    buscarFeriadosPorPoint(pointIds).then(setFeriadosPorPoint);
+  }, [pointIds]);
+
   const ocorrenciasPorDia = useMemo(
-    () => ocorrenciasEmDatas(matriculas, diasVisiveis),
-    [matriculas, diasVisiveis],
+    () => ocorrenciasEmDatas(matriculas, diasVisiveis, feriadosPorPoint),
+    [matriculas, diasVisiveis, feriadosPorPoint],
   );
 
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];

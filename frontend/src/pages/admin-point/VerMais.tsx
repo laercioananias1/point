@@ -29,6 +29,12 @@ export default function AdminPointVerMais() {
             </span>
             <span className="quick-action-label">Meu Point</span>
           </Link>
+          <Link to="/admin-point/configuracoes/feriados" className="quick-action">
+            <span className="quick-action-icon">
+              <Icon name="calendar" />
+            </span>
+            <span className="quick-action-label">Feriados</span>
+          </Link>
         </div>
         <div className="quick-actions">
           <Link to="/admin-point/configuracoes/prazos" className="quick-action">
