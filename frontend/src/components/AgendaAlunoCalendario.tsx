@@ -116,6 +116,17 @@ export function AgendaAlunoCalendario({
         onDiasVisiveisChange={onDiasVisiveisChange}
       />
 
+      {/* Legenda dos ícones do calendário (pedido do usuário, 2026-09-01:
+          "deixa uma legenda em algum canto"). */}
+      <div className="mini-calendar-legenda">
+        <span>
+          <Icon name="repeat" size={12} /> Recorrente/mensal
+        </span>
+        <span>
+          <Icon name="ticket" size={12} /> Avulsa/reposição
+        </span>
+      </div>
+
       {ocorrenciasDoDia.length === 0 ? (
         <p className="empty-state">Nenhuma aula nesse dia.</p>
       ) : (

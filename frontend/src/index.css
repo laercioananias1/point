@@ -1314,6 +1314,33 @@ button.danger:hover:not(:disabled) {
   background: var(--accent);
 }
 
+/* Legenda dos ícones do calendário (pedido do usuário, 2026-09-01: "deixa
+   uma legenda em algum canto") — só na agenda do aluno, que é quem tem os
+   dois ícones (ver AgendaAlunoCalendario.tsx). */
+.mini-calendar-legenda {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 2px 14px;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+
+.mini-calendar-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mini-calendar-legenda span:first-child svg {
+  color: var(--accent);
+}
+
+.mini-calendar-legenda span:last-child svg {
+  color: var(--coral);
+}
+
 .mini-calendar-dia-titulo {
   font-size: 14px;
   font-weight: 700;
