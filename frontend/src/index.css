@@ -1302,6 +1302,18 @@ button.danger:hover:not(:disabled) {
   color: var(--coral);
 }
 
+/* Pontinho genérico (pedido do usuário, 2026-09-01: "esses ícones mostra
+   somente na agenda do aluno, agenda geral como de turmas pode ser o
+   pontinho ou outro ícone que identifica que tem aula naquele dia") — a
+   agenda por turma não tem a distinção mensal/avulsa (é por turma, não
+   por matrícula), então continua com o pontinho de sempre. */
+.mini-calendar-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 .mini-calendar-dia-titulo {
   font-size: 14px;
   font-weight: 700;

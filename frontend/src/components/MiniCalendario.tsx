@@ -9,8 +9,12 @@ type Modo = "mes" | "semana";
 // dá pra criar ícones como: aula recorrente ou mensal, aula reposição ou
 // aula avulsa") — "mensal" cobre recorrente, "avulsa" cobre avulsa/
 // reposição (reagendar um crédito gera uma matrícula avulsa, ver
-// backend/app/routers/creditos.py::_reagendar_credito). null = sem aula.
-export type MarcadorDia = "mensal" | "avulsa" | null;
+// backend/app/routers/creditos.py::_reagendar_credito). "aula" é o
+// pontinho genérico de antes — pedido do usuário, 2026-09-01: "esses
+// ícones mostra somente na agenda do aluno, agenda geral [por turma] pode
+// ser o pontinho" — lá é por turma, não por matrícula, não tem essa
+// distinção mensal/avulsa. null = sem aula.
+export type MarcadorDia = "mensal" | "avulsa" | "aula" | null;
 
 /** Grade de calendário com um pontinho por dia (mês inteiro ou só a
  * semana), sem hora-a-hora — pedido do usuário, 2026-08-26: "a agenda do
@@ -115,7 +119,9 @@ export function MiniCalendario({
                 </span>
               )}
               <span className={"mini-calendar-marcador" + (marcador ? ` ${marcador}` : "")}>
-                {marcador && <Icon name={marcador === "mensal" ? "repeat" : "ticket"} size={12} />}
+                {marcador === "mensal" && <Icon name="repeat" size={12} />}
+                {marcador === "avulsa" && <Icon name="ticket" size={12} />}
+                {marcador === "aula" && <span className="mini-calendar-dot" />}
               </span>
               <span>{data.getDate()}</span>
             </button>
