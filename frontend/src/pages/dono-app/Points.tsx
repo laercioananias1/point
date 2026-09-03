@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import type { ConviteAdmin, PointRanking } from "../../api/types";
 import { useAuth, type User } from "../../auth/AuthContext";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { formatarCelular, formatarReais } from "../../lib/formato";
 
@@ -240,9 +241,10 @@ function ConviteAdminPendenteRow({
   const [cancelando, setCancelando] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const link = `${window.location.origin}/convite-admin/${convite.token}`;
+  const { confirmar, modal } = useConfirm();
 
   async function cancelar() {
-    if (!confirm(`Cancelar o convite de ${convite.nome}?`)) return;
+    if (!(await confirmar(`Cancelar o convite de ${convite.nome}?`))) return;
     setCancelando(true);
     try {
       await api.patch(`/convites-admin/${convite.id}/cancelar`);
@@ -264,6 +266,7 @@ function ConviteAdminPendenteRow({
 
   return (
     <div className="item-card">
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">
           {convite.nome} · {convite.point.nome}

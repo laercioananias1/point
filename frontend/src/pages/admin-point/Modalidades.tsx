@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade } from "../../api/types";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { formatarReais } from "../../lib/formato";
 
@@ -101,6 +102,7 @@ function ModalidadeRow({
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { confirmar, modal } = useConfirm();
 
   async function salvar() {
     setErro(null);
@@ -125,7 +127,7 @@ function ModalidadeRow({
   // (pedido do usuário, 2026-09-01: "validar para remover, verificar se
   // já não existe já aplicada em alguma matrícula").
   async function remover() {
-    if (!confirm(`Remover a modalidade "${modalidade.nome}"?`)) return;
+    if (!(await confirmar(`Remover a modalidade "${modalidade.nome}"?`))) return;
     setErro(null);
     setRemovendo(true);
     try {
@@ -184,6 +186,7 @@ function ModalidadeRow({
 
   return (
     <div className="item-card" style={{ alignItems: "flex-start" }}>
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">{modalidade.nome}</span>
         <span className="item-card-subtitle">

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Feriado } from "../../api/types";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 
 function rotuloData(iso: string): string {
@@ -108,10 +109,11 @@ export default function AdminPointFeriados() {
 function FeriadoRow({ feriado, onRemovido }: { feriado: Feriado; onRemovido: () => void }) {
   const [removendo, setRemovendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { confirmar, modal } = useConfirm();
 
   async function remover() {
     if (feriado.id === null) return;
-    if (!confirm(`Remover o feriado "${feriado.nome}"?`)) return;
+    if (!(await confirmar(`Remover o feriado "${feriado.nome}"?`))) return;
     setErro(null);
     setRemovendo(true);
     try {
@@ -126,6 +128,7 @@ function FeriadoRow({ feriado, onRemovido }: { feriado: Feriado; onRemovido: () 
 
   return (
     <div className="item-card">
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title" style={{ textTransform: "capitalize" }}>
           {rotuloData(feriado.data)}

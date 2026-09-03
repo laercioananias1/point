@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, Quadra } from "../../api/types";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 
 /** Tela própria pra quadras — saiu de dentro da antiga Configurações
@@ -115,6 +116,7 @@ function QuadraRow({
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { confirmar, modal } = useConfirm();
 
   function alternar(id: number) {
     setModalidadeIds((atual) => (atual.includes(id) ? atual.filter((i) => i !== id) : [...atual, id]));
@@ -139,7 +141,7 @@ function QuadraRow({
   // [de modalidades: "validar para remover, verificar se já não existe
   // aplicada em alguma matrícula"].
   async function remover() {
-    if (!confirm(`Remover a quadra "${quadra.nome}"?`)) return;
+    if (!(await confirmar(`Remover a quadra "${quadra.nome}"?`))) return;
     setErro(null);
     setRemovendo(true);
     try {
@@ -188,6 +190,7 @@ function QuadraRow({
 
   return (
     <div className="item-card" style={{ alignItems: "flex-start" }}>
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">{quadra.nome}</span>
         <span className="item-card-subtitle">

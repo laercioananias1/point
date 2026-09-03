@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
 import type { ConviteVinculo, Vinculo } from "../../api/types";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 import { rotuloRepasse } from "../../lib/formato";
@@ -122,9 +123,10 @@ function ConviteVinculoPendenteRow({
   const [cancelando, setCancelando] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const link = `${window.location.origin}/convite-vinculo/${convite.token}`;
+  const { confirmar, modal } = useConfirm();
 
   async function cancelar() {
-    if (!confirm(`Cancelar o convite de ${convite.nome}?`)) return;
+    if (!(await confirmar(`Cancelar o convite de ${convite.nome}?`))) return;
     setCancelando(true);
     try {
       await api.patch(`/convites-vinculo/${convite.id}/cancelar`);
@@ -146,6 +148,7 @@ function ConviteVinculoPendenteRow({
 
   return (
     <div className="item-card">
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">
           {convite.nome} · repasse {rotuloRepasse(convite.modelo_repasse, convite.valor_repasse)}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Assinatura, Convite, Matricula } from "../../api/types";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 import { rotuloTurma } from "../../lib/dias";
@@ -224,9 +225,10 @@ function AssinaturaAtivaRow({
   onMudanca: () => void;
 }) {
   const [cancelando, setCancelando] = useState(false);
+  const { confirmar, modal } = useConfirm();
 
   async function cancelar() {
-    if (!confirm(`Cancelar a assinatura de ${assinatura.aluno.nome}?`)) return;
+    if (!(await confirmar(`Cancelar a assinatura de ${assinatura.aluno.nome}?`))) return;
     setCancelando(true);
     try {
       await api.patch(`/assinaturas/${assinatura.id}/cancelar`);
@@ -238,6 +240,7 @@ function AssinaturaAtivaRow({
 
   return (
     <div className="item-card">
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">
           {assinatura.aluno.nome} · {assinatura.modalidade.nome} · {assinatura.plano?.frequencia_semanal}
@@ -264,9 +267,10 @@ function ConvitePendenteRow({ convite, onMudanca }: { convite: Convite; onMudanc
   const [cancelando, setCancelando] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const link = `${window.location.origin}/convite/${convite.token}`;
+  const { confirmar, modal } = useConfirm();
 
   async function cancelar() {
-    if (!confirm(`Cancelar o convite de ${convite.nome}?`)) return;
+    if (!(await confirmar(`Cancelar o convite de ${convite.nome}?`))) return;
     setCancelando(true);
     try {
       await api.patch(`/convites/${convite.id}/cancelar`);
@@ -288,6 +292,7 @@ function ConvitePendenteRow({ convite, onMudanca }: { convite: Convite; onMudanc
 
   return (
     <div className="item-card">
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">
           {convite.nome} · {convite.modalidade.nome} · {convite.plano.frequencia_semanal}x/semana

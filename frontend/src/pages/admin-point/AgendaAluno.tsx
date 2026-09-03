@@ -4,6 +4,7 @@ import { api, ApiError } from "../../api/client";
 import type { Assinatura, Credito, HistoricoEvento, Matricula, TurmaResumo } from "../../api/types";
 import { diaSemanaDeData, somarDias, toISODate } from "../../components/Calendar";
 import { AgendaAlunoCalendario, type Ocorrencia } from "../../components/AgendaAlunoCalendario";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA, horarioFim } from "../../lib/dias";
 
@@ -225,9 +226,10 @@ function AssinaturaRowAdmin({
   onCancelada: () => void;
 }) {
   const [cancelando, setCancelando] = useState(false);
+  const { confirmar, modal } = useConfirm();
 
   async function cancelar() {
-    if (!confirm(`Cancelar a assinatura de ${assinatura.aluno.nome}? Isso encerra o plano de vez.`)) {
+    if (!(await confirmar(`Cancelar a assinatura de ${assinatura.aluno.nome}? Isso encerra o plano de vez.`))) {
       return;
     }
     setCancelando(true);
@@ -241,6 +243,7 @@ function AssinaturaRowAdmin({
 
   return (
     <div className="item-card">
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">
           {assinatura.modalidade.nome} · {assinatura.plano?.frequencia_semanal}x/semana

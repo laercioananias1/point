@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Plano } from "../../api/types";
+import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { formatarReais } from "../../lib/formato";
 
@@ -99,6 +100,7 @@ function PlanoRow({ plano, onSalva }: { plano: Plano; onSalva: () => void }) {
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { confirmar, modal } = useConfirm();
 
   async function salvar() {
     setErro(null);
@@ -119,7 +121,7 @@ function PlanoRow({ plano, onSalva }: { plano: Plano; onSalva: () => void }) {
   // forma" [de modalidades: "validar para remover, verificar se já não
   // existe aplicada em alguma matrícula"].
   async function remover() {
-    if (!confirm(`Remover o plano de ${plano.frequencia_semanal}x por semana?`)) return;
+    if (!(await confirmar(`Remover o plano de ${plano.frequencia_semanal}x por semana?`))) return;
     setErro(null);
     setRemovendo(true);
     try {
@@ -163,6 +165,7 @@ function PlanoRow({ plano, onSalva }: { plano: Plano; onSalva: () => void }) {
 
   return (
     <div className="item-card" style={{ alignItems: "flex-start" }}>
+      {modal}
       <div className="item-card-info">
         <span className="item-card-title">{plano.frequencia_semanal}x por semana</span>
         <span className="item-card-subtitle">{formatarReais(plano.preco)} / mês</span>
