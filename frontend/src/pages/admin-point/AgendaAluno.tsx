@@ -440,7 +440,11 @@ function CancelarAulaModalAdmin({
             Motivo do cancelamento
           </span>
           <div className="toggle-grid">
-            {["Chuva", "Ventos fortes"].map((m) => (
+            {/* Motivos de aluno (pedido do usuário, 2026-09-01: "os
+                motivos de aluno são: doença, motivo pessoal, outros",
+                depois "troque doença para saúde") — diferente do
+                cancelamento por turma inteira, que é sobre o tempo. */}
+            {["Saúde", "Motivo pessoal"].map((m) => (
               <button
                 key={m}
                 type="button"

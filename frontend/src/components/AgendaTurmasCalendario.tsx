@@ -663,7 +663,12 @@ function CancelarAulaAlunoModal({
             Motivo do cancelamento
           </span>
           <div className="toggle-grid">
-            {["Chuva", "Ventos fortes"].map((m) => (
+            {/* Motivos diferentes do cancelamento por turma acima (pedido
+                do usuário, 2026-09-01: "os motivos de aluno são: doença,
+                motivo pessoal, outros", depois "troque doença para
+                saúde") — aqui é só ESSE aluno, então o motivo é dele, não
+                do tempo. */}
+            {["Saúde", "Motivo pessoal"].map((m) => (
               <button
                 key={m}
                 type="button"

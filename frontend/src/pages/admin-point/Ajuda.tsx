@@ -212,7 +212,7 @@ export default function AdminPointAjuda() {
           <AjudaPergunta icon="x" pergunta="Como cancelar 1 aula específica de um aluno?">
             <ul>
               <li>Aba Alunos → clique no aluno → toque na data no calendário.</li>
-              <li>Escolha o motivo do cancelamento (Chuva, Ventos fortes ou Outro).</li>
+              <li>Escolha o motivo do cancelamento (Saúde, Motivo pessoal ou Outro).</li>
               <li>
                 Escolha se gera crédito de reposição ou não (opcional — útil se o cadastro da aula
                 estava errado).
