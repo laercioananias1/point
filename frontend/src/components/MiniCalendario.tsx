@@ -121,7 +121,7 @@ export function MiniCalendario({
                 </span>
               )}
               <span className={"mini-calendar-marcador" + (marcador ? ` ${marcador}` : "")}>
-                {marcador === "mensal" && <Icon name="repeat" size={12} />}
+                {marcador === "mensal" && <Icon name="calendar" size={12} />}
                 {marcador === "avulsa" && <Icon name="ticket" size={12} />}
                 {marcador === "reposicao" && <Icon name="refresh" size={12} />}
                 {marcador === "cancelada" && <Icon name="x-circle" size={12} />}

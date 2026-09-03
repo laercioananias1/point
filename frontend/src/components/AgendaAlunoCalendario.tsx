@@ -127,7 +127,7 @@ export function AgendaAlunoCalendario({
           "deixa uma legenda em algum canto"). */}
       <div className="mini-calendar-legenda">
         <span style={{ color: "var(--accent)" }}>
-          <Icon name="repeat" size={12} /> Recorrente/mensal
+          <Icon name="calendar" size={12} /> Recorrente/mensal
         </span>
         <span style={{ color: "var(--coral)" }}>
           <Icon name="ticket" size={12} /> Avulsa
