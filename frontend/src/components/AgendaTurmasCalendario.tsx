@@ -705,10 +705,6 @@ function CancelarAulaAlunoModal({
           />
           Gerar crédito de reposição pro aluno
         </label>
-        <p className="empty-state" style={{ padding: 0 }}>
-          Desmarque se for só correção de um cadastro errado — nesse caso o aluno não perdeu uma aula
-          de verdade.
-        </p>
 
         {erro && <p className="form-error">{erro}</p>}
 
