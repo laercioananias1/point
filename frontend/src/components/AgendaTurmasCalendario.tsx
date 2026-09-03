@@ -580,7 +580,7 @@ function GerenciarAulaModal({
             {enviando === "a_partir_desta_data" ? "Cancelando..." : "Cancelar este dia em diante"}
           </button>
           <button className="secondary" disabled={enviando !== null} onClick={onFechar}>
-            Desistir
+            Voltar
           </button>
         </div>
       </div>
