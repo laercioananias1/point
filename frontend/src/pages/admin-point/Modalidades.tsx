@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { api } from "../../api/client";
+import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
@@ -95,21 +95,46 @@ function ModalidadeRow({
   onSalva: () => void;
 }) {
   const [editando, setEditando] = useState(false);
+  const [nome, setNome] = useState(modalidade.nome);
   const [duracao, setDuracao] = useState(String(modalidade.duracao_padrao_minutos));
   const [precoAvulso, setPrecoAvulso] = useState(String(modalidade.preco_avulso));
   const [salvando, setSalvando] = useState(false);
+  const [removendo, setRemovendo] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   async function salvar() {
+    setErro(null);
     setSalvando(true);
     try {
       await api.patch(`/modalidades/${modalidade.id}`, {
+        nome,
         duracao_padrao_minutos: Number(duracao),
         preco_avulso: Number(precoAvulso),
       });
       setEditando(false);
       onSalva();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível salvar. Tente de novo.");
     } finally {
       setSalvando(false);
+    }
+  }
+
+  // Validação de verdade fica no backend (checa turma/matrícula) — o
+  // confirm() aqui é só o "tem certeza?" de sempre antes de remover
+  // (pedido do usuário, 2026-09-01: "validar para remover, verificar se
+  // já não existe já aplicada em alguma matrícula").
+  async function remover() {
+    if (!confirm(`Remover a modalidade "${modalidade.nome}"?`)) return;
+    setErro(null);
+    setRemovendo(true);
+    try {
+      await api.delete(`/modalidades/${modalidade.id}`);
+      onSalva();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível remover. Tente de novo.");
+    } finally {
+      setRemovendo(false);
     }
   }
 
@@ -117,7 +142,10 @@ function ModalidadeRow({
     return (
       <div className="item-card" style={{ alignItems: "flex-start" }}>
         <div className="item-card-info" style={{ flex: 1 }}>
-          <span className="item-card-title">{modalidade.nome}</span>
+          <label>
+            Nome
+            <input value={nome} onChange={(e) => setNome(e.target.value)} />
+          </label>
           <div className="form-row" style={{ marginTop: "6px" }}>
             <label>
               Duração (min)
@@ -140,6 +168,7 @@ function ModalidadeRow({
               />
             </label>
           </div>
+          {erro && <p className="form-error">{erro}</p>}
         </div>
         <div className="item-card-actions">
           <button disabled={salvando} onClick={salvar}>
@@ -154,17 +183,23 @@ function ModalidadeRow({
   }
 
   return (
-    <div className="item-card">
+    <div className="item-card" style={{ alignItems: "flex-start" }}>
       <div className="item-card-info">
         <span className="item-card-title">{modalidade.nome}</span>
         <span className="item-card-subtitle">
           aula padrão de {modalidade.duracao_padrao_minutos} min · avulsa{" "}
           {formatarReais(modalidade.preco_avulso)}
         </span>
+        {erro && <p className="form-error">{erro}</p>}
       </div>
-      <button className="secondary" onClick={() => setEditando(true)}>
-        Editar
-      </button>
+      <div className="item-card-actions">
+        <button className="secondary" onClick={() => setEditando(true)}>
+          Editar
+        </button>
+        <button className="secondary" disabled={removendo} onClick={remover}>
+          {removendo ? "Removendo..." : "Remover"}
+        </button>
+      </div>
     </div>
   );
 }

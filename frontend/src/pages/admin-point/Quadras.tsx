@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { api } from "../../api/client";
+import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, Quadra } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
@@ -110,21 +110,45 @@ function QuadraRow({
   onSalva: () => void;
 }) {
   const [editando, setEditando] = useState(false);
+  const [nome, setNome] = useState(quadra.nome);
   const [modalidadeIds, setModalidadeIds] = useState(quadra.modalidades.map((m) => m.id));
   const [salvando, setSalvando] = useState(false);
+  const [removendo, setRemovendo] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   function alternar(id: number) {
     setModalidadeIds((atual) => (atual.includes(id) ? atual.filter((i) => i !== id) : [...atual, id]));
   }
 
   async function salvar() {
+    setErro(null);
     setSalvando(true);
     try {
-      await api.patch(`/quadras/${quadra.id}`, { modalidade_ids: modalidadeIds });
+      await api.patch(`/quadras/${quadra.id}`, { nome, modalidade_ids: modalidadeIds });
       setEditando(false);
       onSalva();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível salvar. Tente de novo.");
     } finally {
       setSalvando(false);
+    }
+  }
+
+  // Validação de verdade fica no backend (checa turma/matrícula) — pedido
+  // do usuário, 2026-09-01: "quadras e planos também da mesma forma"
+  // [de modalidades: "validar para remover, verificar se já não existe
+  // aplicada em alguma matrícula"].
+  async function remover() {
+    if (!confirm(`Remover a quadra "${quadra.nome}"?`)) return;
+    setErro(null);
+    setRemovendo(true);
+    try {
+      await api.delete(`/quadras/${quadra.id}`);
+      onSalva();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível remover. Tente de novo.");
+    } finally {
+      setRemovendo(false);
     }
   }
 
@@ -132,7 +156,10 @@ function QuadraRow({
     return (
       <div className="item-card" style={{ alignItems: "flex-start" }}>
         <div className="item-card-info" style={{ flex: 1 }}>
-          <span className="item-card-title">{quadra.nome}</span>
+          <label>
+            Nome
+            <input value={nome} onChange={(e) => setNome(e.target.value)} />
+          </label>
           <div className="toggle-grid" style={{ marginTop: "6px" }}>
             {modalidades.map((m) => (
               <button
@@ -145,6 +172,7 @@ function QuadraRow({
               </button>
             ))}
           </div>
+          {erro && <p className="form-error">{erro}</p>}
         </div>
         <div className="item-card-actions">
           <button disabled={salvando} onClick={salvar}>
@@ -159,16 +187,22 @@ function QuadraRow({
   }
 
   return (
-    <div className="item-card">
+    <div className="item-card" style={{ alignItems: "flex-start" }}>
       <div className="item-card-info">
         <span className="item-card-title">{quadra.nome}</span>
         <span className="item-card-subtitle">
           {quadra.modalidades.map((m) => m.nome).join(", ") || "nenhuma modalidade associada"}
         </span>
+        {erro && <p className="form-error">{erro}</p>}
       </div>
-      <button className="secondary" onClick={() => setEditando(true)}>
-        Editar
-      </button>
+      <div className="item-card-actions">
+        <button className="secondary" onClick={() => setEditando(true)}>
+          Editar
+        </button>
+        <button className="secondary" disabled={removendo} onClick={remover}>
+          {removendo ? "Removendo..." : "Remover"}
+        </button>
+      </div>
     </div>
   );
 }

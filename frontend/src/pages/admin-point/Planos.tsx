@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { api } from "../../api/client";
+import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Plano } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
@@ -65,12 +65,7 @@ export default function AdminPointPlanos() {
             ) : (
               <div className="card-list">
                 {planos.map((p) => (
-                  <div className="item-card" key={p.id}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">{p.frequencia_semanal}x por semana</span>
-                      <span className="item-card-subtitle">{formatarReais(p.preco)} / mês</span>
-                    </div>
-                  </div>
+                  <PlanoRow key={p.id} plano={p} onSalva={carregar} />
                 ))}
               </div>
             )}
@@ -95,5 +90,92 @@ export default function AdminPointPlanos() {
         </>
       )}
     </Layout>
+  );
+}
+
+function PlanoRow({ plano, onSalva }: { plano: Plano; onSalva: () => void }) {
+  const [editando, setEditando] = useState(false);
+  const [preco, setPreco] = useState(String(plano.preco));
+  const [salvando, setSalvando] = useState(false);
+  const [removendo, setRemovendo] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function salvar() {
+    setErro(null);
+    setSalvando(true);
+    try {
+      await api.patch(`/planos/${plano.id}`, { preco: Number(preco) });
+      setEditando(false);
+      onSalva();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível salvar. Tente de novo.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  // Validação de verdade fica no backend (checa assinatura/convite) —
+  // pedido do usuário, 2026-09-01: "quadras e planos também da mesma
+  // forma" [de modalidades: "validar para remover, verificar se já não
+  // existe aplicada em alguma matrícula"].
+  async function remover() {
+    if (!confirm(`Remover o plano de ${plano.frequencia_semanal}x por semana?`)) return;
+    setErro(null);
+    setRemovendo(true);
+    try {
+      await api.delete(`/planos/${plano.id}`);
+      onSalva();
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : "Não foi possível remover. Tente de novo.");
+    } finally {
+      setRemovendo(false);
+    }
+  }
+
+  if (editando) {
+    return (
+      <div className="item-card" style={{ alignItems: "flex-start" }}>
+        <div className="item-card-info" style={{ flex: 1 }}>
+          <span className="item-card-title">{plano.frequencia_semanal}x por semana</span>
+          <label style={{ marginTop: "6px" }}>
+            Preço mensal (R$)
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={preco}
+              onChange={(e) => setPreco(e.target.value)}
+            />
+          </label>
+          {erro && <p className="form-error">{erro}</p>}
+        </div>
+        <div className="item-card-actions">
+          <button disabled={salvando} onClick={salvar}>
+            {salvando ? "Salvando..." : "Salvar"}
+          </button>
+          <button className="secondary" onClick={() => setEditando(false)}>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="item-card" style={{ alignItems: "flex-start" }}>
+      <div className="item-card-info">
+        <span className="item-card-title">{plano.frequencia_semanal}x por semana</span>
+        <span className="item-card-subtitle">{formatarReais(plano.preco)} / mês</span>
+        {erro && <p className="form-error">{erro}</p>}
+      </div>
+      <div className="item-card-actions">
+        <button className="secondary" onClick={() => setEditando(true)}>
+          Editar
+        </button>
+        <button className="secondary" disabled={removendo} onClick={remover}>
+          {removendo ? "Removendo..." : "Remover"}
+        </button>
+      </div>
+    </div>
   );
 }

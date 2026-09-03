@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_role
 from app.models.enums import Role
+from app.models.matricula import Matricula
 from app.models.modalidade import Modalidade
 from app.models.quadra import Quadra
+from app.models.turma import Turma
 from app.models.user import User
 from app.schemas.quadra import QuadraCreate, QuadraOut, QuadraUpdate
 
@@ -76,3 +78,32 @@ def atualizar_quadra(
     db.commit()
     db.refresh(quadra)
     return quadra
+
+
+@router.delete("/{quadra_id}", status_code=204)
+def remover_quadra(
+    quadra_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> None:
+    """Remover quadra (pedido do usuário, 2026-09-01: "quadras e planos
+    também da mesma forma" — mesma validação de modalidades: turma é quem
+    prende matrícula (Matricula.turma_id -> Turma.quadra_id), FK sem
+    cascade."""
+    quadra = db.get(Quadra, quadra_id)
+    if quadra is None or quadra.point_id != admin.point_id:
+        raise HTTPException(404, "Quadra não encontrada")
+
+    turma_ids = [t.id for t in db.query(Turma.id).filter(Turma.quadra_id == quadra_id).all()]
+    if turma_ids:
+        tem_matricula = (
+            db.query(Matricula.id).filter(Matricula.turma_id.in_(turma_ids)).first() is not None
+        )
+        if tem_matricula:
+            raise HTTPException(409, "Essa quadra já tem aluno matriculado numa turma — não dá pra remover.")
+        raise HTTPException(
+            409, "Essa quadra tem turma cadastrada — remova as turmas antes de remover a quadra."
+        )
+
+    db.delete(quadra)
+    db.commit()
