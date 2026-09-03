@@ -24,6 +24,14 @@ interface OcorrenciaTurma {
   // agora viram uma ocorrência "cancelada" em vez de sumir.
   cancelada: boolean;
   motivoCancelamento: string | null;
+  // Feriado — campo à parte de "cancelada" de propósito (pedido do
+  // usuário, 2026-09-01: "faz um ícone diferenciado para feriado, não
+  // vamos misturar com dia que tem aula cancelada") — mesmo efeito na
+  // prática (sem Aula gerada), mas motivo diferente: um é decisão humana
+  // pontual (chuva, ventos fortes...), o outro é o calendário nacional/
+  // local, sabido de antemão.
+  feriado: boolean;
+  nomeFeriado: string | null;
 }
 
 /** Ocorrências de todas as turmas passadas dentro das datas visíveis —
@@ -58,10 +66,14 @@ function ocorrenciasEmDatas(
       if (iso < t.periodo_inicio) continue;
       if (t.periodo_fim !== null && iso > t.periodo_fim) continue;
       if (!t.dias_semana.includes(diaSemanaDeData(data))) continue;
-      const motivoFeriado = feriadosPorData.get(iso);
-      const cancelada = t.excecoes.includes(iso) || motivoFeriado !== undefined;
-      const motivo = cancelamentosPorData.get(iso) ?? motivoFeriado;
-      if (cancelada && motivo === undefined) continue; // exceção antiga, sem motivo — some como antes
+
+      const nomeFeriado = feriadosPorData.get(iso) ?? null;
+      const cancelada = nomeFeriado === null && t.excecoes.includes(iso);
+      const motivoCancelamento = cancelamentosPorData.get(iso) ?? null;
+      // Feriado sempre aparece (é informativo, sabido de antemão); exceção
+      // manual antiga sem motivo registrado some como sempre fez.
+      if (cancelada && motivoCancelamento === null) continue;
+
       adicionar(iso, {
         turmaId: t.id,
         data,
@@ -73,7 +85,9 @@ function ocorrenciasEmDatas(
         professorNome: t.vinculo.professor.nome,
         capacidade: t.capacidade,
         cancelada,
-        motivoCancelamento: motivo ?? null,
+        motivoCancelamento,
+        feriado: nomeFeriado !== null,
+        nomeFeriado,
       });
     }
   }
@@ -160,12 +174,16 @@ export function AgendaTurmasCalendario({
       <MiniCalendario
         // Aqui é por turma, não por matrícula — não tem a distinção
         // mensal/avulsa que a agenda do aluno tem (ver
-        // AgendaAlunoCalendario.tsx). "cancelada" (pedido do usuário,
-        // 2026-09-01) tem prioridade sobre o pontinho genérico — é o caso
-        // fora do padrão, o que mais vale destacar no mês.
+        // AgendaAlunoCalendario.tsx). "feriado" e "cancelada" têm
+        // prioridade sobre o pontinho genérico — são os casos fora do
+        // padrão, o que mais vale destacar no mês; ícone de feriado é
+        // separado do de cancelamento de propósito (pedido do usuário,
+        // 2026-09-01: "não vamos misturar com dia que tem aula
+        // cancelada").
         marcadorDoDia={(data) => {
           const ocs = ocorrenciasPorDia.get(toISODate(data));
           if (!ocs || ocs.length === 0) return null;
+          if (ocs.some((oc) => oc.feriado)) return "feriado";
           return ocs.some((oc) => oc.cancelada) ? "cancelada" : "aula";
         }}
         diaSelecionado={diaSelecionado}
@@ -178,6 +196,38 @@ export function AgendaTurmasCalendario({
       ) : (
         <div className="card-list">
           {ocorrenciasDoDia.map((oc, i) => {
+            if (oc.feriado) {
+              return (
+                <div
+                  key={i}
+                  className="item-card"
+                  style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
+                >
+                  <div className="item-card-info">
+                    <span
+                      className="item-card-title"
+                      style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--navy)" }}
+                    >
+                      <Icon name="flag" /> {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}{" "}
+                      não tem aula (feriado)
+                    </span>
+                    <span className="item-card-subtitle">
+                      {oc.modalidadeNome} · com {oc.professorNome}
+                    </span>
+                    <span
+                      className="item-card-subtitle"
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <Icon name="pin" /> {oc.pointNome} · {oc.quadraNome}
+                    </span>
+                  </div>
+                  <div className="info-box" style={{ borderColor: "var(--navy)" }}>
+                    <span>Feriado: {oc.nomeFeriado}</span>
+                  </div>
+                </div>
+              );
+            }
+
             if (oc.cancelada) {
               return (
                 <div

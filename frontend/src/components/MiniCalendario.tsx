@@ -15,8 +15,18 @@ type Modo = "mes" | "semana";
 // usuário, 2026-09-01: "esses ícones mostra somente na agenda do aluno,
 // agenda geral [por turma] pode ser o pontinho" — lá é por turma, não
 // por matrícula, não tem essa distinção. "cancelada" é uma aula
-// cancelada por força maior, com motivo. null = sem aula.
-export type MarcadorDia = "mensal" | "avulsa" | "reposicao" | "aula" | "cancelada" | null;
+// cancelada por força maior, com motivo. "feriado" é separado de
+// propósito (pedido do usuário, 2026-09-01: "não vamos misturar com dia
+// que tem aula cancelada") — mesmo efeito (sem aula), motivo diferente.
+// null = sem aula.
+export type MarcadorDia =
+  | "mensal"
+  | "avulsa"
+  | "reposicao"
+  | "aula"
+  | "cancelada"
+  | "feriado"
+  | null;
 
 /** Grade de calendário com um pontinho por dia (mês inteiro ou só a
  * semana), sem hora-a-hora — pedido do usuário, 2026-08-26: "a agenda do
@@ -125,6 +135,7 @@ export function MiniCalendario({
                 {marcador === "avulsa" && <Icon name="ticket" size={12} />}
                 {marcador === "reposicao" && <Icon name="refresh" size={12} />}
                 {marcador === "cancelada" && <Icon name="x-circle" size={12} />}
+                {marcador === "feriado" && <Icon name="flag" size={12} />}
                 {marcador === "aula" && <span className="mini-calendar-dot" />}
               </span>
               <span>{data.getDate()}</span>

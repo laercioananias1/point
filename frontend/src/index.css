@@ -1310,6 +1310,10 @@ button.danger:hover:not(:disabled) {
   color: var(--warn);
 }
 
+.mini-calendar-marcador.feriado {
+  color: var(--navy);
+}
+
 /* Pontinho genérico (pedido do usuário, 2026-09-01: "esses ícones mostra
    somente na agenda do aluno, agenda geral como de turmas pode ser o
    pontinho ou outro ícone que identifica que tem aula naquele dia") — a

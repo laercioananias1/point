@@ -103,7 +103,8 @@ export type IconName =
   | "check-circle"
   | "list"
   | "repeat"
-  | "x-circle";
+  | "x-circle"
+  | "flag";
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -287,6 +288,15 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
         <circle cx="12" cy="12" r="10" />
         <line x1="15" y1="9" x2="9" y2="15" />
         <line x1="9" y1="9" x2="15" y2="15" />
+      </>
+    ),
+    // Feriado no calendário (pedido do usuário, 2026-09-01: "faz um
+    // ícone diferenciado para feriado, não vamos misturar com dia que
+    // tem aula cancelada") — separado do "x-circle" de cancelamento.
+    flag: (
+      <>
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+        <line x1="4" y1="22" x2="4" y2="15" />
       </>
     ),
   };
