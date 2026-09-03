@@ -51,19 +51,37 @@ export default function AdminPointAjuda() {
         <div className="card-list">
           <AjudaPergunta
             icon="grid"
-            pergunta="Como cadastrar uma modalidade e uma quadra?"
-            nota="Cadastre isso antes de convidar professor ou aluno — turma depende disso."
+            pergunta="Como cadastrar, editar ou remover uma modalidade e uma quadra?"
+            nota="Cadastre isso antes de convidar professor ou aluno — turma depende disso. Remover só é permitido se não tiver turma cadastrada com aquela modalidade/quadra."
           >
             <ol>
               <li>Ver mais → Modalidades → Cadastrar modalidade (nome, duração padrão, preço avulso).</li>
               <li>Ver mais → Quadras → Cadastrar quadra, associando às modalidades que ela atende.</li>
+              <li>Em cada item da lista, "Editar" muda o nome e os outros dados; "Remover" apaga.</li>
             </ol>
           </AjudaPergunta>
 
-          <AjudaPergunta icon="ticket" pergunta="Como cadastrar um plano?">
+          <AjudaPergunta
+            icon="ticket"
+            pergunta="Como cadastrar, editar ou remover um plano?"
+            nota="Só o preço é editável — a frequência semanal é a identidade do plano. Remover só é permitido se o plano nunca foi usado numa assinatura/convite."
+          >
             <ol>
               <li>Ver mais → Planos → Cadastrar plano.</li>
               <li>Defina a frequência semanal (ex.: 2x) e o preço mensal.</li>
+              <li>Em cada plano da lista, "Editar" muda o preço; "Remover" apaga.</li>
+            </ol>
+          </AjudaPergunta>
+
+          <AjudaPergunta
+            icon="calendar"
+            pergunta="Como cadastrar um feriado?"
+            nota="O sistema nunca gera aula em dia de feriado — nacional ou local — automaticamente, não precisa cancelar na mão."
+          >
+            <ol>
+              <li>Ver mais → Feriados.</li>
+              <li>Os nacionais já vêm prontos (inclusive os que mudam de data todo ano, como Sexta-feira Santa).</li>
+              <li>"Cadastrar feriado local" adiciona um só desse Point (ex.: aniversário da cidade).</li>
             </ol>
           </AjudaPergunta>
 
@@ -158,11 +176,43 @@ export default function AdminPointAjuda() {
       </section>
 
       <section className="section">
+        <h2>Agenda geral (turmas)</h2>
+        <div className="card-list">
+          <AjudaPergunta
+            icon="x"
+            pergunta="Como cancelar uma aula pra turma inteira (chuva, imprevisto)?"
+            nota="Os ícones do calendário ficam diferentes: bandeira = feriado, X vermelho = aula cancelada por você — pra não confundir os dois."
+          >
+            <ol>
+              <li>Aba Agenda → toque no dia → "Cancelar aula" na turma.</li>
+              <li>Escolha o motivo: Chuva, Ventos fortes ou Outro (nesse caso, descreva).</li>
+              <li>
+                "Cancelar só este dia" mantém a turma normal nas próximas semanas; "Cancelar este
+                dia em diante" encerra a turma ali.
+              </li>
+              <li>Marque se quer gerar crédito de reposição pra quem já tinha aula marcada.</li>
+            </ol>
+          </AjudaPergunta>
+
+          <AjudaPergunta
+            icon="x"
+            pergunta="Dá pra cancelar a aula de só um aluno, sem mexer na turma inteira?"
+          >
+            <p>
+              Dá, de dois jeitos: aba Agenda → dia → na lista de presença, "Cancelar aula dele"; ou
+              pela agenda individual do aluno (ver abaixo). Os dois pedem motivo.
+            </p>
+          </AjudaPergunta>
+        </div>
+      </section>
+
+      <section className="section">
         <h2>Agenda de um aluno</h2>
         <div className="card-list">
           <AjudaPergunta icon="x" pergunta="Como cancelar 1 aula específica de um aluno?">
             <ul>
               <li>Aba Alunos → clique no aluno → toque na data no calendário.</li>
+              <li>Escolha o motivo do cancelamento (Chuva, Ventos fortes ou Outro).</li>
               <li>
                 Escolha se gera crédito de reposição ou não (opcional — útil se o cadastro da aula
                 estava errado).
@@ -224,6 +274,13 @@ export default function AdminPointAjuda() {
 
           <AjudaPergunta icon="users" pergunta="Tenho mais de um papel (ex.: dono e professor). Como troco de área?">
             <p>Aba Perfil → "Trocar de área", no fim da tela.</p>
+          </AjudaPergunta>
+
+          <AjudaPergunta icon="settings" pergunta="Como mudo pro modo escuro?">
+            <p>
+              Aba Perfil → "Aparência": Sistema (acompanha o celular/computador automaticamente),
+              Claro ou Escuro.
+            </p>
           </AjudaPergunta>
         </div>
       </section>
