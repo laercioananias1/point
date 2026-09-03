@@ -346,4 +346,8 @@ export interface Matricula {
   // Preço da mensalidade, vindo do Plano da assinatura (pedido do usuário,
   // 2026-09-01) — null pra avulsa, que não tem mensalidade recorrente.
   valor_mensalidade: number | null;
+  // Distingue "Aula Avulsa" (compra direta) de "Aula de Reposição" (nasceu
+  // de um crédito reagendado) — pedido do usuário, 2026-09-01: ícones
+  // diferentes no calendário do aluno. Sempre false pra mensal.
+  e_reposicao: boolean;
 }

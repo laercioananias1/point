@@ -1306,6 +1306,10 @@ button.danger:hover:not(:disabled) {
   color: var(--risk);
 }
 
+.mini-calendar-marcador.reposicao {
+  color: var(--warn);
+}
+
 /* Pontinho genérico (pedido do usuário, 2026-09-01: "esses ícones mostra
    somente na agenda do aluno, agenda geral como de turmas pode ser o
    pontinho ou outro ícone que identifica que tem aula naquele dia") — a
@@ -1335,14 +1339,6 @@ button.danger:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-}
-
-.mini-calendar-legenda span:first-child svg {
-  color: var(--accent);
-}
-
-.mini-calendar-legenda span:last-child svg {
-  color: var(--coral);
 }
 
 .mini-calendar-dia-titulo {

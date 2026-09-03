@@ -97,3 +97,7 @@ class MatriculaOut(ORMModel):
     # Preço da mensalidade, vindo do Plano da Assinatura (pedido do usuário,
     # 2026-09-01) — None pra avulsa, que não tem mensalidade recorrente.
     valor_mensalidade: float | None = None
+    # Distingue "Aula Avulsa" (compra direta) de "Aula de Reposição" (nasceu
+    # de um crédito reagendado) — pedido do usuário, 2026-09-01: ícones
+    # diferentes no calendário do aluno. Sempre False pra mensal.
+    e_reposicao: bool = False

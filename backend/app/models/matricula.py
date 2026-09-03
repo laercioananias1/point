@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, object_session, relationship
 
 from app.core.database import Base
 from app.models.base import TimestampMixin
@@ -169,6 +169,28 @@ class Matricula(TimestampMixin, Base):
         from app.services.aulas import matricula_inadimplente
 
         return matricula_inadimplente(self)
+
+    @property
+    def e_reposicao(self) -> bool:
+        """Essa avulsa nasceu de um crédito reagendado, não de compra
+        direta (pedido do usuário, 2026-09-01: "Aula Avulsa" e "Aula de
+        Reposição" são ícones/conceitos diferentes no calendário) — via
+        CreditoReposicao.nova_matricula_id, sem virar relationship pra não
+        colidir com o overlap que já existe entre Matricula.creditos e
+        CreditoReposicao.matricula_id (mesma tabela, FK diferente)."""
+        if self.tipo != MatriculaTipo.AVULSA:
+            return False
+        sessao = object_session(self)
+        if sessao is None:
+            return False
+        from app.models.credito_reposicao import CreditoReposicao
+
+        return (
+            sessao.query(CreditoReposicao.id)
+            .filter(CreditoReposicao.nova_matricula_id == self.id)
+            .first()
+            is not None
+        )
 
     @property
     def data_inicio_efetiva(self) -> date:

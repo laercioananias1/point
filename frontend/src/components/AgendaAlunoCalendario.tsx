@@ -9,6 +9,11 @@ export interface Ocorrencia {
   matriculaId: number;
   data: Date;
   tipo: "mensal" | "avulsa";
+  // Avulsa que nasceu de um crédito reagendado, não de compra direta
+  // (pedido do usuário, 2026-09-01, com referência visual de ícones:
+  // "dá pra implementar esses ícones" — Aula Avulsa vs Aula de
+  // Reposição). Sempre false quando tipo === "mensal".
+  eReposicao: boolean;
   horario: string;
   duracaoMinutos: number;
   modalidadeNome: string;
@@ -38,6 +43,7 @@ function ocorrenciasEmDatas(matriculas: Matricula[], datas: Date[]): Map<string,
     if (m.status !== "ativa") continue;
     const base = {
       matriculaId: m.id,
+      eReposicao: m.e_reposicao,
       horario: m.turma.horario,
       duracaoMinutos: m.turma.duracao_minutos,
       modalidadeNome: m.turma.modalidade.nome,
@@ -98,13 +104,14 @@ export function AgendaAlunoCalendario({
 
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
 
-  // Prioriza "avulsa" quando o dia tem os dois (raro, mas possível: aula
-  // recorrente normal + uma reposição caindo no mesmo dia) — é o caso mais
-  // fora do padrão, o que mais vale destacar.
+  // Prioriza o caso mais fora do padrão quando o dia tem mais de um
+  // (raro, mas possível): reposição > avulsa comprada > recorrente normal.
   function marcadorDoDia(data: Date): MarcadorDia {
     const ocs = ocorrenciasPorDia.get(toISODate(data));
     if (!ocs || ocs.length === 0) return null;
-    return ocs.some((oc) => oc.tipo === "avulsa") ? "avulsa" : "mensal";
+    if (ocs.some((oc) => oc.tipo === "avulsa" && oc.eReposicao)) return "reposicao";
+    if (ocs.some((oc) => oc.tipo === "avulsa")) return "avulsa";
+    return "mensal";
   }
 
   return (
@@ -119,11 +126,14 @@ export function AgendaAlunoCalendario({
       {/* Legenda dos ícones do calendário (pedido do usuário, 2026-09-01:
           "deixa uma legenda em algum canto"). */}
       <div className="mini-calendar-legenda">
-        <span>
+        <span style={{ color: "var(--accent)" }}>
           <Icon name="repeat" size={12} /> Recorrente/mensal
         </span>
-        <span>
-          <Icon name="ticket" size={12} /> Avulsa/reposição
+        <span style={{ color: "var(--coral)" }}>
+          <Icon name="ticket" size={12} /> Avulsa
+        </span>
+        <span style={{ color: "var(--warn)" }}>
+          <Icon name="refresh" size={12} /> Reposição
         </span>
       </div>
 
@@ -153,7 +163,7 @@ export function AgendaAlunoCalendario({
                 </span>
                 <span style={{ display: "flex", gap: 6 }}>
                   <span className="status-pill status-info">
-                    {oc.tipo === "mensal" ? "Recorrente" : "Avulsa"}
+                    {oc.tipo === "mensal" ? "Recorrente" : oc.eReposicao ? "Reposição" : "Avulsa"}
                   </span>
                   <span className="status-pill status-good">Confirmada</span>
                 </span>
