@@ -102,7 +102,8 @@ export type IconName =
   | "refresh"
   | "check-circle"
   | "list"
-  | "repeat";
+  | "repeat"
+  | "x-circle";
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -276,6 +277,16 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
         <path d="M3 11V9a4 4 0 0 1 4-4h14" />
         <polyline points="7 23 3 19 7 15" />
         <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+      </>
+    ),
+    // Aula cancelada por força maior no calendário (pedido do usuário,
+    // 2026-09-01: "aparecer no calendário com um ícone tb de
+    // cancelamento e mostrar motivo").
+    "x-circle": (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
       </>
     ),
   };

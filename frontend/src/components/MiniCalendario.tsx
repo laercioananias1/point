@@ -13,8 +13,11 @@ type Modo = "mes" | "semana";
 // pontinho genérico de antes — pedido do usuário, 2026-09-01: "esses
 // ícones mostra somente na agenda do aluno, agenda geral [por turma] pode
 // ser o pontinho" — lá é por turma, não por matrícula, não tem essa
-// distinção mensal/avulsa. null = sem aula.
-export type MarcadorDia = "mensal" | "avulsa" | "aula" | null;
+// distinção mensal/avulsa. "cancelada" é uma aula cancelada por força
+// maior, com motivo (pedido do usuário, 2026-09-01: "aparecer no
+// calendário com um ícone tb de cancelamento e mostrar motivo"). null =
+// sem aula.
+export type MarcadorDia = "mensal" | "avulsa" | "aula" | "cancelada" | null;
 
 /** Grade de calendário com um pontinho por dia (mês inteiro ou só a
  * semana), sem hora-a-hora — pedido do usuário, 2026-08-26: "a agenda do
@@ -121,6 +124,7 @@ export function MiniCalendario({
               <span className={"mini-calendar-marcador" + (marcador ? ` ${marcador}` : "")}>
                 {marcador === "mensal" && <Icon name="repeat" size={12} />}
                 {marcador === "avulsa" && <Icon name="ticket" size={12} />}
+                {marcador === "cancelada" && <Icon name="x-circle" size={12} />}
                 {marcador === "aula" && <span className="mini-calendar-dot" />}
               </span>
               <span>{data.getDate()}</span>

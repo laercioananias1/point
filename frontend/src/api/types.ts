@@ -116,6 +116,16 @@ export interface Vinculo {
   point: PointResumo;
 }
 
+// Data + motivo de uma aula cancelada por força maior (pedido do usuário,
+// 2026-09-01: "o cancelar aula do professor ou adm precisa dar um
+// motivo... essa informação precisa aparecer no calendário com um ícone
+// tb de cancelamento e mostrar motivo") — `excecoes` (só as datas)
+// continua existindo pra quem só precisa filtrar ocorrência.
+export interface TurmaCancelamento {
+  data: string;
+  motivo: string | null;
+}
+
 export interface TurmaResumo {
   id: number;
   vinculo_id: number;
@@ -129,6 +139,7 @@ export interface TurmaResumo {
   periodo_inicio: string;
   periodo_fim: string | null;
   excecoes: string[];
+  cancelamentos: TurmaCancelamento[];
   vinculo: Vinculo;
 }
 

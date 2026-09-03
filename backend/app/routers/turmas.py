@@ -222,6 +222,8 @@ def remover_turma(
             creditos_gerados = len(creditos)
 
     if payload.escopo == "unica_data":
+        if not (payload.motivo and payload.motivo.strip()):
+            raise HTTPException(422, "Informe o motivo do cancelamento")
         if payload.data < turma.periodo_inicio or (
             turma.periodo_fim is not None and payload.data > turma.periodo_fim
         ):
@@ -234,7 +236,7 @@ def remover_turma(
         if ja_existe:
             raise HTTPException(409, "Essa data já tinha sido removida")
 
-        db.add(TurmaExcecao(turma_id=turma.id, data=payload.data))
+        db.add(TurmaExcecao(turma_id=turma.id, data=payload.data, motivo=payload.motivo.strip()))
         aulas_removidas = (
             db.query(Aula)
             .filter(

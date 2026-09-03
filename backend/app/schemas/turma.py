@@ -41,6 +41,16 @@ class TurmaCreate(ORMModel):
         return valor
 
 
+class TurmaCancelamentoOut(ORMModel):
+    """Data + motivo de uma aula cancelada por força maior (pedido do
+    usuário, 2026-09-01) — `excecoes` (só as datas) continua existindo
+    pra quem só precisa filtrar ocorrência; isso aqui é só pra exibir o
+    motivo no calendário."""
+
+    data: date
+    motivo: str | None
+
+
 class TurmaOut(ORMModel):
     id: int
     vinculo_id: int
@@ -54,6 +64,7 @@ class TurmaOut(ORMModel):
     periodo_inicio: date
     periodo_fim: date | None
     excecoes: list[date]
+    cancelamentos: list[TurmaCancelamentoOut]
     vinculo: VinculoOut
 
 
@@ -81,6 +92,16 @@ class TurmaRemocao(ORMModel):
     escopo: Literal["unica_data", "a_partir_desta_data"]
     data: date
     gerar_credito: bool = False
+    # Motivo do cancelamento (pedido do usuário, 2026-09-01: "o cancelar
+    # aula do professor ou adm precisa dar um motivo... essa informação
+    # precisa aparecer no calendário") — obrigatório só pra 'unica_data'
+    # (checado no router, não aqui — mensagem de erro clara em vez do
+    # formato genérico de ValidationError), que é o que vira uma
+    # TurmaExcecao com motivo pra mostrar no calendário;
+    # 'a_partir_desta_data' encerra a série (decisão administrativa, não
+    # um cancelamento pontual por força maior), não tem onde guardar
+    # motivo nem faz sentido pedir.
+    motivo: str | None = None
 
 
 class RemocaoTurmaOut(ORMModel):

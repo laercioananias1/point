@@ -16,6 +16,13 @@ interface OcorrenciaTurma {
   quadraNome: string;
   professorNome: string;
   capacidade: number;
+  // Aula cancelada por força maior nessa data, com motivo (pedido do
+  // usuário, 2026-09-01: "essa informação precisa aparecer no calendário
+  // com um ícone tb de cancelamento e mostrar motivo") — antes essas
+  // datas simplesmente desapareciam do calendário (t.excecoes.includes),
+  // agora viram uma ocorrência "cancelada" em vez de sumir.
+  cancelada: boolean;
+  motivoCancelamento: string | null;
 }
 
 /** Ocorrências de todas as turmas passadas dentro das datas visíveis —
@@ -30,12 +37,14 @@ function ocorrenciasEmDatas(turmas: TurmaResumo[], datas: Date[]): Map<string, O
   };
 
   for (const t of turmas) {
+    const cancelamentosPorData = new Map(t.cancelamentos.map((c) => [c.data, c.motivo]));
     for (const data of datas) {
       const iso = toISODate(data);
       if (iso < t.periodo_inicio) continue;
       if (t.periodo_fim !== null && iso > t.periodo_fim) continue;
-      if (t.excecoes.includes(iso)) continue;
       if (!t.dias_semana.includes(diaSemanaDeData(data))) continue;
+      const cancelada = t.excecoes.includes(iso);
+      if (cancelada && !cancelamentosPorData.has(iso)) continue; // exceção antiga, sem motivo — some como antes
       adicionar(iso, {
         turmaId: t.id,
         data,
@@ -46,6 +55,8 @@ function ocorrenciasEmDatas(turmas: TurmaResumo[], datas: Date[]): Map<string, O
         quadraNome: t.quadra.nome,
         professorNome: t.vinculo.professor.nome,
         capacidade: t.capacidade,
+        cancelada,
+        motivoCancelamento: cancelamentosPorData.get(iso) ?? null,
       });
     }
   }
@@ -119,12 +130,14 @@ export function AgendaTurmasCalendario({
       <MiniCalendario
         // Aqui é por turma, não por matrícula — não tem a distinção
         // mensal/avulsa que a agenda do aluno tem (ver
-        // AgendaAlunoCalendario.tsx), então fica o pontinho genérico de
-        // sempre (pedido do usuário, 2026-09-01: "agenda geral como de
-        // turmas pode ser o pontinho").
-        marcadorDoDia={(data) =>
-          (ocorrenciasPorDia.get(toISODate(data))?.length ?? 0) > 0 ? "aula" : null
-        }
+        // AgendaAlunoCalendario.tsx). "cancelada" (pedido do usuário,
+        // 2026-09-01) tem prioridade sobre o pontinho genérico — é o caso
+        // fora do padrão, o que mais vale destacar no mês.
+        marcadorDoDia={(data) => {
+          const ocs = ocorrenciasPorDia.get(toISODate(data));
+          if (!ocs || ocs.length === 0) return null;
+          return ocs.some((oc) => oc.cancelada) ? "cancelada" : "aula";
+        }}
         diaSelecionado={diaSelecionado}
         onSelecionarDia={setDiaSelecionado}
         onDiasVisiveisChange={onDiasVisiveisChange}
@@ -135,6 +148,40 @@ export function AgendaTurmasCalendario({
       ) : (
         <div className="card-list">
           {ocorrenciasDoDia.map((oc, i) => {
+            if (oc.cancelada) {
+              return (
+                <div
+                  key={i}
+                  className="item-card"
+                  style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
+                >
+                  <div className="item-card-info">
+                    <span
+                      className="item-card-title"
+                      style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--risk)" }}
+                    >
+                      <Icon name="x-circle" /> {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}{" "}
+                      cancelada
+                    </span>
+                    <span className="item-card-subtitle">
+                      {oc.modalidadeNome} · com {oc.professorNome}
+                    </span>
+                    <span
+                      className="item-card-subtitle"
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <Icon name="pin" /> {oc.pointNome} · {oc.quadraNome}
+                    </span>
+                  </div>
+                  {oc.motivoCancelamento && (
+                    <div className="info-box" style={{ borderColor: "var(--risk)" }}>
+                      <span>Motivo: {oc.motivoCancelamento}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             const iso = toISODate(oc.data);
             const diaSemana = diaSemanaDeData(oc.data);
             const alunos = matriculas
@@ -293,6 +340,16 @@ function GerenciarAulaModal({
   // é natural gerar o crédito ... coloca um check pra confirmar") — só
   // aparece quando tem aluno na ocorrência, e vem marcado por padrão.
   const [gerarCredito, setGerarCredito] = useState(true);
+  // Motivo do cancelamento (pedido do usuário, 2026-09-01: "o cancelar
+  // aula do professor ou adm precisa dar um motivo, alguns motivos
+  // padrões pode ser selecionado como: Chuva, ventos fortes ou outros
+  // onde precisa informar o motivo") — obrigatório só pra "cancelar só
+  // este dia" (é o que vira TurmaExcecao com motivo, ver backend); "em
+  // diante" encerra a série, decisão diferente, sem motivo pra guardar.
+  const [motivoSelecionado, setMotivoSelecionado] = useState<string | null>(null);
+  const [motivoOutro, setMotivoOutro] = useState("");
+  const usandoOutro = motivoSelecionado === "outro";
+  const motivoFinal = (usandoOutro ? motivoOutro : motivoSelecionado)?.trim() || null;
 
   useEffect(() => {
     function aoTeclar(e: KeyboardEvent) {
@@ -316,6 +373,7 @@ function GerenciarAulaModal({
         escopo,
         data: toISODate(data),
         gerar_credito: alunosCount > 0 && gerarCredito,
+        motivo: motivoFinal,
       });
       onRemovido();
     } catch (e) {
@@ -335,6 +393,42 @@ function GerenciarAulaModal({
           </span>
         </div>
 
+        <div>
+          <span style={{ fontWeight: 600, fontSize: 14, display: "block", marginBottom: 6 }}>
+            Motivo do cancelamento
+          </span>
+          <div className="toggle-grid">
+            {["Chuva", "Ventos fortes"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={motivoSelecionado === m ? "toggle-chip active" : "toggle-chip"}
+                onClick={() => setMotivoSelecionado(m)}
+              >
+                {m}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={usandoOutro ? "toggle-chip active" : "toggle-chip"}
+              onClick={() => setMotivoSelecionado("outro")}
+            >
+              Outro
+            </button>
+          </div>
+          {usandoOutro && (
+            <input
+              style={{ marginTop: 8 }}
+              placeholder="Descreva o motivo"
+              value={motivoOutro}
+              onChange={(e) => setMotivoOutro(e.target.value)}
+            />
+          )}
+          <p className="empty-state" style={{ padding: "4px 0 0" }}>
+            Obrigatório só pra cancelar um dia específico — "em diante" encerra a série toda.
+          </p>
+        </div>
+
         {alunosCount > 0 && (
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <input
@@ -350,7 +444,10 @@ function GerenciarAulaModal({
         {erro && <p className="form-error">{erro}</p>}
 
         <div className="modal-actions">
-          <button disabled={enviando !== null} onClick={() => remover("unica_data")}>
+          <button
+            disabled={enviando !== null || !motivoFinal}
+            onClick={() => remover("unica_data")}
+          >
             {enviando === "unica_data" ? "Cancelando..." : "Cancelar só este dia"}
           </button>
           <button

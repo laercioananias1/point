@@ -61,6 +61,16 @@ class Turma(TimestampMixin, Base):
         return [e.data for e in self.excecoes_rel]
 
     @property
+    def cancelamentos(self) -> list["TurmaExcecao"]:  # noqa: F821
+        """Mesma lista de excecoes_rel, com nome mais claro pro schema novo
+        (TurmaCancelamentoOut: data + motivo) — pedido do usuário,
+        2026-09-01: mostrar o motivo do cancelamento no calendário.
+        `excecoes` continua existindo só com as datas, sem mexer em quem já
+        usa esse campo pra filtrar ocorrência (services/aulas.py e o
+        cálculo de agenda no front)."""
+        return self.excecoes_rel
+
+    @property
     def dias_semana(self) -> list[str]:
         """Dias da semana, na ordem segunda→domingo (não na ordem em que
         foram cadastrados), pra TurmaOut expor direto sem aninhar schema.
