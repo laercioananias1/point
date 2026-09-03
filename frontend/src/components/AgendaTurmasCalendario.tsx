@@ -117,7 +117,13 @@ export function AgendaTurmasCalendario({
       )}
 
       <MiniCalendario
-        temOcorrencia={(data) => (ocorrenciasPorDia.get(toISODate(data))?.length ?? 0) > 0}
+        // Aqui é por turma, não por matrícula — não tem a distinção
+        // mensal/avulsa que a agenda do aluno tem (ver
+        // AgendaAlunoCalendario.tsx); toda ocorrência de turma marca como
+        // "mensal" (ícone de recorrência), só pra sair do pontinho antigo.
+        marcadorDoDia={(data) =>
+          (ocorrenciasPorDia.get(toISODate(data))?.length ?? 0) > 0 ? "mensal" : null
+        }
         diaSelecionado={diaSelecionado}
         onSelecionarDia={setDiaSelecionado}
         onDiasVisiveisChange={onDiasVisiveisChange}

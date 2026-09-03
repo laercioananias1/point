@@ -1281,18 +1281,25 @@ button.danger:hover:not(:disabled) {
    deveria mostrar somente a agenda do aluno em questão" — não era bug de
    dado (o filtro por dia já era certo), era visual: todo dia tinha um
    pontinho cinza (só de espaçador, pra não pular o número quando não tem
-   aula), quase do mesmo tamanho/peso do pontinho de verdade — parecia
-   que tinha aula todo santo dia. Transparente por padrão: só aparece
-   pontinho em dia que realmente tem aula. */
-.mini-calendar-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: transparent;
+   aula), quase do mesmo peso do pontinho de verdade — parecia que tinha
+   aula todo santo dia.
+   Virou ícone (pedido do usuário, 2026-09-01: "no lugar do pontinho dá
+   pra criar ícones... aula recorrente/mensal, aula reposição/avulsa") —
+   altura fixa mesmo vazio, pra não pular o número quando não tem aula. */
+.mini-calendar-marcador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 12px;
+  color: transparent;
 }
 
-.mini-calendar-dot.ativo {
-  background: var(--accent);
+.mini-calendar-marcador.mensal {
+  color: var(--accent);
+}
+
+.mini-calendar-marcador.avulsa {
+  color: var(--coral);
 }
 
 .mini-calendar-dia-titulo {

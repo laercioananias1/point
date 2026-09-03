@@ -3,7 +3,7 @@ import type { Matricula } from "../api/types";
 import { diaSemanaDeData, toISODate } from "./Calendar";
 import { horarioFim } from "../lib/dias";
 import { Icon } from "./Layout";
-import { MiniCalendario } from "./MiniCalendario";
+import { MiniCalendario, type MarcadorDia } from "./MiniCalendario";
 
 export interface Ocorrencia {
   matriculaId: number;
@@ -98,10 +98,19 @@ export function AgendaAlunoCalendario({
 
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
 
+  // Prioriza "avulsa" quando o dia tem os dois (raro, mas possível: aula
+  // recorrente normal + uma reposição caindo no mesmo dia) — é o caso mais
+  // fora do padrão, o que mais vale destacar.
+  function marcadorDoDia(data: Date): MarcadorDia {
+    const ocs = ocorrenciasPorDia.get(toISODate(data));
+    if (!ocs || ocs.length === 0) return null;
+    return ocs.some((oc) => oc.tipo === "avulsa") ? "avulsa" : "mensal";
+  }
+
   return (
     <div>
       <MiniCalendario
-        temOcorrencia={(data) => (ocorrenciasPorDia.get(toISODate(data))?.length ?? 0) > 0}
+        marcadorDoDia={marcadorDoDia}
         diaSelecionado={diaSelecionado}
         onSelecionarDia={setDiaSelecionado}
         onDiasVisiveisChange={onDiasVisiveisChange}

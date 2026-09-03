@@ -101,9 +101,10 @@ export type IconName =
   | "pause"
   | "refresh"
   | "check-circle"
-  | "list";
+  | "list"
+  | "repeat";
 
-export function Icon({ name }: { name: IconName }) {
+export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
     home: (
       <>
@@ -264,11 +265,24 @@ export function Icon({ name }: { name: IconName }) {
         <line x1="3" y1="18" x2="3.01" y2="18" />
       </>
     ),
+    // Marcador de "aula recorrente/mensal" no mini-calendário da agenda do
+    // aluno (pedido do usuário, 2026-09-01: "no lugar do pontinho da pra
+    // criar ícones como: aula recorrente ou mensal, aula reposição ou
+    // aula avulsa") — o de avulsa/reposição reaproveita o ícone "ticket"
+    // que já representa crédito de reposição no resto do app.
+    repeat: (
+      <>
+        <polyline points="17 1 21 5 17 9" />
+        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+        <polyline points="7 23 3 19 7 15" />
+        <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+      </>
+    ),
   };
   return (
     <svg
-      width="20"
-      height="20"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

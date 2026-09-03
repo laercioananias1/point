@@ -5,6 +5,13 @@ import { Icon } from "./Layout";
 
 type Modo = "mes" | "semana";
 
+// Marcador por dia (pedido do usuário, 2026-09-01: "no lugar do pontinho
+// dá pra criar ícones como: aula recorrente ou mensal, aula reposição ou
+// aula avulsa") — "mensal" cobre recorrente, "avulsa" cobre avulsa/
+// reposição (reagendar um crédito gera uma matrícula avulsa, ver
+// backend/app/routers/creditos.py::_reagendar_credito). null = sem aula.
+export type MarcadorDia = "mensal" | "avulsa" | null;
+
 /** Grade de calendário com um pontinho por dia (mês inteiro ou só a
  * semana), sem hora-a-hora — pedido do usuário, 2026-08-26: "a agenda do
  * aluno pode ser diferente, pq é algo individual só dele" (referência de
@@ -14,12 +21,12 @@ type Modo = "mes" | "semana";
  * selecionado (a lista de ocorrências é bem diferente pra aluno — cancelar
  * com crédito — e pra professor — remover a aula da turma). */
 export function MiniCalendario({
-  temOcorrencia,
+  marcadorDoDia,
   diaSelecionado,
   onSelecionarDia,
   onDiasVisiveisChange,
 }: {
-  temOcorrencia: (data: Date) => boolean;
+  marcadorDoDia: (data: Date) => MarcadorDia;
   diaSelecionado: Date;
   onSelecionarDia: (data: Date) => void;
   // Avisa quem chama exatamente quais datas a grade tá mostrando agora
@@ -92,6 +99,7 @@ export function MiniCalendario({
           const iso = toISODate(data);
           const foraDoMes = modo === "mes" && data.getMonth() !== referencia.getMonth();
           const selecionado = iso === toISODate(diaSelecionado);
+          const marcador = marcadorDoDia(data);
           return (
             <button
               type="button"
@@ -106,7 +114,9 @@ export function MiniCalendario({
                   {DIAS_SEMANA.find((d) => d.value === diaSemanaDeData(data))?.label.slice(0, 3).toUpperCase()}
                 </span>
               )}
-              <span className={"mini-calendar-dot" + (temOcorrencia(data) ? " ativo" : "")} />
+              <span className={"mini-calendar-marcador" + (marcador ? ` ${marcador}` : "")}>
+                {marcador && <Icon name={marcador === "mensal" ? "repeat" : "ticket"} size={12} />}
+              </span>
               <span>{data.getDate()}</span>
             </button>
           );
