@@ -49,13 +49,15 @@ cp .env.production.example .env.production
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
-Isso sobe três serviços, todos só em `127.0.0.1` (não acessíveis direto da
+Isso sobe quatro serviços, todos só em `127.0.0.1` (não acessíveis direto da
 internet — o nginx do host é quem expõe):
 
 - `db` (MySQL) — sem porta publicada, só a rede interna do compose acessa
 - `api` (FastAPI) — `127.0.0.1:8001`
 - `web` (painel, build estático servido por nginx dentro do container) —
   `127.0.0.1:8002`
+- `landing` (site institucional, estático — pedido do usuário, 2026-09-09)
+  — `127.0.0.1:8003`
 
 ## 3. Migrations + primeiro usuário
 
@@ -79,36 +81,46 @@ quem já existe.
 
 ## 4. DNS + nginx (rodando dentro do container `adsops-frontend-1`)
 
+Pedido do usuário, 2026-09-09: `opoint.com.br`/`www.opoint.com.br` passam a
+ser o **site institucional** (serviço `landing`, novo — ver seção 2, porta
+`127.0.0.1:8003`); o **app/painel** (o que antes respondia em
+`opoint.com.br`) mudou pra `app.opoint.com.br`. Três domínios, dois destinos:
+`landing` de um lado, `web`+`api` do outro.
+
 ### 4.1 Apontar o DNS
 
-No painel onde `opoint.com.br` foi registrado, crie um registro **A**
-apontando pro IP público desse VPS (e o mesmo pra `www.opoint.com.br` se for
-usar, ou um CNAME pro domínio raiz). Espere propagar antes de pedir o
-certificado (seção 4.4) — `dig opoint.com.br` deve devolver o IP do servidor.
+No painel onde `opoint.com.br` foi registrado, crie:
+
+- Registro **A** de `opoint.com.br` pro IP público do VPS.
+- Registro **A** (ou CNAME pro domínio raiz) de `www.opoint.com.br`.
+- Registro **A** de `app.opoint.com.br` pro mesmo IP.
+
+Espere propagar antes de pedir os certificados (seção 4.4) — `dig
+app.opoint.com.br` (e os outros dois) deve devolver o IP do servidor.
 
 ### 4.2 Conectar o container do nginx à rede do Point
 
 O nginx que atende 80/443 roda dentro de `adsops-frontend-1` (projeto
-não relacionado). Pra ele conseguir falar com `point-api-1`/`point-web-1`
-pelo nome do container (em vez de depender de `127.0.0.1:PORTA`, que dentro
-de um container sibling não bate no host), conecte-o à rede do compose do
-Point (se ainda não estiver conectado):
+não relacionado). Pra ele conseguir falar com `point-api-1`/`point-web-1`/
+`point-landing-1` pelo nome do container (em vez de depender de
+`127.0.0.1:PORTA`, que dentro de um container sibling não bate no host),
+conecte-o à rede do compose do Point (se ainda não estiver conectado):
 
 ```bash
 docker network connect point_default adsops-frontend-1
 ```
 
-### 4.3 Adicionar o server block
+### 4.3 Adicionar os server blocks
 
 A config desse nginx fica em `/etc/nginx/conf.d/*.conf` **dentro** do
 container (não é bind mount do host — só os volumes do certbot são). Crie
-o arquivo direto no container rodando:
+os arquivos direto no container rodando — um pro site, outro pro app:
 
 ```bash
-docker exec -i adsops-frontend-1 sh -c 'cat > /etc/nginx/conf.d/opoint.conf' << 'EOF'
+docker exec -i adsops-frontend-1 sh -c 'cat > /etc/nginx/conf.d/opoint-site.conf' << 'EOF'
 server {
     listen 80;
-    server_name opoint.com.br;
+    server_name opoint.com.br www.opoint.com.br;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -121,10 +133,41 @@ server {
 
 server {
     listen 443 ssl;
-    server_name opoint.com.br;
+    server_name opoint.com.br www.opoint.com.br;
 
     ssl_certificate /etc/letsencrypt/live/opoint.com.br/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/opoint.com.br/privkey.pem;
+
+    location / {
+        proxy_pass http://point-landing-1:80/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+
+docker exec -i adsops-frontend-1 sh -c 'cat > /etc/nginx/conf.d/opoint-app.conf' << 'EOF'
+server {
+    listen 80;
+    server_name app.opoint.com.br;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name app.opoint.com.br;
+
+    ssl_certificate /etc/letsencrypt/live/app.opoint.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/app.opoint.com.br/privkey.pem;
 
     location /api/ {
         proxy_pass http://point-api-1:8000/;
@@ -145,32 +188,55 @@ server {
 EOF
 ```
 
-O bloco 443 só funciona depois que o certificado existir (próximo passo) —
-`nginx -t`/`reload` vai reclamar até lá, é esperado.
+Se já existia um `opoint.conf` (do domínio único de antes), remova-o —
+os dois blocos acima substituem ele:
 
-### 4.4 Emitir o certificado (Let's Encrypt / certbot)
+```bash
+docker exec adsops-frontend-1 rm -f /etc/nginx/conf.d/opoint.conf
+```
+
+Os blocos 443 só funcionam depois que o certificado existir (próximo
+passo) — `nginx -t`/`reload` vai reclamar até lá, é esperado.
+
+### 4.4 Emitir os certificados (Let's Encrypt / certbot)
 
 O host não tem `certbot` instalado — roda um container avulso, reaproveitando
 os volumes de certbot que o `adsops-frontend-1` já usa (`_data` é o caminho
 real por trás dos volumes nomeados; confirme com
-`docker volume inspect adsops_certbot_www adsops_certbot_conf`):
+`docker volume inspect adsops_certbot_www adsops_certbot_conf`). Um
+certificado com `opoint.com.br` + `www.opoint.com.br` juntos (SAN), outro
+separado pra `app.opoint.com.br`:
 
 ```bash
 docker run --rm \
   -v adsops_certbot_www:/var/www/certbot \
   -v adsops_certbot_conf:/etc/letsencrypt \
-  certbot/certbot certonly --webroot -w /var/www/certbot -d opoint.com.br
+  certbot/certbot certonly --webroot -w /var/www/certbot \
+  -d opoint.com.br -d www.opoint.com.br
+
+docker run --rm \
+  -v adsops_certbot_www:/var/www/certbot \
+  -v adsops_certbot_conf:/etc/letsencrypt \
+  certbot/certbot certonly --webroot -w /var/www/certbot \
+  -d app.opoint.com.br
 ```
 
-Depois, recarregue o nginx pra ele pegar o certificado novo e o server block:
+Se já existia certificado só de `opoint.com.br` (do domínio único de
+antes) e ele já cobre `www`, o primeiro comando acima só expande esse
+certificado (`certbot` detecta e usa `--expand` sozinho nesse caso; se
+recusar, adicione `--expand` explícito).
+
+Depois, recarregue o nginx pra ele pegar os certificados novos e os
+server blocks:
 
 ```bash
 docker exec adsops-frontend-1 nginx -t
 docker exec adsops-frontend-1 nginx -s reload
 ```
 
-Teste: `curl -I https://opoint.com.br/api/health` deve responder 200 com
-`{"api":"ok","database":"ok"}`.
+Teste: `curl -I https://opoint.com.br` deve responder 200 (site
+institucional), e `curl -I https://app.opoint.com.br/api/health` deve
+responder 200 com `{"api":"ok","database":"ok"}` (o app).
 
 ### 4.5 Desligar o domínio antigo (`point.taskhero.com.br`)
 

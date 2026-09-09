@@ -83,6 +83,16 @@ services:
     depends_on:
       - api
 
+  # Site institucional (opoint.com.br / www.opoint.com.br) — pedido do
+  # usuário, 2026-09-09: domínio raiz passa a ser o site, o app (antes em
+  # opoint.com.br) muda pra app.opoint.com.br. Estático, sem depender de
+  # nada — ver DEPLOY.md seção 4 pro roteamento no nginx do host.
+  landing:
+    build: ./landing
+    restart: always
+    ports:
+      - "127.0.0.1:8003:80"
+
 volumes:
   db_data:
   uploads_data:

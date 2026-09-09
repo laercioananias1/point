@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect width="48" height="48" rx="12" fill="#0E3A53"/>
+  <!-- Anel faz o "O" de OPoint, a bola sólida cruza a borda fazendo o
+       ponto (mesmo desenho do LogoMark, ver
+       frontend/src/components/LogoMark.tsx) — refeito 2026-09-01 sem a
+       rede de malha fina, que sumia em bordado/impressão pequena. -->
+  <circle cx="23" cy="24" r="14" fill="none" stroke="#EAF1F4" stroke-width="7.5"/>
+  <circle cx="35" cy="12" r="8" fill="#F2542D"/>
+</svg>

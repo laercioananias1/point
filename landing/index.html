@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OPoint — gestão para arenas esportivas</title>
+<meta name="description" content="OPoint organiza quadras, turmas, matrículas e pagamento do seu Point — Pix, Wellhub e TotalPass, agenda com ocupação em tempo real, tudo num só painel." />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---- Tokens (mesma identidade do app OPoint) ---- */
+  :root {
+    --bg: #f7f1e2;
+    --surface: #ffffff;
+    --surface-sunk: #efe6d2;
+    --line: #e4d9c2;
+    --ink: #12242e;
+    --ink-muted: #5b6b72;
+    --navy: #0e3a53;
+    --navy-ink: #0a2a3d;
+    --navy-line: #23516b;
+    --navy-text: #eaf1f4;
+    --navy-text-muted: #9fb9c4;
+    --accent: #0e9594;
+    --accent-strong: #077372;
+    --accent-soft: #dcefec;
+    --coral: #f2542d;
+    --gold: #c97f12;
+    --gold-soft: #f6e8d0;
+    --shadow-card: 0 1px 2px rgba(18, 36, 46, 0.06), 0 10px 24px -10px rgba(18, 36, 46, 0.16);
+    --shadow-pop: 0 18px 40px -16px rgba(10, 42, 61, 0.4);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1a22;
+      --surface: #13293a;
+      --surface-sunk: #0e2029;
+      --line: #234253;
+      --ink: #eaf1f4;
+      --ink-muted: #9fb9c4;
+      --navy: #081c29;
+      --navy-ink: #051119;
+      --navy-line: #1c3a4d;
+      --navy-text: #eaf1f4;
+      --navy-text-muted: #9fb9c4;
+      --accent: #17a8a0;
+      --accent-strong: #5eead4;
+      --accent-soft: #123c3b;
+      --coral: #ff6b45;
+      --gold: #f0a93a;
+      --gold-soft: #3a2c10;
+      --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 24px -10px rgba(0, 0, 0, 0.5);
+      --shadow-pop: 0 18px 40px -16px rgba(0, 0, 0, 0.6);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Work Sans", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  h1, h2, h3 { font-family: "Archivo", sans-serif; text-wrap: balance; margin: 0; }
+  a { color: inherit; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ---- Nav ---- */
+  .nav { background: var(--navy); color: var(--navy-text); border-bottom: 1px solid var(--navy-line); }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 28px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-family: "Archivo", sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
+  .nav-links { display: flex; align-items: center; gap: 28px; font-size: 14px; font-weight: 600; }
+  .nav-links a { text-decoration: none; color: var(--navy-text-muted); transition: color 150ms ease; }
+  .nav-links a:hover { color: var(--navy-text); }
+  .nav-actions { display: flex; align-items: center; gap: 14px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 9px; font-family: "Work Sans", sans-serif; font-weight: 700; font-size: 14.5px;
+    padding: 11px 20px; text-decoration: none; border: 1px solid transparent; cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--coral); color: #fff; box-shadow: 0 8px 20px -8px rgba(242, 84, 45, 0.55); }
+  .btn-primary:hover { box-shadow: 0 10px 24px -8px rgba(242, 84, 45, 0.7); }
+  .btn-ghost-on-navy { background: transparent; color: var(--navy-text); border-color: var(--navy-line); }
+  .btn-ghost-on-navy:hover { border-color: var(--navy-text-muted); }
+
+  /* ---- Hero ---- */
+  .hero { background: var(--navy); color: var(--navy-text); padding: 64px 0 96px; position: relative; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: -30% -10% auto auto; width: 560px; height: 560px;
+    background: radial-gradient(circle, rgba(14, 149, 148, 0.35), transparent 65%); pointer-events: none;
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; position: relative; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong);
+    background: rgba(14, 149, 148, 0.16); border: 1px solid rgba(14, 149, 148, 0.35);
+    padding: 6px 12px; border-radius: 100px; margin-bottom: 18px;
+  }
+  .hero h1 { font-size: 44px; line-height: 1.08; font-weight: 800; letter-spacing: -0.01em; }
+  .hero h1 em { font-style: normal; color: #6fd6d1; }
+  .hero p.lede { font-size: 17.5px; color: var(--navy-text-muted); max-width: 46ch; margin: 20px 0 32px; }
+  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 34px; }
+  .hero-proof { display: flex; gap: 28px; flex-wrap: wrap; }
+  .proof-item { display: flex; flex-direction: column; gap: 2px; }
+  .proof-item .num { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 22px; color: #fff; }
+  .proof-item .lbl { font-size: 12.5px; color: var(--navy-text-muted); }
+
+  /* ---- Hero mock: grade de ocupação ---- */
+  .mock-card { background: var(--surface); color: var(--ink); border-radius: 16px; box-shadow: var(--shadow-pop); padding: 20px 20px 18px; position: relative; }
+  .mock-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .mock-head h3 { font-size: 15px; }
+  .mock-head .pct { font-size: 13px; color: var(--ink-muted); }
+  .mock-bar-track { height: 6px; border-radius: 4px; background: var(--line); overflow: hidden; margin-bottom: 14px; }
+  .mock-bar-fill { height: 100%; width: 71%; background: var(--accent); border-radius: 4px; }
+  .mock-grid { display: grid; grid-template-columns: 40px repeat(5, 1fr); gap: 5px; }
+  .mock-cell { border-radius: 7px; min-height: 30px; display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; }
+  .mock-head-cell { background: transparent; color: var(--ink-muted); font-family: "Work Sans", sans-serif; font-weight: 700; font-size: 10.5px; }
+  .mock-hour { background: transparent; color: var(--ink-muted); font-size: 10.5px; justify-content: flex-start; }
+  .mock-empty { border: 1px dashed var(--line); }
+  .mock-legend { display: flex; gap: 14px; margin-top: 14px; font-size: 11.5px; color: var(--ink-muted); flex-wrap: wrap; }
+  .mock-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .mock-float {
+    position: absolute; right: -14px; bottom: -18px; background: var(--navy); color: var(--navy-text);
+    border-radius: 12px; padding: 12px 16px; box-shadow: var(--shadow-pop); font-size: 12.5px;
+    display: flex; align-items: center; gap: 10px; border: 1px solid var(--navy-line);
+  }
+
+  /* ---- Sections ---- */
+  section { padding: 88px 0; }
+  .section-head { max-width: 640px; margin-bottom: 48px; }
+  .section-head .eyebrow-plain { font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 10px; display: block; }
+  .section-head h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 14px; }
+  .section-head p { color: var(--ink-muted); font-size: 16.5px; max-width: 56ch; }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 12px; }
+  .feature-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-strong); }
+  .feature-card h3 { font-size: 17px; font-weight: 700; }
+  .feature-card p { color: var(--ink-muted); font-size: 14.5px; margin: 0; }
+  .feature-card .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .tag { font-size: 11.5px; font-weight: 600; padding: 4px 9px; border-radius: 100px; background: var(--surface-sunk); color: var(--ink-muted); border: 1px solid var(--line); }
+
+  .how { background: var(--surface-sunk); }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .step-num { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 13px; color: var(--accent-strong); background: var(--accent-soft); width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .step h3 { font-size: 15.5px; margin-bottom: 6px; }
+  .step p { color: var(--ink-muted); font-size: 14px; margin: 0; }
+
+  .who-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .who-pill { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 100px; padding: 10px 18px 10px 14px; font-weight: 600; font-size: 14.5px; box-shadow: var(--shadow-card); }
+  .who-pill .dot { width: 9px; height: 9px; }
+
+  .cta-band { background: var(--navy); color: var(--navy-text); }
+  .cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+  .cta-inner h2 { font-size: 28px; color: #fff; max-width: 30ch; }
+  .cta-inner p { color: var(--navy-text-muted); margin-top: 8px; max-width: 40ch; }
+
+  footer { background: var(--navy-ink); color: var(--navy-text-muted); padding: 48px 0 32px; font-size: 13.5px; }
+  .foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 36px; }
+  .foot-brand { display: flex; align-items: center; gap: 8px; color: var(--navy-text); font-family: "Archivo", sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 10px; }
+  .foot-col h4 { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--navy-text); margin-bottom: 12px; font-family: "Work Sans", sans-serif; font-weight: 700; }
+  .foot-col a { display: block; text-decoration: none; color: var(--navy-text-muted); margin-bottom: 8px; }
+  .foot-col a:hover { color: var(--navy-text); }
+  .foot-bottom { border-top: 1px solid var(--navy-line); padding-top: 20px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .foot-note { max-width: 60ch; }
+
+  @media (max-width: 880px) {
+    .nav-links { display: none; }
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 34px; }
+    .feature-grid { grid-template-columns: 1fr 1fr; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .foot-grid { grid-template-columns: 1fr 1fr; }
+    .mock-float { display: none; }
+  }
+  @media (max-width: 560px) {
+    .feature-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .foot-grid { grid-template-columns: 1fr; }
+    .cta-inner { flex-direction: column; align-items: flex-start; }
+    .wrap { padding: 0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-row">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="23" cy="24" r="14" fill="none" stroke="#EAF1F4" stroke-width="7.5"/>
+        <circle cx="35" cy="12" r="8" fill="#F2542D"/>
+      </svg>
+      OPoint
+    </div>
+    <div class="nav-links">
+      <a href="#recursos">Recursos</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#quem-usa">Pra quem é</a>
+      <a href="#contato">Contato</a>
+    </div>
+    <div class="nav-actions">
+      <a class="btn btn-primary" href="https://app.opoint.com.br">Entrar</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Gestão de arenas esportivas</span>
+      <h1>Sua quadra, suas turmas, sua agenda — <em>sem depender de planilha e grupo de WhatsApp</em>.</h1>
+      <p class="lede">
+        O OPoint organiza modalidades, quadras, turmas e matrículas do seu Point — e ainda mostra em tempo
+        real quanta vaga sobrou em cada horário, colorida por nível de aluno.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="https://app.opoint.com.br">Entrar</a>
+        <a class="btn btn-ghost-on-navy" href="#recursos">Ver recursos</a>
+      </div>
+      <div class="hero-proof">
+        <div class="proof-item"><span class="num mono">4</span><span class="lbl">papéis num só app — dono, admin, professor, aluno</span></div>
+        <div class="proof-item"><span class="num mono">3</span><span class="lbl">formas de pagamento — Pix, Wellhub, TotalPass</span></div>
+        <div class="proof-item"><span class="num mono">1</span><span class="lbl">agenda por Point, sem duplicar em planilha</span></div>
+      </div>
+    </div>
+
+    <div class="mock-card">
+      <div class="mock-head">
+        <h3>Quadra de Areia 1</h3>
+        <span class="pct mono">71% ocupada</span>
+      </div>
+      <div class="mock-bar-track"><div class="mock-bar-fill"></div></div>
+      <div class="mock-grid">
+        <div class="mock-cell mock-head-cell"></div>
+        <div class="mock-cell mock-head-cell">SEG</div>
+        <div class="mock-cell mock-head-cell">TER</div>
+        <div class="mock-cell mock-head-cell">QUA</div>
+        <div class="mock-cell mock-head-cell">QUI</div>
+        <div class="mock-cell mock-head-cell">SEX</div>
+
+        <div class="mock-cell mock-hour">17h</div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.42)">4/4</div>
+        <div class="mock-cell mock-empty"></div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.42)">3/4</div>
+        <div class="mock-cell mock-empty"></div>
+        <div class="mock-cell" style="background:rgba(242,84,45,.32)">2/2</div>
+
+        <div class="mock-cell mock-hour">18h</div>
+        <div class="mock-cell" style="background:rgba(201,127,18,.28)">1/6</div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.28)">2/4</div>
+        <div class="mock-cell mock-empty"></div>
+        <div class="mock-cell" style="background:rgba(201,127,18,.4)">4/6</div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.42)">4/4</div>
+
+        <div class="mock-cell mock-hour">19h</div>
+        <div class="mock-cell mock-empty"></div>
+        <div class="mock-cell" style="background:rgba(242,84,45,.14)">0/2</div>
+        <div class="mock-cell" style="background:rgba(201,127,18,.4)">5/6</div>
+        <div class="mock-cell mock-empty"></div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.28)">2/4</div>
+      </div>
+      <div class="mock-legend">
+        <span><i class="dot" style="background:#0e9594"></i>Iniciante</span>
+        <span><i class="dot" style="background:#c97f12"></i>Intermediário</span>
+        <span><i class="dot" style="background:#f2542d"></i>Avançado (particular)</span>
+      </div>
+      <div class="mock-float">
+        <span style="font-size:18px">✓</span>
+        <span>Aluno vê <strong>vaga disponível</strong>, sem ver sua ocupação real</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="recursos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow-plain">Recursos</span>
+      <h2>Feito do jeito que uma arena de verdade funciona</h2>
+      <p>Cada tela resolve um problema que quem toca uma quadra esportiva já teve — não é um CRM genérico
+        forçado a caber no seu negócio.</p>
+    </div>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        </div>
+        <h3>Categoria por cor, tipo por finalidade</h3>
+        <p>Cadastre os níveis do seu Point (iniciante, intermediário, avançado) com uma cor própria, e o
+          tipo de cada turma — padrão, dupla, família ou aula individual.</p>
+        <div class="tag-row"><span class="tag">Turma privada</span><span class="tag">Nível por cor</span></div>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <h3>Agenda que também é vitrine</h3>
+        <p>A mesma grade que o admin usa pra acompanhar ocupação real vira, com um clique, o modo que o
+          aluno vê pra saber se ainda tem vaga — sem expor quem está matriculado.</p>
+        <div class="tag-row"><span class="tag">Ocupação real</span><span class="tag">Modo disponibilidade</span></div>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8l7-5 7 5M5 8v9a2 2 0 002 2h10a2 2 0 002-2V8" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <h3>Matrícula avulsa ou mensal</h3>
+        <p>Aluno compra uma aula avulsa quando quiser, ou assina um plano mensal por frequência semanal —
+          com crédito de reposição quando cancela dentro do prazo.</p>
+        <div class="tag-row"><span class="tag">Crédito de reposição</span><span class="tag">Assinatura</span></div>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10h18M6 15h4M3 6h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <h3>Pagamento sem planilha</h3>
+        <p>Pix direto no app, ou check-in automático de quem já paga por Wellhub e TotalPass — nada de
+          cruzar comprovante com caderno.</p>
+        <div class="tag-row"><span class="tag">Pix</span><span class="tag">Wellhub</span><span class="tag">TotalPass</span></div>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="2"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M15.5 15.2c2.4.4 4 1.9 4.3 4.3" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <h3>Um app, quatro papéis</h3>
+        <p>Dono do Point acompanha tudo; professor cria e gerencia as próprias turmas; aluno agenda e
+          cancela sozinho — cada um vê só o que precisa.</p>
+        <div class="tag-row"><span class="tag">Multi-Point</span><span class="tag">Professor autônomo</span></div>
+      </article>
+
+      <article class="feature-card">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v6H4zM4 14h10v6H4z" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <h3>Convite, não cadastro forçado</h3>
+        <p>Professor e aluno recebem um convite por e-mail já com tudo preenchido — só confirmam. Sem
+          formulário de dez campos pra alguém desistir no meio.</p>
+        <div class="tag-row"><span class="tag">Convite por e-mail</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="how" id="como-funciona">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow-plain">Como funciona</span>
+      <h2>Do cadastro à primeira turma rodando</h2>
+      <p>Leva uma tarde pra configurar o Point inteiro — não semanas de implantação.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num mono">1</div>
+        <h3>Cadastre o Point</h3>
+        <p>Quadras, modalidades, categorias de nível e horário de funcionamento.</p>
+      </div>
+      <div class="step">
+        <div class="step-num mono">2</div>
+        <h3>Convide professor e aluno</h3>
+        <p>Cada um recebe um link, cria a senha e já entra direto na própria agenda.</p>
+      </div>
+      <div class="step">
+        <div class="step-num mono">3</div>
+        <h3>Turmas rodam sozinhas</h3>
+        <p>Recorrência semanal, exceção por feriado, reposição de crédito — sem replanejar todo mês.</p>
+      </div>
+      <div class="step">
+        <div class="step-num mono">4</div>
+        <h3>Você acompanha, não digita</h3>
+        <p>Ocupação, pagamento e repasse de professor num painel só, atualizado sozinho.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="quem-usa">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow-plain">Pra quem é</span>
+      <h2>Qualquer arena que vende hora de quadra e aula</h2>
+      <p>Se a sua agenda hoje vive no grupo de WhatsApp, o OPoint foi pensado pra você.</p>
+    </div>
+    <div class="who-row">
+      <span class="who-pill"><i class="dot" style="background:#0e9594"></i>Beach tennis</span>
+      <span class="who-pill"><i class="dot" style="background:#c97f12"></i>Futevôlei</span>
+      <span class="who-pill"><i class="dot" style="background:#f2542d"></i>Tênis</span>
+      <span class="who-pill"><i class="dot" style="background:#0e9594"></i>Padel</span>
+      <span class="who-pill"><i class="dot" style="background:#c97f12"></i>Futebol society</span>
+      <span class="who-pill"><i class="dot" style="background:#f2542d"></i>Funcional / cross</span>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="wrap cta-inner">
+    <div>
+      <h2>Bora tirar a agenda do WhatsApp?</h2>
+      <p>Entre no seu painel e veja as turmas e quadras do seu Point organizadas de verdade.</p>
+    </div>
+    <a class="btn btn-primary" href="https://app.opoint.com.br">Entrar</a>
+  </div>
+</section>
+
+<footer id="contato">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="23" cy="24" r="14" fill="none" stroke="#EAF1F4" stroke-width="7.5"/>
+            <circle cx="35" cy="12" r="8" fill="#F2542D"/>
+          </svg>
+          OPoint
+        </div>
+        <p class="foot-note">Sistema de gestão pra arenas esportivas — quadras, turmas, matrículas e
+          pagamento num só lugar.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Produto</h4>
+        <a href="#recursos">Recursos</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#quem-usa">Pra quem é</a>
+      </div>
+      <div class="foot-col">
+        <h4>Contato</h4>
+        <!-- TODO: trocar pelo e-mail/telefone reais antes de publicar -->
+        <a href="mailto:contato@opoint.com.br">contato@opoint.com.br</a>
+        <a href="tel:+5500000000000">(00) 00000-0000</a>
+      </div>
+      <div class="foot-col">
+        <h4>Empresa</h4>
+        <!-- TODO: trocar pela razão social/CNPJ reais antes de publicar
+             (usado na verificação de negócio da Meta pro WhatsApp Business) -->
+        <a href="#">Razão social — preencher</a>
+        <a href="#">CNPJ 00.000.000/0000-00 — preencher</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 OPoint. Todos os direitos reservados.</span>
+      <span>Feito para donos de arena esportiva no Brasil.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
