@@ -13,6 +13,7 @@ from app.routers import (
     alunos,
     assinaturas,
     auth,
+    categorias,
     checkins,
     configuracoes,
     convites,
@@ -28,6 +29,7 @@ from app.routers import (
     points,
     professores,
     quadras,
+    tipos_turma,
     turmas,
     vinculos,
 )
@@ -60,6 +62,8 @@ app.include_router(professores.router)
 app.include_router(alunos.router)
 app.include_router(vinculos.router)
 app.include_router(modalidades.router)
+app.include_router(categorias.router)
+app.include_router(tipos_turma.router)
 app.include_router(quadras.router)
 app.include_router(turmas.router)
 app.include_router(matriculas.router)

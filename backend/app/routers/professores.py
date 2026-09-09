@@ -39,7 +39,6 @@ def cadastrar_professor(payload: ProfessorCreate, db: Annotated[Session, Depends
         nome=payload.nome,
         contato=payload.contato,
         email=payload.email,
-        modalidades=payload.modalidades,
     )
     db.add(professor)
     db.flush()  # garante professor.id antes de criar o User

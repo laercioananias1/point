@@ -8,6 +8,7 @@ import ConviteAdminAceite from "./pages/ConviteAdminAceite";
 import AdminPointInicio from "./pages/admin-point/Inicio";
 import AdminPointAluno from "./pages/admin-point/Aluno";
 import AdminPointAgendaAluno from "./pages/admin-point/AgendaAluno";
+import AdminPointAgendaProfessor from "./pages/admin-point/AgendaProfessor";
 import AdminPointConvidarAluno from "./pages/admin-point/ConvidarAluno";
 import AdminPointProfessor from "./pages/admin-point/Professor";
 import AdminPointConvidarProfessor from "./pages/admin-point/ConvidarProfessor";
@@ -19,12 +20,17 @@ import AdminPointPrazos from "./pages/admin-point/Prazos";
 import AdminPointHorariosFuncionamento from "./pages/admin-point/HorariosFuncionamento";
 import AdminPointModalidades from "./pages/admin-point/Modalidades";
 import AdminPointCadastrarModalidade from "./pages/admin-point/CadastrarModalidade";
+import AdminPointCategorias from "./pages/admin-point/Categorias";
+import AdminPointCadastrarCategoria from "./pages/admin-point/CadastrarCategoria";
+import AdminPointTiposTurma from "./pages/admin-point/TiposTurma";
+import AdminPointCadastrarTipoTurma from "./pages/admin-point/CadastrarTipoTurma";
 import AdminPointQuadras from "./pages/admin-point/Quadras";
 import AdminPointCadastrarQuadra from "./pages/admin-point/CadastrarQuadra";
 import AdminPointPlanos from "./pages/admin-point/Planos";
 import AdminPointCadastrarPlano from "./pages/admin-point/CadastrarPlano";
 import AdminPointFeriados from "./pages/admin-point/Feriados";
 import AdminPointTurmas from "./pages/admin-point/Turmas";
+import AdminPointCadastrarTurma from "./pages/admin-point/CadastrarTurma";
 import AdminPointOcupacao from "./pages/admin-point/Ocupacao";
 import AdminPointAgenda from "./pages/admin-point/Agenda";
 import AdminPointAjuda from "./pages/admin-point/Ajuda";
@@ -32,6 +38,7 @@ import ProfessorInicio from "./pages/professor/Inicio";
 import ProfessorAgenda from "./pages/professor/Agenda";
 import ProfessorOcupacao from "./pages/professor/Ocupacao";
 import ProfessorTurmas from "./pages/professor/Turmas";
+import ProfessorCadastrarTurma from "./pages/professor/CadastrarTurma";
 import ProfessorPerfil from "./pages/professor/Perfil";
 import ProfessorAjuda from "./pages/professor/Ajuda";
 import AlunoInicio from "./pages/aluno/Inicio";
@@ -135,6 +142,14 @@ export default function App() {
         }
       />
       <Route
+        path="/admin-point/professor/:professorId/agenda"
+        element={
+          <ProtectedRoute>
+            <AdminPointAgendaProfessor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin-point/faturamento"
         element={
           <ProtectedRoute>
@@ -147,6 +162,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointTurmas />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/turmas/cadastrar"
+        element={
+          <ProtectedRoute>
+            <AdminPointCadastrarTurma />
           </ProtectedRoute>
         }
       />
@@ -219,6 +242,38 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointCadastrarModalidade />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/categorias"
+        element={
+          <ProtectedRoute>
+            <AdminPointCategorias />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/categorias/cadastrar"
+        element={
+          <ProtectedRoute>
+            <AdminPointCadastrarCategoria />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/tipos-turma"
+        element={
+          <ProtectedRoute>
+            <AdminPointTiposTurma />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/tipos-turma/cadastrar"
+        element={
+          <ProtectedRoute>
+            <AdminPointCadastrarTipoTurma />
           </ProtectedRoute>
         }
       />
@@ -299,6 +354,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ProfessorTurmas />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/professor/turmas/cadastrar"
+        element={
+          <ProtectedRoute>
+            <ProfessorCadastrarTurma />
           </ProtectedRoute>
         }
       />

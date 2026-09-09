@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api/client";
 import type { Checkin, Feriado, Matricula, TurmaResumo } from "../api/types";
+import { CategoriaBadge } from "./CategoriaBadge";
 import { Icon } from "./Layout";
 import { diaSemanaDeData, toISODate } from "./Calendar";
 import { MiniCalendario } from "./MiniCalendario";
@@ -17,6 +18,10 @@ interface OcorrenciaTurma {
   quadraNome: string;
   professorNome: string;
   capacidade: number;
+  // Categoria/nível da turma (pedido do usuário, 2026-09-08) — pra
+  // destacar visualmente na agenda com a cor cadastrada pelo Point.
+  categoriaNome: string;
+  categoriaCor: string;
   // Aula cancelada por força maior nessa data, com motivo (pedido do
   // usuário, 2026-09-01: "essa informação precisa aparecer no calendário
   // com um ícone tb de cancelamento e mostrar motivo") — antes essas
@@ -92,6 +97,8 @@ function ocorrenciasEmDatas(
         quadraNome: t.quadra.nome,
         professorNome: t.vinculo.professor.nome,
         capacidade: t.capacidade,
+        categoriaNome: t.categoria.nome,
+        categoriaCor: t.categoria.cor,
         cancelada,
         motivoCancelamento,
       });
@@ -170,6 +177,18 @@ export function AgendaTurmasCalendario({
     () => ocorrenciasEmDatas(turmas, diasVisiveis, feriadosPorData),
     [turmas, diasVisiveis, feriadosPorData],
   );
+  // Cores das categorias com aula nesse dia (pedido do usuário, 2026-09-08:
+  // identificar visualmente a turma por nível na agenda) — só das
+  // ocorrências não canceladas, pra não conflitar com o marcador fixo
+  // "cancelada" (ícone x-circle) que já tem prioridade em marcadorDoDia.
+  const coresDoDia = useCallback(
+    (data: Date) => {
+      const ocs = ocorrenciasPorDia.get(toISODate(data)) ?? [];
+      const ativas = ocs.filter((oc) => !oc.cancelada);
+      return Array.from(new Set(ativas.map((oc) => oc.categoriaCor)));
+    },
+    [ocorrenciasPorDia],
+  );
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
   const nomeFeriadoDoDia = feriadosPorData.get(toISODate(diaSelecionado)) ?? null;
 
@@ -227,6 +246,7 @@ export function AgendaTurmasCalendario({
         diaSelecionado={diaSelecionado}
         onSelecionarDia={setDiaSelecionado}
         onDiasVisiveisChange={onDiasVisiveisChange}
+        coresDoDia={coresDoDia}
       />
 
       {nomeFeriadoDoDia && (
@@ -263,6 +283,9 @@ export function AgendaTurmasCalendario({
                       cancelada
                     </span>
                     <span className="item-card-subtitle">
+                      <CategoriaBadge nome={oc.categoriaNome} cor={oc.categoriaCor} />
+                    </span>
+                    <span className="item-card-subtitle">
                       {oc.modalidadeNome} · com {oc.professorNome}
                     </span>
                     <span
@@ -296,6 +319,9 @@ export function AgendaTurmasCalendario({
                   <div className="item-card-info">
                     <span className="item-card-title">
                       {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}
+                    </span>
+                    <span className="item-card-subtitle">
+                      <CategoriaBadge nome={oc.categoriaNome} cor={oc.categoriaCor} />
                     </span>
                     <span className="item-card-subtitle">
                       {oc.modalidadeNome} · com {oc.professorNome}

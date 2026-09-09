@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { Assinatura, Credito, HistoricoEvento, Matricula, TurmaResumo } from "../../api/types";
+import { useAuth } from "../../auth/AuthContext";
+import type {
+  AlunoCategoria,
+  Assinatura,
+  Categoria,
+  Credito,
+  HistoricoEvento,
+  Matricula,
+  TurmaResumo,
+} from "../../api/types";
 import { diaSemanaDeData, somarDias, toISODate } from "../../components/Calendar";
 import { AgendaAlunoCalendario, type Ocorrencia } from "../../components/AgendaAlunoCalendario";
+import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA, horarioFim } from "../../lib/dias";
@@ -24,6 +34,7 @@ const DIAS_NA_TIRA = 21;
 export default function AdminPointAgendaAluno() {
   const { alunoId } = useParams<{ alunoId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [creditos, setCreditos] = useState<Credito[]>([]);
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
@@ -33,6 +44,15 @@ export default function AdminPointAgendaAluno() {
   const [cancelando, setCancelando] = useState<Ocorrencia | null>(null);
   const [reagendandoCredito, setReagendandoCredito] = useState<Credito | null>(null);
   const [pausando, setPausando] = useState(false);
+  // Nível/categoria do aluno NESTE Point (pedido do usuário, 2026-09-08) —
+  // Aluno é global, então isso é por aluno+Point (ver AlunoCategoria no
+  // backend), não um campo direto do Aluno.
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaAtual, setCategoriaAtual] = useState<AlunoCategoria | null>(null);
+  const [editandoCategoria, setEditandoCategoria] = useState(false);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<number | null>(null);
+  const [salvandoCategoria, setSalvandoCategoria] = useState(false);
+  const [erroCategoria, setErroCategoria] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setErro(null);
@@ -58,6 +78,43 @@ export default function AdminPointAgendaAluno() {
   }, [carregar]);
 
   const idAluno = Number(alunoId);
+
+  const carregarCategoria = useCallback(async () => {
+    if (!user?.point_id || !idAluno) return;
+    setErroCategoria(null);
+    try {
+      const [categoriasRes, atualRes] = await Promise.all([
+        api.get<Categoria[]>(`/categorias?point_id=${user.point_id}`),
+        api.get<AlunoCategoria | null>(`/alunos/${idAluno}/categoria`),
+      ]);
+      setCategorias(categoriasRes);
+      setCategoriaAtual(atualRes);
+      setCategoriaSelecionada(atualRes?.categoria.id ?? categoriasRes[0]?.id ?? null);
+    } catch {
+      setErroCategoria("Não foi possível carregar a categoria desse aluno.");
+    }
+  }, [user?.point_id, idAluno]);
+
+  useEffect(() => {
+    carregarCategoria();
+  }, [carregarCategoria]);
+
+  async function salvarCategoria() {
+    if (categoriaSelecionada === null) return;
+    setErroCategoria(null);
+    setSalvandoCategoria(true);
+    try {
+      const atualizada = await api.patch<AlunoCategoria>(`/alunos/${idAluno}/categoria`, {
+        categoria_id: categoriaSelecionada,
+      });
+      setCategoriaAtual(atualizada);
+      setEditandoCategoria(false);
+    } catch (e) {
+      setErroCategoria(e instanceof ApiError ? e.message : "Não foi possível salvar. Tente de novo.");
+    } finally {
+      setSalvandoCategoria(false);
+    }
+  }
   const matriculasDoAluno = matriculas.filter((m) => m.aluno.id === idAluno);
   const ativas = matriculasDoAluno.filter((m) => m.status === "ativa");
   const idsMatriculasDoAluno = new Set(matriculasDoAluno.map((m) => m.id));
@@ -93,6 +150,61 @@ export default function AdminPointAgendaAluno() {
           {alunoResumo.email && ` · ${alunoResumo.email}`}
         </p>
       )}
+
+      {/* Nível/categoria do aluno NESTE Point (pedido do usuário,
+          2026-09-08) — só a classificação por enquanto, sem validar contra
+          a turma ainda. */}
+      <section className="section" style={{ paddingTop: 0 }}>
+        {editandoCategoria ? (
+          <div className="item-card" style={{ alignItems: "flex-start" }}>
+            <div className="item-card-info" style={{ flex: 1 }}>
+              <label>
+                Categoria (nível)
+                <select
+                  value={categoriaSelecionada ?? ""}
+                  onChange={(e) => setCategoriaSelecionada(Number(e.target.value))}
+                >
+                  {categorias.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {erroCategoria && <p className="form-error">{erroCategoria}</p>}
+            </div>
+            <div className="item-card-actions">
+              <button disabled={salvandoCategoria} onClick={salvarCategoria}>
+                {salvandoCategoria ? "Salvando..." : "Salvar"}
+              </button>
+              <button className="secondary" onClick={() => setEditandoCategoria(false)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="item-card">
+            <div className="item-card-info">
+              <span className="item-card-subtitle">Categoria</span>
+              <span className="item-card-title">
+                {categoriaAtual ? (
+                  <CategoriaBadge nome={categoriaAtual.categoria.nome} cor={categoriaAtual.categoria.cor} />
+                ) : (
+                  "Sem categoria definida"
+                )}
+              </span>
+              {erroCategoria && <p className="form-error">{erroCategoria}</p>}
+            </div>
+            <button
+              className="secondary"
+              disabled={categorias.length === 0}
+              onClick={() => setEditandoCategoria(true)}
+            >
+              {categoriaAtual ? "Trocar" : "Definir"}
+            </button>
+          </div>
+        )}
+      </section>
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}

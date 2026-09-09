@@ -1,6 +1,8 @@
 from app.models.aluno import Aluno
+from app.models.aluno_categoria import AlunoCategoria
 from app.models.assinatura import Assinatura
 from app.models.aula import Aula
+from app.models.categoria import Categoria
 from app.models.checkin import Checkin
 from app.models.configuracao import ConfiguracaoPlataforma
 from app.models.convite import Convite
@@ -20,6 +22,7 @@ from app.models.point import Point
 from app.models.professor import Professor
 from app.models.quadra import Quadra
 from app.models.redefinicao_senha import RedefinicaoSenha
+from app.models.tipo_turma import TipoTurma
 from app.models.turma import Turma
 from app.models.turma_dia_semana import TurmaDiaSemana
 from app.models.turma_excecao import TurmaExcecao
@@ -28,8 +31,10 @@ from app.models.vinculo import Vinculo
 
 __all__ = [
     "Aluno",
+    "AlunoCategoria",
     "Assinatura",
     "Aula",
+    "Categoria",
     "Checkin",
     "ConfiguracaoPlataforma",
     "Convite",
@@ -50,6 +55,7 @@ __all__ = [
     "Quadra",
     "RedefinicaoSenha",
     "RepasseFechamento",
+    "TipoTurma",
     "Turma",
     "TurmaDiaSemana",
     "TurmaExcecao",

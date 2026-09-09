@@ -80,6 +80,14 @@ def solicitar_matricula(
     turma = db.get(Turma, payload.turma_id)
     if turma is None:
         raise HTTPException(404, "Turma não encontrada")
+    if turma.privada:
+        # Turma privada (pedido do usuário, 2026-09-09) — esse endpoint é
+        # só do aluno (não tem versão admin/professor dele), então
+        # "privada" aqui é sempre bloqueio: quem matricula alguém numa
+        # turma privada é o professor/admin, via Convite.
+        raise HTTPException(
+            403, "Essa turma é privada — só o professor ou o admin do Point matricula alunos aqui"
+        )
 
     if payload.tipo == MatriculaTipo.AVULSA:
         if payload.data_aula is None:

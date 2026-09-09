@@ -1330,6 +1330,21 @@ button.danger:hover:not(:disabled) {
   background: var(--accent);
 }
 
+/* Um pontinho por categoria com aula no dia (pedido do usuário, 2026-09-08)
+   — substitui o .mini-calendar-dot genérico na agenda por turma, que sabe
+   a cor de cada categoria. Menor que o .categoria-dot normal (10px) pra
+   caber lado a lado dentro dos 12px de altura do marcador do dia. */
+.mini-calendar-cores {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.mini-calendar-cores .categoria-dot {
+  width: 5px;
+  height: 5px;
+}
+
 /* Legenda dos ícones do calendário (pedido do usuário, 2026-09-01: "deixa
    uma legenda em algum canto") — só na agenda do aluno, que é quem tem os
    dois ícones (ver AgendaAlunoCalendario.tsx). */
@@ -1397,6 +1412,16 @@ button.danger:hover:not(:disabled) {
 .status-pill.status-info {
   background: var(--accent-soft);
   color: var(--accent-strong);
+}
+
+/* Bolinha da cor da categoria (pedido do usuário, 2026-09-08) — usada em
+   CategoriaBadge, no mini-calendário e no select de categoria da turma. */
+.categoria-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .empty-state {
@@ -1673,34 +1698,34 @@ button.danger:hover:not(:disabled) {
 }
 
 /* Mapa de calor de ocupação das quadras (pedido do usuário, 2026-08-26) —
-   mesmo tratamento visual do calendário (bordas, cabeçalho), mas cada
-   célula é preenchida com a intensidade da ocupação em vez de um evento. */
+   cada slot é um card próprio, com espaço entre eles (pedido do usuário,
+   2026-09-09: seguir o layout de referência — cards arredondados soltos
+   numa grade, em vez de uma tabela com linhas de borda). */
 .ocupacao-wrap {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow-card);
+  padding: 8px;
 }
 
 .ocupacao-grid {
   display: grid;
+  gap: 6px;
   min-width: 480px;
 }
 
 .ocupacao-cell {
-  border-bottom: 1px solid var(--line);
-  border-right: 1px solid var(--line);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
+  min-height: 38px;
 }
 
 .ocupacao-corner {
-  border-top: none;
-  border-left: none;
-  background: var(--surface-sunk);
+  background: transparent;
 }
 
 .ocupacao-header {
@@ -1723,6 +1748,20 @@ button.danger:hover:not(:disabled) {
   font-size: 11px;
   color: var(--ink-muted);
   background: var(--surface-sunk);
+}
+
+/* Slot sem turma — só um espaço reservado discreto, pra grade continuar
+   legível sem linha de borda em toda célula. */
+.ocupacao-slot-vazio {
+  border: 1px dashed var(--line);
+  background: var(--surface);
+}
+
+/* Slot com turma (com ou sem aluno) — card cheio, com uma faixa lateral
+   na cor da categoria (definida inline, ver GraficoOcupacao.tsx) igual a
+   referência de layout de arena que o usuário mandou. */
+.ocupacao-slot-ocupado {
+  border-radius: 8px;
 }
 
 .ocupacao-valor {
@@ -1749,6 +1788,52 @@ button.danger:hover:not(:disabled) {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 
+/* Cabeçalho de cada quadra com barra de progresso da ocupação (pedido do
+   usuário, 2026-09-09) — no lugar do texto solto "X% de ocupação". */
+.ocupacao-quadra-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ocupacao-quadra-header h3 {
+  margin: 0;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.ocupacao-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.ocupacao-progress-track {
+  flex: 1;
+  max-width: 220px;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.ocupacao-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 200ms ease;
+}
+
+.ocupacao-progress-label {
+  font-size: 12px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
 .ocupacao-lista-alunos {
   list-style: none;
   margin: 0;
@@ -1769,6 +1854,16 @@ button.danger:hover:not(:disabled) {
 
 /* Legenda de intensidade — reaproveita a mesma escala de opacidade das
    células preenchidas, pra ficar óbvio o que a cor quer dizer. */
+/* Legenda das cores de categoria (pedido do usuário, 2026-09-08: "pinta
+   aqui a célula com a cor da categoria e coloque uma legenda") — uma
+   CategoriaBadge por categoria com turma na semana exibida. */
+.ocupacao-legenda-categorias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+}
+
 .ocupacao-legenda {
   display: flex;
   align-items: center;

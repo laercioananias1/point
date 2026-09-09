@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -34,6 +34,20 @@ class Turma(TimestampMixin, Base):
     vinculo_id: Mapped[int] = mapped_column(ForeignKey("vinculos.id"))
     modalidade_id: Mapped[int] = mapped_column(ForeignKey("modalidades.id"))
     quadra_id: Mapped[int] = mapped_column(ForeignKey("quadras.id"))
+    # Nível/categoria do aluno (pedido do usuário, 2026-09-08) — cadastrada
+    # pelo admin do Point (nome + cor); a turma é exclusiva dessa categoria.
+    categoria_id: Mapped[int] = mapped_column(ForeignKey("categorias.id"))
+    # Tipo/formato (pedido do usuário, 2026-09-09) — ex.: 'Padrão', 'Aula
+    # individual', 'Dupla', 'Família'. Só etiqueta organizacional, cadastrada
+    # pelo Point (ver TipoTurma.__doc__).
+    tipo_turma_id: Mapped[int] = mapped_column(ForeignKey("tipos_turma.id"))
+    # Independente do tipo (pedido do usuário, 2026-09-09: "o ser privado ou
+    # não tem que ser na turma e não no tipo") — quando True, o aluno não
+    # consegue se auto-matricular (comprar avulsa ou reagendar crédito
+    # sozinho): só o professor/admin do Point matricula alguém aqui. Ver
+    # bloqueio em routers/matriculas.py::solicitar_matricula e
+    # routers/creditos.py::_reagendar_credito.
+    privada: Mapped[bool] = mapped_column(Boolean, default=False)
 
     capacidade: Mapped[int] = mapped_column(Integer)
 
@@ -46,6 +60,8 @@ class Turma(TimestampMixin, Base):
     vinculo: Mapped["Vinculo"] = relationship(back_populates="turmas")  # noqa: F821
     modalidade: Mapped["Modalidade"] = relationship()  # noqa: F821
     quadra: Mapped["Quadra"] = relationship()  # noqa: F821
+    categoria: Mapped["Categoria"] = relationship()  # noqa: F821
+    tipo_turma: Mapped["TipoTurma"] = relationship()  # noqa: F821
     matriculas: Mapped[list["Matricula"]] = relationship(back_populates="turma")  # noqa: F821
     excecoes_rel: Mapped[list["TurmaExcecao"]] = relationship(  # noqa: F821
         cascade="all, delete-orphan"

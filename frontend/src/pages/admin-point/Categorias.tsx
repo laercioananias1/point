@@ -2,19 +2,19 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Modalidade, Quadra } from "../../api/types";
+import type { Categoria } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 
-/** Tela própria pra quadras — saiu de dentro da antiga Configurações
- * (pedido do usuário, 2026-08-30: "Ver Mais" com um botão por seção). */
-export default function AdminPointQuadras() {
+/** Tela própria pra categorias (nível de aluno) — mesmo padrão de
+ * Modalidades.tsx (pedido do usuário, 2026-09-08: "cada point faz seu
+ * cadastro e define uma cor"). */
+export default function AdminPointCategorias() {
   const navigate = useNavigate();
   const location = useLocation();
   const criada = (location.state as { criada?: string } | null)?.criada;
   const { user } = useAuth();
-  const [quadras, setQuadras] = useState<Quadra[]>([]);
-  const [modalidades, setModalidades] = useState<Modalidade[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -23,14 +23,9 @@ export default function AdminPointQuadras() {
     setLoading(true);
     setErro(null);
     try {
-      const [quadrasRes, modalidadesRes] = await Promise.all([
-        api.get<Quadra[]>(`/quadras?point_id=${user.point_id}`),
-        api.get<Modalidade[]>(`/modalidades?point_id=${user.point_id}`),
-      ]);
-      setQuadras(quadrasRes);
-      setModalidades(modalidadesRes);
+      setCategorias(await api.get<Categoria[]>(`/categorias?point_id=${user.point_id}`));
     } catch {
-      setErro("Não foi possível carregar as quadras. Tente novamente.");
+      setErro("Não foi possível carregar as categorias. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -51,82 +46,64 @@ export default function AdminPointQuadras() {
         >
           <Icon name="chevron-left" />
         </button>
-        <h1>Quadras {!loading && `(${quadras.length})`}</h1>
+        <h1>Categorias {!loading && `(${categorias.length})`}</h1>
       </div>
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
-      {criada && <p className="form-success">Quadra "{criada}" cadastrada.</p>}
+      {criada && <p className="form-success">Categoria "{criada}" cadastrada.</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
       {!loading && !erro && (
         <>
           <section className="section">
-            {quadras.length === 0 ? (
-              <p className="empty-state">Nenhuma quadra cadastrada ainda.</p>
+            {categorias.length === 0 ? (
+              <p className="empty-state">Nenhuma categoria cadastrada ainda.</p>
             ) : (
               <div className="card-list">
-                {quadras.map((q) => (
-                  <QuadraRow key={q.id} quadra={q} modalidades={modalidades} onSalva={carregar} />
+                {categorias.map((c) => (
+                  <CategoriaRow key={c.id} categoria={c} onSalva={carregar} />
                 ))}
               </div>
             )}
           </section>
 
-          {modalidades.length === 0 ? (
-            <section className="section">
-              <p className="form-error">
-                Cadastre uma modalidade (Ver mais → Modalidades) antes de criar quadras.
-              </p>
-            </section>
-          ) : (
-            <section className="section">
-              <Link to="/admin-point/configuracoes/quadras/cadastrar" className="action-card">
-                <span className="action-card-icon">
-                  <Icon name="plus" />
+          <section className="section">
+            <Link to="/admin-point/configuracoes/categorias/cadastrar" className="action-card">
+              <span className="action-card-icon">
+                <Icon name="plus" />
+              </span>
+              <span className="action-card-info">
+                <span className="action-card-title">Cadastrar categoria</span>
+                <span className="action-card-subtitle">
+                  Nível do aluno (ex.: iniciante, intermediário, avançado) e a cor na agenda
                 </span>
-                <span className="action-card-info">
-                  <span className="action-card-title">Cadastrar quadra</span>
-                  <span className="action-card-subtitle">Nome e modalidades atendidas</span>
-                </span>
-                <span className="action-card-chevron" aria-hidden="true">
-                  <Icon name="chevron-right" />
-                </span>
-              </Link>
-            </section>
-          )}
+              </span>
+              <span className="action-card-chevron" aria-hidden="true">
+                <Icon name="chevron-right" />
+              </span>
+            </Link>
+          </section>
         </>
       )}
     </Layout>
   );
 }
 
-function QuadraRow({
-  quadra,
-  modalidades,
-  onSalva,
-}: {
-  quadra: Quadra;
-  modalidades: Modalidade[];
-  onSalva: () => void;
-}) {
+function CategoriaRow({ categoria, onSalva }: { categoria: Categoria; onSalva: () => void }) {
   const [editando, setEditando] = useState(false);
-  const [nome, setNome] = useState(quadra.nome);
-  const [modalidadeIds, setModalidadeIds] = useState(quadra.modalidades.map((m) => m.id));
+  const [nome, setNome] = useState(categoria.nome);
+  const [cor, setCor] = useState(categoria.cor);
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const { confirmar, modal } = useConfirm();
 
-  function alternar(id: number) {
-    setModalidadeIds((atual) => (atual.includes(id) ? atual.filter((i) => i !== id) : [...atual, id]));
-  }
-
   async function salvar() {
     setErro(null);
     setSalvando(true);
     try {
-      await api.patch(`/quadras/${quadra.id}`, { nome, modalidade_ids: modalidadeIds });
+      await api.patch(`/categorias/${categoria.id}`, { nome, cor });
       setEditando(false);
       onSalva();
     } catch (e) {
@@ -136,16 +113,12 @@ function QuadraRow({
     }
   }
 
-  // Validação de verdade fica no backend (checa turma/matrícula) — pedido
-  // do usuário, 2026-09-01: "quadras e planos também da mesma forma"
-  // [de modalidades: "validar para remover, verificar se já não existe
-  // aplicada em alguma matrícula"].
   async function remover() {
-    if (!(await confirmar(`Remover a quadra "${quadra.nome}"?`))) return;
+    if (!(await confirmar(`Remover a categoria "${categoria.nome}"?`))) return;
     setErro(null);
     setRemovendo(true);
     try {
-      await api.delete(`/quadras/${quadra.id}`);
+      await api.delete(`/categorias/${categoria.id}`);
       onSalva();
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Não foi possível remover. Tente de novo.");
@@ -162,18 +135,24 @@ function QuadraRow({
             Nome
             <input value={nome} onChange={(e) => setNome(e.target.value)} />
           </label>
-          <div className="toggle-grid" style={{ marginTop: "6px" }}>
-            {modalidades.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className={modalidadeIds.includes(m.id) ? "toggle-chip active" : "toggle-chip"}
-                onClick={() => alternar(m.id)}
-              >
-                {m.nome}
-              </button>
-            ))}
-          </div>
+          <label style={{ marginTop: "6px" }}>
+            Cor
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="color"
+                value={cor}
+                onChange={(e) => setCor(e.target.value)}
+                style={{ width: 44, height: 36, padding: 2, flexShrink: 0 }}
+                aria-label="Cor da categoria"
+              />
+              <input
+                value={cor}
+                onChange={(e) => setCor(e.target.value)}
+                pattern="^#[0-9a-fA-F]{6}$"
+                maxLength={7}
+              />
+            </div>
+          </label>
           {erro && <p className="form-error">{erro}</p>}
         </div>
         <div className="item-card-actions">
@@ -192,9 +171,12 @@ function QuadraRow({
     <div className="item-card" style={{ alignItems: "flex-start" }}>
       {modal}
       <div className="item-card-info">
-        <span className="item-card-title">{quadra.nome}</span>
-        <span className="item-card-subtitle">
-          {quadra.modalidades.map((m) => m.nome).join(", ") || "nenhuma modalidade associada"}
+        <span
+          className="item-card-title"
+          style={{ display: "flex", alignItems: "center", gap: 8 }}
+        >
+          <span className="categoria-dot" style={{ background: categoria.cor }} aria-hidden="true" />
+          {categoria.nome}
         </span>
         {erro && <p className="form-error">{erro}</p>}
       </div>

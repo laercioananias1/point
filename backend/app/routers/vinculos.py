@@ -42,7 +42,7 @@ def virar_professor_do_proprio_point(
     hora se ainda não tinha), só que sem convite: reaproveita nome/celular/
     e-mail da própria conta."""
     if admin.professor_id is None:
-        professor = Professor(nome=admin.nome, contato=admin.celular, email=admin.email, modalidades=[])
+        professor = Professor(nome=admin.nome, contato=admin.celular, email=admin.email)
         db.add(professor)
         db.flush()
         admin.professor_id = professor.id

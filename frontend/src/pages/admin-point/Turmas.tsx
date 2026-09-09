@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { TurmaResumo } from "../../api/types";
+import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { Icon, Layout } from "../../components/Layout";
 import { rotuloTurma } from "../../lib/dias";
 
@@ -13,12 +14,16 @@ function rotuloPeriodo(inicio: string, fim: string | null): string {
 
 /** Pedido do usuário, 2026-08-26: "deixe tb 2 botões (iguais do
  * professor) de turma e ocupação de quadra" — aqui é o Point inteiro
- * (todas as turmas, de todos os professores), só leitura: quem cria e
- * prolonga turma continua sendo o professor dono dela (aba Turmas dele),
- * o admin só acompanha. */
+ * (todas as turmas, de todos os professores). Prolongar período continua
+ * exclusivo do professor dono da turma (aba Turmas dele); criar turma o
+ * admin também pode, em nome de qualquer professor vinculado ao seu Point
+ * (pedido do usuário, 2026-09-09: "o adm tb pode criar turmas porém
+ * precisa selecionar o professor" — ver admin-point/CadastrarTurma.tsx). */
 export default function AdminPointTurmas() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const criada = (location.state as { criada?: string } | null)?.criada;
   const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -73,6 +78,7 @@ export default function AdminPointTurmas() {
         <h1>Turmas {pronto && `(${turmasFiltradas.length})`}</h1>
       </div>
 
+      {criada && <p className="form-success">{criada}</p>}
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
@@ -114,7 +120,18 @@ export default function AdminPointTurmas() {
                   {turmasFiltradas.map((t) => (
                     <div className="item-card" key={t.id}>
                       <div className="item-card-info">
-                        <span className="item-card-title">{rotuloTurma(t.dias_semana, t.horario)}</span>
+                        <span className="item-card-title">
+                          {rotuloTurma(t.dias_semana, t.horario)}
+                          {t.privada && (
+                            <span className="status-pill status-info" style={{ marginLeft: 8 }}>
+                              Privada
+                            </span>
+                          )}
+                        </span>
+                        <span className="item-card-subtitle">
+                          <CategoriaBadge nome={t.categoria.nome} cor={t.categoria.cor} /> ·{" "}
+                          {t.tipo_turma.nome}
+                        </span>
                         <span className="item-card-subtitle">
                           {t.modalidade.nome} · {t.quadra.nome} · com {t.vinculo.professor.nome} ·{" "}
                           {t.capacidade} vaga(s)
@@ -129,6 +146,23 @@ export default function AdminPointTurmas() {
               )}
             </>
           )}
+        </section>
+      )}
+
+      {pronto && (
+        <section className="section">
+          <Link to="/admin-point/turmas/cadastrar" className="action-card">
+            <span className="action-card-icon">
+              <Icon name="plus" />
+            </span>
+            <span className="action-card-info">
+              <span className="action-card-title">Criar turma</span>
+              <span className="action-card-subtitle">Em nome de qualquer professor vinculado a este Point</span>
+            </span>
+            <span className="action-card-chevron" aria-hidden="true">
+              <Icon name="chevron-right" />
+            </span>
+          </Link>
         </section>
       )}
     </Layout>

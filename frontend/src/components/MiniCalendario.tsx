@@ -41,6 +41,7 @@ export function MiniCalendario({
   diaSelecionado,
   onSelecionarDia,
   onDiasVisiveisChange,
+  coresDoDia,
 }: {
   marcadorDoDia: (data: Date) => MarcadorDia;
   diaSelecionado: Date;
@@ -51,6 +52,12 @@ export function MiniCalendario({
   // uma janela fixa em volta de hoje) — dispara de novo a cada troca de
   // mês/semana/modo.
   onDiasVisiveisChange?: (dias: Date[]) => void;
+  // Cores das categorias com aula nesse dia (pedido do usuário, 2026-09-08)
+  // — opcional, só a agenda por turma passa isso (AgendaTurmasCalendario);
+  // quando presente, substitui o pontinho genérico do marcador "aula" por
+  // um pontinho por cor distinta daquele dia. Não mexe nos marcadores
+  // "mensal"/"avulsa"/"reposicao" da agenda do aluno, que não passa isso.
+  coresDoDia?: (data: Date) => string[];
 }) {
   const [modo, setModo] = useState<Modo>("mes");
   const [referencia, setReferencia] = useState(new Date());
@@ -136,7 +143,18 @@ export function MiniCalendario({
                 {marcador === "reposicao" && <Icon name="refresh" size={12} />}
                 {marcador === "cancelada" && <Icon name="x-circle" size={12} />}
                 {marcador === "feriado" && <Icon name="flag" size={12} />}
-                {marcador === "aula" && <span className="mini-calendar-dot" />}
+                {marcador === "aula" &&
+                  (() => {
+                    const cores = coresDoDia?.(data) ?? [];
+                    if (cores.length === 0) return <span className="mini-calendar-dot" />;
+                    return (
+                      <span className="mini-calendar-cores">
+                        {cores.slice(0, 3).map((cor, i) => (
+                          <span key={i} className="categoria-dot" style={{ background: cor }} />
+                        ))}
+                      </span>
+                    );
+                  })()}
               </span>
               <span>{data.getDate()}</span>
             </button>

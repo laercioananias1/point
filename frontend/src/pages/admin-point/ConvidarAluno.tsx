@@ -172,10 +172,10 @@ function ConvidarForm({ pointId }: { pointId: number }) {
   }
 
   if (modalidades.length === 0) {
-    return <p className="empty-state">Cadastre uma modalidade (Ver mais) antes.</p>;
+    return <p className="form-error">Cadastre uma modalidade (Ver mais) antes.</p>;
   }
   if (planos.length === 0) {
-    return <p className="empty-state">Cadastre um plano (Ver mais) antes.</p>;
+    return <p className="form-error">Cadastre um plano (Ver mais) antes.</p>;
   }
 
   return (
@@ -261,7 +261,8 @@ function ConvidarForm({ pointId }: { pointId: number }) {
                     className={selecionada ? "toggle-chip active" : "toggle-chip"}
                     onClick={() => alternarTurma(t.id)}
                   >
-                    {rotuloTurma(t.dias_semana, t.horario)}
+                    {rotuloTurma(t.dias_semana, t.horario)} · {t.tipo_turma.nome}
+                    {t.privada && " (privada)"}
                   </button>
                   {selecionada && (
                     <div className="toggle-grid" style={{ marginTop: 6, marginLeft: 12 }}>

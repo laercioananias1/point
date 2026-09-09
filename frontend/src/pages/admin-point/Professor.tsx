@@ -63,16 +63,30 @@ export default function AdminPointProfessor() {
             ) : (
               <div className="card-list">
                 {vinculos.map((v) => (
-                  <div className="item-card" key={v.id}>
+                  <Link
+                    to={`/admin-point/professor/${v.professor.id}/agenda`}
+                    className="item-card item-card-clickable"
+                    key={v.id}
+                  >
                     <div className="item-card-info">
                       <span className="item-card-title">{v.professor.nome}</span>
                       <span className="item-card-subtitle">
-                        {v.professor.modalidades.join(", ") || "sem modalidade informada"} · repasse{" "}
-                        {rotuloRepasse(v.modelo_repasse, v.valor_repasse)}
+                        {/* Professor.modalidades nunca é preenchido por
+                            nenhum fluxo real (aceitar convite, virar
+                            professor do próprio Point sempre criam com
+                            modalidades=[]) — não tem cadastro que preencha
+                            isso hoje, então mostrar aqui só confundia
+                            (pedido do usuário, 2026-09-08). */}
+                        Repasse {rotuloRepasse(v.modelo_repasse, v.valor_repasse)}
                       </span>
                     </div>
-                    <StatusPill status={v.status} />
-                  </div>
+                    <div className="item-card-actions">
+                      <StatusPill status={v.status} />
+                      <span aria-hidden="true">
+                        <Icon name="chevron-right" />
+                      </span>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}

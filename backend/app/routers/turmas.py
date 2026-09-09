@@ -18,10 +18,12 @@ from app.models.enums import (
     VinculoStatus,
 )
 from app.models.aula import Aula
+from app.models.categoria import Categoria
 from app.models.matricula import Matricula
 from app.models.modalidade import Modalidade
 from app.models.point import DIAS_UTEIS
 from app.models.quadra import Quadra
+from app.models.tipo_turma import TipoTurma
 from app.models.turma import Turma
 from app.models.turma_dia_semana import TurmaDiaSemana
 from app.models.turma_excecao import TurmaExcecao
@@ -43,13 +45,24 @@ router = APIRouter(tags=["turmas"])
 def criar_turmas(
     payload: TurmaCreate,
     db: Annotated[Session, Depends(get_db)],
-    professor: Annotated[User, Depends(require_role(Role.PROFESSOR))],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR, Role.ADMIN_POINT))],
 ) -> list[Turma]:
     """Cria 1 turma por horário selecionado, cada uma cobrindo todos os dias
     marcados — dois dias e dois horários viram 2 turmas, não 4 (pedido do
-    usuário, 2026-08-20: turma é o grupo/horário recorrente inteiro)."""
+    usuário, 2026-08-20: turma é o grupo/horário recorrente inteiro).
+
+    Quem chama pode ser o professor dono do vínculo OU o admin do Point
+    daquele vínculo (pedido do usuário, 2026-09-09: "o adm tb pode criar
+    turmas porém precisa selecionar o professor") — o admin escolhe
+    qualquer vínculo ativo do seu Point, de qualquer professor; o professor
+    só pode usar vínculo próprio. Um usuário com os dois papéis (admin que
+    também é professor) cai em qualquer um dos dois, o que valer."""
     vinculo = db.get(Vinculo, payload.vinculo_id)
-    if vinculo is None or vinculo.professor_id != professor.professor_id:
+    dono_do_vinculo = vinculo is not None and (
+        (user.tem_role(Role.ADMIN_POINT) and vinculo.point_id == user.point_id)
+        or (user.tem_role(Role.PROFESSOR) and vinculo.professor_id == user.professor_id)
+    )
+    if vinculo is None or not dono_do_vinculo:
         raise HTTPException(404, "Vínculo não encontrado")
     if vinculo.status != VinculoStatus.ATIVO:
         raise HTTPException(422, "O vínculo ainda não foi aprovado pelo Point")
@@ -63,6 +76,14 @@ def criar_turmas(
         raise HTTPException(404, "Quadra não encontrada neste Point")
     if modalidade not in quadra.modalidades:
         raise HTTPException(422, "Essa quadra não está cadastrada para essa modalidade")
+
+    categoria = db.get(Categoria, payload.categoria_id)
+    if categoria is None or categoria.point_id != vinculo.point_id:
+        raise HTTPException(404, "Categoria não encontrada neste Point")
+
+    tipo_turma = db.get(TipoTurma, payload.tipo_turma_id)
+    if tipo_turma is None or tipo_turma.point_id != vinculo.point_id:
+        raise HTTPException(404, "Tipo de turma não encontrado neste Point")
 
     if not payload.dias_semana or not payload.horarios:
         raise HTTPException(422, "Escolha pelo menos um dia e um horário")
@@ -96,10 +117,13 @@ def criar_turmas(
 
     # Agenda validada globalmente (seção 3.1) — o professor é uma entidade
     # única e global, então o conflito é checado em TODOS os vínculos dele,
-    # não só no Point deste vínculo. Duas turmas só colidem de verdade se o
-    # dia/horário bate E os períodos se sobrepõem — periodo_fim nulo (turma
-    # recorrente, sem data de término, pedido do usuário 2026-08-20) conta
-    # como "nunca termina", não pode sumir da checagem por causa do NULL.
+    # não só no Point deste vínculo (usa vinculo.professor_id, não o
+    # chamador — quando é o admin criando em nome de outro professor, o
+    # conflito é do professor do vínculo, não do admin). Duas turmas só
+    # colidem de verdade se o dia/horário bate E os períodos se sobrepõem —
+    # periodo_fim nulo (turma recorrente, sem data de término, pedido do
+    # usuário 2026-08-20) conta como "nunca termina", não pode sumir da
+    # checagem por causa do NULL.
     filtro_periodo = [
         or_(Turma.periodo_fim.is_(None), Turma.periodo_fim >= payload.periodo_inicio),
     ]
@@ -111,7 +135,7 @@ def criar_turmas(
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
         .join(TurmaDiaSemana, TurmaDiaSemana.turma_id == Turma.id)
         .filter(
-            Vinculo.professor_id == professor.professor_id,
+            Vinculo.professor_id == vinculo.professor_id,
             TurmaDiaSemana.dia_semana.in_(payload.dias_semana),
             Turma.horario.in_(payload.horarios),
             *filtro_periodo,
@@ -129,6 +153,9 @@ def criar_turmas(
             vinculo_id=vinculo.id,
             modalidade_id=modalidade.id,
             quadra_id=quadra.id,
+            categoria_id=categoria.id,
+            tipo_turma_id=tipo_turma.id,
+            privada=payload.privada,
             capacidade=payload.capacidade,
             horario=horario,
             duracao_minutos=duracao,
@@ -367,7 +394,7 @@ PERIODO_DIA_HORAS = {
 @router.get("/turmas", response_model=list[TurmaOut])
 def buscar_turmas(
     db: Annotated[Session, Depends(get_db)],
-    _user: Annotated[User, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
     modalidade: str | None = None,
     modalidade_id: int | None = None,
     point_id: int | None = None,
@@ -382,7 +409,14 @@ def buscar_turmas(
     pra escolher qual cancelar por força maior, ou quais oferecer na
     ativação de uma assinatura — daí modalidade_id e periodo_dia). professor_id
     é o que a tela de reagendar crédito usa (pedido do usuário, 2026-08-25:
-    "só pode reagendar com o professor que já dá aula pra ele")."""
+    "só pode reagendar com o professor que já dá aula pra ele").
+
+    Turma.privada (pedido do usuário, 2026-09-09) some deste catálogo pra
+    quem só tem o papel aluno — quem decide quem entra numa turma privada
+    é o professor/admin (ex.: montando um Convite), então o aluno nem
+    precisa ver essa turma pra escolher sozinho (ele não conseguiria
+    mesmo — ver bloqueio em matriculas.py e creditos.py). Admin/professor
+    continuam vendo tudo, é o que eles usam pra gerenciar."""
     query = (
         db.query(Turma)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
@@ -391,6 +425,8 @@ def buscar_turmas(
             or_(Turma.periodo_fim.is_(None), Turma.periodo_fim >= date.today()),
         )
     )
+    if not user.tem_role(Role.ADMIN_POINT) and not user.tem_role(Role.PROFESSOR):
+        query = query.filter(Turma.privada.is_(False))
     if modalidade:
         query = query.join(Modalidade, Turma.modalidade_id == Modalidade.id).filter(
             Modalidade.nome.ilike(f"%{modalidade}%")

@@ -55,9 +55,6 @@ export default function ProfessorPerfil() {
                 <span className="item-card-title">{perfil.nome}</span>
                 <span className="item-card-subtitle">{perfil.email}</span>
                 <span className="item-card-subtitle">{perfil.contato}</span>
-                {perfil.modalidades.length > 0 && (
-                  <span className="item-card-subtitle">{perfil.modalidades.join(" · ")}</span>
-                )}
               </div>
             </div>
           </section>

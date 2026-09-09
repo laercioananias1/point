@@ -78,6 +78,20 @@ export default function AdminPointVerMais() {
             <span className="quick-action-label">Faturamento</span>
           </Link>
         </div>
+        <div className="quick-actions">
+          <Link to="/admin-point/configuracoes/categorias" className="quick-action">
+            <span className="quick-action-icon">
+              <Icon name="list" />
+            </span>
+            <span className="quick-action-label">Categorias</span>
+          </Link>
+          <Link to="/admin-point/configuracoes/tipos-turma" className="quick-action">
+            <span className="quick-action-icon">
+              <Icon name="repeat" />
+            </span>
+            <span className="quick-action-label">Tipos de turma</span>
+          </Link>
+        </div>
       </section>
     </Layout>
   );

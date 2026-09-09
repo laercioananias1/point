@@ -3,9 +3,11 @@ from typing import Literal
 
 from pydantic import field_validator
 
+from app.schemas.categoria import CategoriaOut
 from app.schemas.common import ORMModel
 from app.schemas.modalidade import ModalidadeOut
 from app.schemas.quadra import QuadraOut
+from app.schemas.tipo_turma import TipoTurmaOut
 from app.schemas.vinculo import VinculoOut
 from app.services.aulas import DIAS_SEMANA
 
@@ -16,11 +18,22 @@ class TurmaCreate(ORMModel):
     horário, cada uma com os 3 dias), não 6 (pedido do usuário, 2026-08-20:
     turma passou a ser o grupo/horário recorrente inteiro, não 1 dia só).
     periodo_inicio/periodo_fim valem pra todas as turmas do lote.
-    periodo_fim=None = recorrente, sem data de término (2026-08-20)."""
+    periodo_fim=None = recorrente, sem data de término (2026-08-20).
+
+    categoria_id (pedido do usuário, 2026-09-08): a turma é exclusiva de um
+    nível/categoria de aluno — todo o lote criado aqui usa a mesma.
+
+    tipo_turma_id/privada (pedido do usuário, 2026-09-09): tipo é só
+    etiqueta ('Padrão', 'Aula individual', 'Dupla', 'Família'); privada é
+    independente do tipo — quando True, o aluno não consegue se
+    auto-matricular nessa turma (só professor/admin)."""
 
     vinculo_id: int
     modalidade_id: int
     quadra_id: int
+    categoria_id: int
+    tipo_turma_id: int
+    privada: bool = False
     capacidade: int
     periodo_inicio: date
     periodo_fim: date | None = None
@@ -56,6 +69,9 @@ class TurmaOut(ORMModel):
     vinculo_id: int
     modalidade: ModalidadeOut
     quadra: QuadraOut
+    categoria: CategoriaOut
+    tipo_turma: TipoTurmaOut
+    privada: bool
     capacidade: int
     dias_semana: list[str]
     horario: str

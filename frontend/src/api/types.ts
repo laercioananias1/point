@@ -82,6 +82,36 @@ export interface Modalidade {
   preco_avulso: number;
 }
 
+// Tipo/formato de turma cadastrado pelo Point (pedido do usuário,
+// 2026-09-09) — ex.: "Padrão", "Aula individual", "Dupla", "Família". Só
+// etiqueta organizacional — o flag de turma privada é independente, fica
+// em Turma.privada, não aqui.
+export interface TipoTurma {
+  id: number;
+  point_id: number;
+  nome: string;
+}
+
+// Nível de aluno cadastrado pelo Point (pedido do usuário, 2026-09-08) — ex.:
+// "Iniciante", "Intermediário", "Avançado". Cor pra identificar na agenda;
+// Turma fica exclusiva de uma Categoria.
+export interface Categoria {
+  id: number;
+  point_id: number;
+  nome: string;
+  cor: string; // "#rrggbb"
+}
+
+// Classificação do aluno POR Point (pedido do usuário, 2026-09-08) — Aluno é
+// global, Categoria é cadastrada por Point, então não dá pra ter um campo
+// direto e único no Aluno (ver AlunoCategoria no backend).
+export interface AlunoCategoria {
+  id: number;
+  aluno_id: number;
+  point_id: number;
+  categoria: Categoria;
+}
+
 export interface Quadra {
   id: number;
   point_id: number;
@@ -94,7 +124,6 @@ export interface ProfessorResumo {
   nome: string;
   contato: string;
   email: string;
-  modalidades: string[];
 }
 
 export interface AlunoResumo {
@@ -131,6 +160,9 @@ export interface TurmaResumo {
   vinculo_id: number;
   modalidade: Modalidade;
   quadra: Quadra;
+  categoria: Categoria;
+  tipo_turma: TipoTurma;
+  privada: boolean;
   capacidade: number;
   dias_semana: string[];
   horario: string;

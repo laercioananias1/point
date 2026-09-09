@@ -20,13 +20,23 @@ from app.services.feriados import eh_feriado
 router = APIRouter(prefix="/creditos", tags=["creditos"])
 
 
-def _reagendar_credito(db: Session, credito: CreditoReposicao, payload: ReagendarCredito) -> Matricula:
+def _reagendar_credito(
+    db: Session,
+    credito: CreditoReposicao,
+    payload: ReagendarCredito,
+    permite_privada: bool = False,
+) -> Matricula:
     """Núcleo compartilhado de usar um crédito de reposição pra entrar numa
     turma com vaga (seção 4.4) — usado tanto pelo aluno reagendando a
     própria aula quanto pelo admin fazendo isso por ele (pedido do usuário,
     2026-09-01: "fazer ajustes na agenda do aluno", ver reagendar_credito_
     admin abaixo). Não passa por aprovação do admin (a matrícula original
-    já foi aprovada; isso só reagenda uma aula que já era devida)."""
+    já foi aprovada; isso só reagenda uma aula que já era devida).
+
+    permite_privada (pedido do usuário, 2026-09-09) — só True quando quem
+    está escolhendo a turma nova é o admin (reagendar_credito_admin); o
+    aluno reagendando a própria aula (reagendar_credito) não pode cair
+    numa turma privada, mesma regra de matriculas.py::solicitar_matricula."""
     if credito.status == CreditoStatus.DISPONIVEL and credito.data_expiracao < date.today():
         # Expiração é checada aqui (lazy), não por um job — atualiza o status
         # pra refletir a realidade antes de recusar o reagendamento.
@@ -39,6 +49,10 @@ def _reagendar_credito(db: Session, credito: CreditoReposicao, payload: Reagenda
     nova_turma = db.get(Turma, payload.turma_id)
     if nova_turma is None or nova_turma.vinculo.status != VinculoStatus.ATIVO:
         raise HTTPException(404, "Turma não encontrada")
+    if nova_turma.privada and not permite_privada:
+        raise HTTPException(
+            403, "Essa turma é privada — só o professor ou o admin do Point matricula alunos aqui"
+        )
 
     # Pedido do usuário, 2026-08-25: "ele só pode reagendar com o professor
     # que já dá aula pra ele" — não vale usar o crédito numa turma de outro
@@ -107,7 +121,7 @@ def reagendar_credito(
     if credito is None or credito.matricula.aluno_id != aluno.aluno_id:
         raise HTTPException(404, "Crédito não encontrado")
 
-    nova_matricula = _reagendar_credito(db, credito, payload)
+    nova_matricula = _reagendar_credito(db, credito, payload, permite_privada=False)
     db.commit()
     db.refresh(nova_matricula)
     return nova_matricula
@@ -135,7 +149,7 @@ def reagendar_credito_admin(
     if credito is None:
         raise HTTPException(404, "Crédito não encontrado")
 
-    nova_matricula = _reagendar_credito(db, credito, payload)
+    nova_matricula = _reagendar_credito(db, credito, payload, permite_privada=True)
     db.commit()
     db.refresh(nova_matricula)
     return nova_matricula

@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Integer, String
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -14,6 +14,5 @@ class Professor(TimestampMixin, Base):
     nome: Mapped[str] = mapped_column(String(120))
     contato: Mapped[str] = mapped_column(String(30))  # celular
     email: Mapped[str] = mapped_column(String(255))
-    modalidades: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     vinculos: Mapped[list["Vinculo"]] = relationship(back_populates="professor")  # noqa: F821

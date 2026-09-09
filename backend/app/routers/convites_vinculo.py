@@ -234,7 +234,7 @@ def aceitar_convite_vinculo_novo(
             "esse convite e mandar um novo pro celular certo, pra você aceitar fazendo login",
         )
 
-    professor = Professor(nome=convite.nome, contato=convite.celular, email=convite.email, modalidades=[])
+    professor = Professor(nome=convite.nome, contato=convite.celular, email=convite.email)
     db.add(professor)
     db.flush()
 
@@ -274,9 +274,7 @@ def aceitar_convite_vinculo(
     convite = _convite_valido_ou_erro(db, token)
 
     if user.professor_id is None:
-        professor = Professor(
-            nome=convite.nome, contato=convite.celular, email=user.email, modalidades=[]
-        )
+        professor = Professor(nome=convite.nome, contato=convite.celular, email=user.email)
         db.add(professor)
         db.flush()
         user.professor_id = professor.id

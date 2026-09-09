@@ -79,7 +79,7 @@ export default function AdminPointCadastrarQuadra() {
       {loading && <p className="empty-state">Carregando...</p>}
 
       {!loading && !erroCarregar && modalidades.length === 0 && (
-        <p className="empty-state">Cadastre uma modalidade (Ver mais → Modalidades) antes de criar quadras.</p>
+        <p className="form-error">Cadastre uma modalidade (Ver mais → Modalidades) antes de criar quadras.</p>
       )}
 
       {!loading && !erroCarregar && modalidades.length > 0 && (
