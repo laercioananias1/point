@@ -28,6 +28,7 @@ from app.schemas.convite import (
 )
 from app.services.assinaturas import criar_assinatura_ativa, validar_turmas_para_plano
 from app.services.email import enviar_convite_avulso_email, enviar_convite_email
+from app.services.whatsapp import enviar_convite_whatsapp
 
 router = APIRouter(prefix="/convites", tags=["convites"])
 
@@ -51,6 +52,7 @@ def _para_out(db: Session, convite: Convite) -> ConviteOut:
         token=convite.token,
         nome=convite.nome,
         email=convite.email,
+        celular=convite.celular,
         point=convite.point,
         avulso=convite.avulso,
         modalidade=convite.modalidade,
@@ -146,6 +148,7 @@ def criar_convite(
         point_id=admin.point_id,
         nome=payload.nome,
         email=payload.email,
+        celular=payload.celular,
         avulso=payload.avulso,
         modalidade_id=payload.modalidade_id if not payload.avulso else None,
         periodo_dia_desejado=payload.periodo_dia_desejado if not payload.avulso else None,
@@ -180,6 +183,13 @@ def criar_convite(
             preco=float(plano.preco),
             fonte_pagamento=convite.fonte_pagamento,
         )
+    enviar_convite_whatsapp(
+        celular=convite.celular,
+        nome=convite.nome,
+        point_nome=convite.point.nome,
+        token=convite.token,
+        tipo="aluno",
+    )
 
     return _para_out(db, convite)
 

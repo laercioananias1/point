@@ -60,6 +60,8 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       TOTALPASS_PARTNER_API_KEY: ${TOTALPASS_PARTNER_API_KEY:-}
       TOTALPASS_BASE_URL: ${TOTALPASS_BASE_URL:-https://booking-api.staging.totalpass.com}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
     restart: always
     ports:
       # 127.0.0.1 só — o nginx/Traefik do host é quem fala com a internet

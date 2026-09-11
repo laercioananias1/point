@@ -21,8 +21,7 @@ class ConviteTurmaEscolha(ORMModel):
 
 class ConviteCriar(ORMModel):
     """O admin decide a assinatura inteira aqui — o aluno só vai aceitar
-    (pedido do usuário, 2026-08-20). Sem celular (pedido do usuário,
-    2026-08-26) — o próprio aluno informa o dele ao aceitar.
+    (pedido do usuário, 2026-08-20).
 
     avulso (pedido do usuário, 2026-09-11): quando True, é só um convite
     pra entrar na plataforma — os 5 campos de assinatura abaixo ficam
@@ -33,6 +32,10 @@ class ConviteCriar(ORMModel):
 
     nome: str
     email: str
+    # Obrigatório (pedido do usuário, 2026-09-11: "não é mais opcional o
+    # celular, devido agora começar utilizar whats precisa") — o convite
+    # sempre sai por WhatsApp também, além do e-mail; igual professor/admin.
+    celular: str
     avulso: bool = False
     modalidade_id: int | None = None
     periodo_dia_desejado: PeriodoDia | None = None
@@ -75,6 +78,7 @@ class ConviteOut(ORMModel):
     token: str
     nome: str
     email: str
+    celular: str
     point: PointResumo
     avulso: bool
     # Todos None quando avulso=True (pedido do usuário, 2026-09-11).

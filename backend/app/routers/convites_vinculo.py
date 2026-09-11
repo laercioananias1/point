@@ -22,6 +22,7 @@ from app.schemas.convite_vinculo import (
 )
 from app.schemas.vinculo import VinculoOut
 from app.services.email import enviar_convite_vinculo_email
+from app.services.whatsapp import enviar_convite_whatsapp
 
 router = APIRouter(prefix="/convites-vinculo", tags=["convites-vinculo"])
 
@@ -124,6 +125,13 @@ def criar_convite_vinculo(
         point_nome=convite.point.nome,
         modelo_repasse=convite.modelo_repasse.value,
         valor_repasse=float(convite.valor_repasse),
+    )
+    enviar_convite_whatsapp(
+        celular=convite.celular,
+        nome=convite.nome,
+        point_nome=convite.point.nome,
+        token=convite.token,
+        tipo="professor",
     )
 
     return _para_out(db, convite)

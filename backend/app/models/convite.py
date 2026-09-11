@@ -30,11 +30,18 @@ class Convite(TimestampMixin, Base):
     point_id: Mapped[int] = mapped_column(ForeignKey("points.id"))
 
     # Identidade de quem tá sendo convidado — vira Aluno+User só no aceite.
-    # Celular não entra mais aqui (pedido do usuário, 2026-08-26: "tira
-    # desse cadastro celular") — quem informa o próprio celular agora é o
-    # aluno, na hora de aceitar (ConviteAceitarNovo), não o admin no convite.
     nome: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(160))
+    # Celular tinha saído daqui (pedido do usuário, 2026-08-26: "tira desse
+    # cadastro celular" — quem informa o próprio celular é o aluno, na hora
+    # de aceitar) e voltou opcional (2026-09-11) só pra WhatsApp. Passa a
+    # ser OBRIGATÓRIO (pedido do usuário, 2026-09-11: "nao é mais opcional
+    # o celular, devido agora começar utilizar whats precisa") — o convite
+    # de aluno agora sempre sai por WhatsApp também, igual professor/admin
+    # (ConviteVinculo/ConviteAdmin já exigiam). O aceite continua pedindo
+    # celular de novo (ConviteAceitarNovo), sem relação com este aqui; pode
+    # até ser um número diferente.
+    celular: Mapped[str] = mapped_column(String(30))
 
     avulso: Mapped[bool] = mapped_column(Boolean, default=False)
 

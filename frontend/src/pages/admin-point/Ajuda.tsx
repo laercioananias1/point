@@ -25,9 +25,10 @@ export default function AdminPointAjuda() {
 
       <AjudaCallout>
         <b>A lógica por trás de quase tudo:</b> você monta o convite inteiro — dados da pessoa,
-        plano ou acordo de repasse, turmas — e manda por e-mail. Quem recebe só aceita (cria a
-        própria senha, se ainda não tiver conta). Ninguém cria senha por outra pessoa: o
-        vínculo/assinatura ativa sozinho no aceite.
+        plano ou acordo de repasse, turmas — e manda por e-mail e por WhatsApp. Quem recebe só
+        aceita (cria a própria senha, se ainda não tiver conta). Ninguém
+        cria senha por outra pessoa: o vínculo/assinatura ativa sozinho no aceite — exceto no
+        convite de aluno <b>avulso</b>, que não tem assinatura nenhuma pra ativar (ver abaixo).
       </AjudaCallout>
 
       <section className="section">
@@ -147,15 +148,24 @@ export default function AdminPointAjuda() {
             pergunta="Como convidar um aluno?"
             nota="Wellhub e TotalPass não geram cobrança por Pix — é só o registro de que o benefício cobre esse aluno."
           >
+            <p>
+              Dois jeitos, escolhidos por uma chave no topo do formulário: <b>com plano</b> (a
+              assinatura já vem pronta) ou <b>avulso</b> (o aluno só entra na plataforma e compra as
+              próprias aulas quando quiser).
+            </p>
             <ol>
               <li>Aba Alunos → Convidar aluno.</li>
-              <li>Nome, e-mail, modalidade e plano.</li>
+              <li>Nome, e-mail e celular.</li>
               <li>
-                Turma(s) e, dentro de cada uma, os dias da semana que esse aluno vai (até bater com
-                a frequência do plano).
+                <b>Com plano:</b> modalidade, plano, turma(s) — com os dias da semana de cada uma,
+                até bater com a frequência do plano —, data de início e forma de pagamento (Pix,
+                Wellhub ou TotalPass).
               </li>
-              <li>Data de início e forma de pagamento: Pix, Wellhub ou TotalPass.</li>
-              <li>Enviar convite — ele aceita por e-mail e a assinatura ativa sozinha.</li>
+              <li>
+                <b>Avulso:</b> nada disso — só nome, e-mail e celular. O aluno aceita, entra e agenda
+                sozinho pela tela dele.
+              </li>
+              <li>Enviar convite — ele aceita por e-mail e WhatsApp.</li>
             </ol>
           </AjudaPergunta>
 

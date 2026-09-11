@@ -311,6 +311,9 @@ export interface Convite {
   token: string;
   nome: string;
   email: string;
+  // Obrigatório (pedido do usuário, 2026-09-11) — o convite sempre sai
+  // por WhatsApp também, além do e-mail.
+  celular: string;
   point: PointResumo;
   // Convite avulso (pedido do usuário, 2026-09-11) — só entra na
   // plataforma, sem assinatura nenhuma; os campos abaixo vêm todos null.
@@ -397,4 +400,15 @@ export interface Matricula {
   // de um crédito reagendado) — pedido do usuário, 2026-09-01: ícones
   // diferentes no calendário do aluno. Sempre false pra mensal.
   e_reposicao: boolean;
+}
+
+export type NotificacaoTipo = "cancelamento_aula";
+
+export interface Notificacao {
+  id: number;
+  tipo: NotificacaoTipo;
+  titulo: string;
+  mensagem: string;
+  lida: boolean;
+  created_at: string;
 }

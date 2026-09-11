@@ -5,7 +5,7 @@ import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, PagamentoMeio, PeriodoDia, Plano, TurmaResumo } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA, rotuloTurma } from "../../lib/dias";
-import { formatarReais } from "../../lib/formato";
+import { formatarCelular, formatarReais } from "../../lib/formato";
 
 /** A partir de que horário cada período do dia começa (pedido do usuário,
  * 2026-08-26: tirou o seletor de "período preferido" do cadastro — o
@@ -64,6 +64,10 @@ function ConvidarForm({ pointId }: { pointId: number }) {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  // Obrigatório (pedido do usuário, 2026-09-11: "não é mais opcional o
+  // celular, devido agora começar utilizar whats precisa") — o convite
+  // sempre sai por WhatsApp também, além do e-mail.
+  const [celular, setCelular] = useState("");
   // Avulso (pedido do usuário, 2026-09-11: "pode ser um aluno avulso...
   // abre opção se for avulso não preenche plano, data início, forma de
   // pagto, turma, nada disso") — só cria a conta, sem assinatura.
@@ -144,8 +148,9 @@ function ConvidarForm({ pointId }: { pointId: number }) {
     setErro(null);
     setEnviando(true);
     try {
+      const celularLimpo = celular.trim();
       if (avulso) {
-        await api.post("/convites", { nome, email, avulso: true });
+        await api.post("/convites", { nome, email, celular: celularLimpo, avulso: true });
       } else {
         const turmas = Object.entries(diasPorTurma)
           .filter(([, dias]) => dias.length > 0)
@@ -161,6 +166,7 @@ function ConvidarForm({ pointId }: { pointId: number }) {
         await api.post("/convites", {
           nome,
           email,
+          celular: celularLimpo,
           avulso: false,
           modalidade_id: modalidadeId,
           periodo_dia_desejado: primeiraTurma ? periodoDaHora(primeiraTurma.horario) : "noite",
@@ -217,6 +223,20 @@ function ConvidarForm({ pointId }: { pointId: number }) {
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
       </div>
+
+      <label>
+        Celular
+        <input
+          type="tel"
+          placeholder="(11) 91234-5678"
+          value={celular}
+          onChange={(e) => setCelular(formatarCelular(e.target.value))}
+          required
+        />
+      </label>
+      <p className="empty-state" style={{ padding: 0 }}>
+        O convite é mandado por e-mail e por WhatsApp.
+      </p>
 
       {avulso ? (
         <p className="empty-state" style={{ padding: 0 }}>
@@ -328,7 +348,9 @@ function ConvidarForm({ pointId }: { pointId: number }) {
 
       <button
         type="submit"
-        disabled={enviando || !nome || !email || (!avulso && diasEscolhidos !== frequenciaAlvo)}
+        disabled={
+          enviando || !nome || !email || !celular.trim() || (!avulso && diasEscolhidos !== frequenciaAlvo)
+        }
       >
         {enviando ? "Enviando..." : "Enviar convite"}
       </button>

@@ -43,6 +43,39 @@ class Settings(BaseSettings):
     totalpass_partner_api_key: str = ""
     totalpass_base_url: str = "https://booking-api.staging.totalpass.com"
 
+    # Notificações via WhatsApp (pedido do usuário, 2026-09-11: "quero
+    # fazer integração com whatsapp para enviar notificações de
+    # agendamento de aula, convites, etc") — Meta Cloud API direta (não é
+    # um BSP terceiro). access_token e phone_number_id vêm do Business
+    # Manager → WhatsApp → Configuração da API. Mensagem iniciada pela
+    # empresa (convite) exige um "message template" pré-aprovado pela Meta
+    # — ver services/whatsapp.py. Sem access_token configurado, o envio
+    # vira um log no console em vez de falhar (mesmo padrão do e-mail via
+    # Resend) — dá pra testar o resto do fluxo sem credencial.
+    whatsapp_access_token: str = ""
+    whatsapp_phone_number_id: str = ""
+    # Versão da Graph API — a Meta depreca versões antigas (~2 anos de
+    # suporte); revise esse valor periodicamente contra
+    # developers.facebook.com/docs/graph-api/changelog.
+    whatsapp_api_base_url: str = "https://graph.facebook.com/v21.0"
+    # Um template por tipo de convite (pedido do usuário, 2026-09-11: "a
+    # variavel 3 ser um botao do modelo") — o botão de URL tem a parte fixa
+    # do link aprovada DENTRO do template na Meta, e cada tipo de convite
+    # aceita num caminho diferente (/convite/, /convite-vinculo/,
+    # /convite-admin/), então não dá pra reaproveitar um template só como
+    # antes (quando o link era texto livre no corpo). Ver
+    # services/whatsapp.py.
+    whatsapp_template_convite_aluno: str = "invite_point"
+    whatsapp_template_convite_professor: str = "convite_professor"
+    whatsapp_template_convite_admin: str = "convite_admin"
+    # Cancelamento de aula pelo professor/admin (pedido do usuário,
+    # 2026-09-11: "vamos fazer uma notificacao para cencalemento de aula
+    # pelo professor") — avisa por WhatsApp quem tinha aula justamente na
+    # data cancelada (mesma lista que hoje recebe o crédito de reposição,
+    # ver routers/turmas.py::remover_turma). Só texto, sem botão — nada
+    # pra clicar, é aviso mesmo.
+    whatsapp_template_cancelamento_aula: str = "cancelamento_aula"
+
     # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
     # 2026-08-30: deploy em produção) — em dev é só o Vite local; em
     # produção, o domínio de verdade do painel (ex.:

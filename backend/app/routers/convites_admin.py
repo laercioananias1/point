@@ -19,6 +19,7 @@ from app.models.vinculo import Vinculo
 from app.schemas.auth import TokenResponse, UserOut
 from app.schemas.convite_admin import ConviteAdminAceitarNovo, ConviteAdminCriar, ConviteAdminOut
 from app.services.email import enviar_convite_admin_email
+from app.services.whatsapp import enviar_convite_whatsapp
 
 router = APIRouter(prefix="/convites-admin", tags=["convites-admin"])
 
@@ -127,6 +128,13 @@ def criar_convite_admin(
     link = f"{settings.frontend_url}/convite-admin/{convite.token}"
     enviar_convite_admin_email(
         nome=convite.nome, email=convite.email, link=link, point_nome=convite.point.nome
+    )
+    enviar_convite_whatsapp(
+        celular=convite.celular,
+        nome=convite.nome,
+        point_nome=convite.point.nome,
+        token=convite.token,
+        tipo="admin",
     )
 
     return _para_out(db, convite)
