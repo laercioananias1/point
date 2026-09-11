@@ -13,6 +13,7 @@ from app.models.enums import (
     CreditoStatus,
     MatriculaStatus,
     MatriculaTipo,
+    NotificacaoTipo,
     PeriodoDia,
     Role,
     VinculoStatus,
@@ -37,6 +38,8 @@ from app.schemas.turma import (
     TurmaRemocao,
 )
 from app.services.aulas import DIAS_SEMANA
+from app.services.notificacoes import criar_notificacao
+from app.services.whatsapp import enviar_cancelamento_aula_whatsapp
 
 router = APIRouter(tags=["turmas"])
 
@@ -219,34 +222,38 @@ def remover_turma(
         dias = ", ".join(f"{d}s" for d in turma.dias_semana)
         raise HTTPException(422, f"Essa turma acontece às {dias}, não nessa data")
 
+    # Calculado sempre (não só quando gerar_credito) — pedido do usuário,
+    # 2026-09-11: "notificacao para cencalemento de aula pelo professor"
+    # precisa dessa mesma lista independente do crédito ter sido marcado
+    # ou não.
+    dia_semana_removido = DIAS_SEMANA[payload.data.weekday()]
+    matriculas_afetadas = [
+        m
+        for m in db.query(Matricula)
+        .filter(Matricula.turma_id == turma_id, Matricula.status == MatriculaStatus.ATIVA)
+        .all()
+        if (
+            dia_semana_removido in m.dias_semana
+            if m.tipo == MatriculaTipo.MENSAL
+            else m.data_avulsa == payload.data
+        )
+    ]
+
     creditos_gerados = 0
-    if payload.gerar_credito:
-        dia_semana_removido = DIAS_SEMANA[payload.data.weekday()]
-        matriculas_afetadas = [
-            m
-            for m in db.query(Matricula)
-            .filter(Matricula.turma_id == turma_id, Matricula.status == MatriculaStatus.ATIVA)
-            .all()
-            if (
-                dia_semana_removido in m.dias_semana
-                if m.tipo == MatriculaTipo.MENSAL
-                else m.data_avulsa == payload.data
+    if payload.gerar_credito and matriculas_afetadas:
+        prazo_dias = turma.vinculo.point.prazo_credito_dias
+        creditos = [
+            CreditoReposicao(
+                matricula_id=m.id,
+                motivo=CreditoMotivo.FORCA_MAIOR,
+                data_aula=payload.data,
+                data_expiracao=date.today() + timedelta(days=prazo_dias),
+                status=CreditoStatus.DISPONIVEL,
             )
+            for m in matriculas_afetadas
         ]
-        if matriculas_afetadas:
-            prazo_dias = turma.vinculo.point.prazo_credito_dias
-            creditos = [
-                CreditoReposicao(
-                    matricula_id=m.id,
-                    motivo=CreditoMotivo.FORCA_MAIOR,
-                    data_aula=payload.data,
-                    data_expiracao=date.today() + timedelta(days=prazo_dias),
-                    status=CreditoStatus.DISPONIVEL,
-                )
-                for m in matriculas_afetadas
-            ]
-            db.add_all(creditos)
-            creditos_gerados = len(creditos)
+        db.add_all(creditos)
+        creditos_gerados = len(creditos)
 
     if payload.escopo == "unica_data":
         if not (payload.motivo and payload.motivo.strip()):
@@ -275,11 +282,48 @@ def remover_turma(
             .delete(synchronize_session=False)
         )
         db.commit()
+
+        # Avisa quem tinha aula justamente nessa data — por WhatsApp e
+        # dentro do próprio app (pedido do usuário, 2026-09-11:
+        # "notificacao para cencalemento de aula pelo professor" /
+        # "esse tipo de msg é bom tb ter no app... já tava previsto lá no
+        # início fazermos uma tela de notificações"). Só nesse escopo,
+        # porque é o caso de "essa ocorrência específica caiu";
+        # "a_partir_desta_data" encerra a série inteira, mudança maior que
+        # fica de fora por ora. Depois do commit — se o cancelamento não
+        # persistir, melhor não ter avisado nada.
+        mensagem_cancelamento = (
+            f"Sua aula de {turma.modalidade.nome} do dia {payload.data.strftime('%d/%m')} "
+            f"foi cancelada. Motivo: {payload.motivo.strip()}."
+        )
+        notificacoes_whatsapp = 0
+        for m in matriculas_afetadas:
+            destinatario = db.query(User).filter(User.aluno_id == m.aluno_id).first()
+            if destinatario is not None:
+                criar_notificacao(
+                    db,
+                    user_id=destinatario.id,
+                    tipo=NotificacaoTipo.CANCELAMENTO_AULA,
+                    titulo="Aula cancelada",
+                    mensagem=mensagem_cancelamento,
+                )
+            if not m.aluno.contato:
+                continue
+            enviar_cancelamento_aula_whatsapp(
+                celular=m.aluno.contato,
+                nome=m.aluno.nome,
+                turma_nome=turma.modalidade.nome,
+                data=payload.data.strftime("%d/%m"),
+                motivo=payload.motivo.strip(),
+            )
+            notificacoes_whatsapp += 1
+
         return RemocaoTurmaOut(
             turma_removida=False,
             aulas_removidas=aulas_removidas,
             novo_periodo_fim=turma.periodo_fim,
             creditos_gerados=creditos_gerados,
+            notificacoes_whatsapp=notificacoes_whatsapp,
         )
 
     # escopo == "a_partir_desta_data"

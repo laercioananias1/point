@@ -120,3 +120,14 @@ class ConviteStatus(str, enum.Enum):
     PENDENTE = "pendente"
     ACEITO = "aceito"
     CANCELADO = "cancelado"
+
+
+class NotificacaoTipo(str, enum.Enum):
+    """Notificação dentro do próprio app (pedido do usuário, 2026-09-11:
+    "esse tipo de msg é bom tb ter no app... já tava previsto lá no início
+    fazermos uma tela de notificações") — um valor por tipo de evento, pra
+    a tela poder trocar ícone/estilo por tipo mais tarde se precisar. Só
+    cancelamento de aula existe por ora; outros eventos (convite, lembrete)
+    entram aqui conforme forem ganhando uma versão "no app" também."""
+
+    CANCELAMENTO_AULA = "cancelamento_aula"

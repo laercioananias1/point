@@ -54,6 +54,7 @@ import DonoAppCriarPoint from "./pages/dono-app/CriarPoint";
 import DonoAppPerfil from "./pages/dono-app/Perfil";
 import EsqueciSenha from "./pages/EsqueciSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import Notificacoes from "./pages/Notificacoes";
 
 // Ordem de prioridade pra decidir a HOME inicial de quem tem mais de um
 // papel (pedido do usuário, 2026-08-26 — dono do Point que também é
@@ -326,6 +327,14 @@ export default function App() {
         }
       />
       <Route
+        path="/admin-point/notificacoes"
+        element={
+          <ProtectedRoute>
+            <Notificacoes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/professor"
         element={
           <ProtectedRoute>
@@ -378,6 +387,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ProfessorAjuda />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/professor/notificacoes"
+        element={
+          <ProtectedRoute>
+            <Notificacoes />
           </ProtectedRoute>
         }
       />
@@ -438,6 +455,14 @@ export default function App() {
         }
       />
       <Route
+        path="/aluno/notificacoes"
+        element={
+          <ProtectedRoute>
+            <Notificacoes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dono-app"
         element={
           <ProtectedRoute>
@@ -466,6 +491,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DonoAppPerfil />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dono-app/notificacoes"
+        element={
+          <ProtectedRoute>
+            <Notificacoes />
           </ProtectedRoute>
         }
       />

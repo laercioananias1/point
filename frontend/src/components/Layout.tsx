@@ -104,7 +104,8 @@ export type IconName =
   | "list"
   | "repeat"
   | "x-circle"
-  | "flag";
+  | "flag"
+  | "bell";
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -299,6 +300,15 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
         <line x1="4" y1="22" x2="4" y2="15" />
       </>
     ),
+    // Sininho de notificações no cabeçalho (pedido do usuário, 2026-09-11:
+    // "esse tipo de msg é bom tb ter no app... já tava previsto lá no
+    // início fazermos uma tela de notificações").
+    bell: (
+      <>
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </>
+    ),
   };
   return (
     <svg
@@ -343,6 +353,23 @@ export function Layout({ children }: { children: ReactNode }) {
       .then(setPointLogo)
       .catch(() => setPointLogo(null));
   }, [user]);
+
+  // Selo de não lidas no sininho (pedido do usuário, 2026-09-11: "esse
+  // tipo de msg é bom tb ter no app... já tava previsto lá no início
+  // fazermos uma tela de notificações") — refaz a contagem a cada troca
+  // de tela (cobre tanto "chegou notificação nova" quanto "acabei de ler
+  // na tela de Notificações", sem precisar de um estado global só pra isso).
+  const [naoLidas, setNaoLidas] = useState(0);
+  useEffect(() => {
+    if (!user) {
+      setNaoLidas(0);
+      return;
+    }
+    api
+      .get<{ nao_lidas: number }>("/notificacoes/contagem-nao-lidas")
+      .then((res) => setNaoLidas(res.nao_lidas))
+      .catch(() => {});
+  }, [user, location.pathname]);
 
   function handleLogout() {
     logout();
@@ -404,6 +431,33 @@ export function Layout({ children }: { children: ReactNode }) {
                 <span className="app-user-role">{rotuloArea}</span>
                 <span className="app-user-name">{user.nome}</span>
               </span>
+              {area && (
+                <button
+                  type="button"
+                  className="app-header-icon-btn app-avisos-btn"
+                  onClick={() => navigate(`${PREFIXO_ROTA[area]}/notificacoes`)}
+                  aria-label={naoLidas > 0 ? `Notificações — ${naoLidas} não lida(s)` : "Notificações"}
+                >
+                  {/* Texto, não Icon/SVG (pedido do usuário, 2026-09-11:
+                      depois de 3 tentativas — contorno fino, fundo sólido,
+                      path exato do Feather (o mesmo "chevron-left" que
+                      funciona bem ao lado, nesta mesma tela) — o sino
+                      seguia invisível mesmo sem cache, mesmo com nome de
+                      classe genérico. Suspeita: bloqueador reconhecendo o
+                      desenho específico de sino de notificação (é o SVG de
+                      "avise-me" mais usado da web). Emoji como texto sai
+                      do jogo de SVG por completo, mesmo truque já provado
+                      no "?" do botão de Ajuda ao lado. */}
+                  <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1 }}>
+                    🔔
+                  </span>
+                  {naoLidas > 0 && (
+                    <span className="app-avisos-selo" aria-hidden="true">
+                      {naoLidas > 9 ? "9+" : naoLidas}
+                    </span>
+                  )}
+                </button>
+              )}
               {/* Botão de Ajuda (pedido do usuário, 2026-09-01: "não fica
                   melhor se for online no app? tem um botão ajuda?") — só pra
                   quem tem uma tela de Ajuda escrita (admin e professor por

@@ -125,3 +125,7 @@ class RemocaoTurmaOut(ORMModel):
     aulas_removidas: int
     novo_periodo_fim: date | None
     creditos_gerados: int
+    # Só preenchido no escopo 'unica_data' (pedido do usuário, 2026-09-11:
+    # "notificacao para cencalemento de aula pelo professor") — 0 nos
+    # demais casos, sem WhatsApp mandado nenhum.
+    notificacoes_whatsapp: int = 0

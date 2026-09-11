@@ -465,6 +465,44 @@ textarea:focus {
   color: #fff;
 }
 
+/* Botão de avisos/notificações no cabeçalho (pedido do usuário,
+   2026-09-11) — mesmo problema que o botão de Ajuda já teve (ver
+   comentário acima, 2026-09-01): o .app-header-icon-btn puro (contorno
+   fino) fica "muito apagado" no cabeçalho escuro. Tentativas com
+   --navy-line e até com o ícone certo do Feather continuaram invisíveis
+   pro usuário mesmo em janela nova/sem cache — indício de bloqueador de
+   anúncios/extensão de privacidade escondendo por nome de classe (várias
+   listas de filtro têm regra cosmética genérica pra qualquer coisa com
+   "bell"/"notification" no nome). Por isso as classes aqui deliberadamente
+   NÃO usam essas palavras. */
+.app-avisos-btn {
+  position: relative;
+  flex-shrink: 0;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+}
+
+.app-avisos-btn:hover {
+  background: var(--accent-strong);
+}
+
+.app-avisos-selo {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 100px;
+  background: var(--coral);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
 /* Botão de Ajuda no cabeçalho (pedido do usuário, 2026-09-01) — círculo
    cheio da cor de destaque, não só um contorno fino: o .app-header-icon-btn
    (contorno + ícone fino, cor do texto do header) ficava "muito apagado"
