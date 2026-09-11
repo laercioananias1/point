@@ -295,7 +295,10 @@ function ConvitePendenteRow({ convite, onMudanca }: { convite: Convite; onMudanc
       {modal}
       <div className="item-card-info">
         <span className="item-card-title">
-          {convite.nome} · {convite.modalidade.nome} · {convite.plano.frequencia_semanal}x/semana
+          {convite.nome}
+          {convite.avulso
+            ? " · avulso"
+            : ` · ${convite.modalidade?.nome} · ${convite.plano?.frequencia_semanal}x/semana`}
         </span>
         <span className="item-card-subtitle">
           {convite.email} · expira em{" "}

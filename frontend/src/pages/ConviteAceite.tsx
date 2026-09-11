@@ -48,7 +48,11 @@ export default function ConviteAceite() {
             <ResumoConvite convite={convite} />
 
             {aceito ? (
-              <p className="auth-card form-success">Assinatura ativada! Redirecionando...</p>
+              <p className="auth-card form-success">
+                {convite.avulso
+                  ? "Conta criada! Redirecionando..."
+                  : "Assinatura ativada! Redirecionando..."}
+              </p>
             ) : convite.status === "aceito" ? (
               <p className="auth-card form-success">Esse convite já foi aceito.</p>
             ) : convite.status === "cancelado" ? (
@@ -81,21 +85,33 @@ export default function ConviteAceite() {
 }
 
 function ResumoConvite({ convite }: { convite: Convite }) {
+  if (convite.avulso) {
+    return (
+      <div className="auth-card">
+        <h1>Convite — {convite.point.nome}</h1>
+        <p className="auth-subtitle">Olá, {convite.nome}!</p>
+        <p className="empty-state" style={{ padding: 0 }}>
+          Sem assinatura pré-definida — depois de aceitar, você mesmo escolhe e agenda suas aulas.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="auth-card">
       <h1>Convite — {convite.point.nome}</h1>
       <p className="auth-subtitle">Olá, {convite.nome}!</p>
       <p>
-        {convite.modalidade.nome} · {convite.plano.frequencia_semanal}x por semana ·{" "}
+        {convite.modalidade!.nome} · {convite.plano!.frequencia_semanal}x por semana ·{" "}
         {convite.fonte_pagamento === "pix"
-          ? `${formatarReais(convite.plano.preco)}/mês`
-          : `via ${rotuloPagamentoMeio(convite.fonte_pagamento)}`}
+          ? `${formatarReais(convite.plano!.preco)}/mês`
+          : `via ${rotuloPagamentoMeio(convite.fonte_pagamento!)}`}
       </p>
       <p className="empty-state" style={{ padding: 0 }}>
         {convite.turmas.map((t) => rotuloTurma(t.dias_semana, t.turma.horario)).join(" · ")}
       </p>
       <p className="empty-state" style={{ padding: 0 }}>
-        Início em {new Date(convite.data_inicio + "T00:00").toLocaleDateString("pt-BR")}
+        Início em {new Date(convite.data_inicio! + "T00:00").toLocaleDateString("pt-BR")}
       </p>
     </div>
   );

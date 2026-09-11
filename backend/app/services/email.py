@@ -70,6 +70,28 @@ def enviar_convite_email(
     )
 
 
+def enviar_convite_avulso_email(*, nome: str, email: str, link: str, point_nome: str) -> None:
+    """Convite avulso (pedido do usuário, 2026-09-11) — sem plano/preço pra
+    mostrar, é só um link pra entrar na plataforma; o aluno escolhe e
+    compra as próprias aulas depois de aceitar."""
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2>Você foi convidado(a) pelo {point_nome}</h2>
+      <p>Olá, {nome}!</p>
+      <p>
+        O {point_nome} te convidou pra entrar na plataforma. Depois de aceitar, você mesmo escolhe e
+        agenda suas aulas quando quiser.
+      </p>
+      <p>
+        <a href="{link}" style="display:inline-block;padding:10px 20px;background:#0e9594;
+           color:#fff;text-decoration:none;border-radius:6px;">Aceitar convite</a>
+      </p>
+      <p style="color:#666;font-size:13px;">Se o botão não funcionar, copie este link: {link}</p>
+    </div>
+    """
+    _enviar(email=email, assunto=f"Convite — {point_nome}", html=html, link_fallback=link)
+
+
 def enviar_convite_vinculo_email(
     *, nome: str, email: str, link: str, point_nome: str, modelo_repasse: str, valor_repasse: float
 ) -> None:

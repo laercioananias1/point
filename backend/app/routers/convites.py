@@ -27,7 +27,7 @@ from app.schemas.convite import (
     ConviteTurmaEscolhaOut,
 )
 from app.services.assinaturas import criar_assinatura_ativa, validar_turmas_para_plano
-from app.services.email import enviar_convite_email
+from app.services.email import enviar_convite_avulso_email, enviar_convite_email
 
 router = APIRouter(prefix="/convites", tags=["convites"])
 
@@ -52,6 +52,7 @@ def _para_out(db: Session, convite: Convite) -> ConviteOut:
         nome=convite.nome,
         email=convite.email,
         point=convite.point,
+        avulso=convite.avulso,
         modalidade=convite.modalidade,
         plano=convite.plano,
         fonte_pagamento=convite.fonte_pagamento,
@@ -74,29 +75,42 @@ def criar_convite(
     de início) e convida o aluno por e-mail (pedido do usuário, 2026-08-20
     — o aluno cadastra a própria conta, o admin não cria senha por ele).
     Valida tudo já aqui pra dar erro cedo — revalida de novo no aceite,
-    porque turma/plano podem ter mudado nesse meio-tempo."""
-    # Dinheiro não é aceito (pedido do usuário, 2026-08-26: "vou retirar do
-    # sistema a forma de pagamento em dinheiro"); Wellhub/TotalPass entraram
-    # depois (pedido do usuário, 2026-09-01) — só como forma de pagamento
-    # da matrícula, sem integração nenhuma ainda (ver PagamentoMeio).
-    if payload.fonte_pagamento not in (PagamentoMeio.PIX, PagamentoMeio.WELLHUB, PagamentoMeio.TOTALPASS):
-        raise HTTPException(422, "Forma de pagamento não aceita — use Pix, Wellhub ou TotalPass")
+    porque turma/plano podem ter mudado nesse meio-tempo.
 
-    modalidade = db.get(Modalidade, payload.modalidade_id)
-    if modalidade is None or modalidade.point_id != admin.point_id:
-        raise HTTPException(404, "Modalidade não encontrada neste Point")
+    Modo avulso (pedido do usuário, 2026-09-11) pula toda essa validação —
+    é só um convite pra entrar na plataforma, sem assinatura nenhuma."""
+    modalidade = None
+    plano = None
+    turmas_validadas: list[tuple[Turma, list[str]]] = []
 
-    plano = db.get(Plano, payload.plano_id)
-    if plano is None or plano.point_id != admin.point_id:
-        raise HTTPException(404, "Plano não encontrado neste Point")
+    if not payload.avulso:
+        # Dinheiro não é aceito (pedido do usuário, 2026-08-26: "vou retirar
+        # do sistema a forma de pagamento em dinheiro"); Wellhub/TotalPass
+        # entraram depois (pedido do usuário, 2026-09-01) — só como forma
+        # de pagamento da matrícula, sem integração nenhuma ainda (ver
+        # PagamentoMeio).
+        if payload.fonte_pagamento not in (
+            PagamentoMeio.PIX,
+            PagamentoMeio.WELLHUB,
+            PagamentoMeio.TOTALPASS,
+        ):
+            raise HTTPException(422, "Forma de pagamento não aceita — use Pix, Wellhub ou TotalPass")
 
-    turmas_validadas = validar_turmas_para_plano(
-        db,
-        point_id=admin.point_id,
-        modalidade_id=payload.modalidade_id,
-        plano=plano,
-        escolhas=[(t.turma_id, t.dias_semana) for t in payload.turmas],
-    )
+        modalidade = db.get(Modalidade, payload.modalidade_id)
+        if modalidade is None or modalidade.point_id != admin.point_id:
+            raise HTTPException(404, "Modalidade não encontrada neste Point")
+
+        plano = db.get(Plano, payload.plano_id)
+        if plano is None or plano.point_id != admin.point_id:
+            raise HTTPException(404, "Plano não encontrado neste Point")
+
+        turmas_validadas = validar_turmas_para_plano(
+            db,
+            point_id=admin.point_id,
+            modalidade_id=payload.modalidade_id,
+            plano=plano,
+            escolhas=[(t.turma_id, t.dias_semana) for t in payload.turmas],
+        )
 
     # Só e-mail identifica duplicidade — celular não trava mais nada
     # (pedido do usuário, 2026-08-21: "trava só em email... é o login de
@@ -132,11 +146,12 @@ def criar_convite(
         point_id=admin.point_id,
         nome=payload.nome,
         email=payload.email,
-        modalidade_id=payload.modalidade_id,
-        periodo_dia_desejado=payload.periodo_dia_desejado,
-        fonte_pagamento=payload.fonte_pagamento,
-        plano_id=plano.id,
-        data_inicio=payload.data_inicio,
+        avulso=payload.avulso,
+        modalidade_id=payload.modalidade_id if not payload.avulso else None,
+        periodo_dia_desejado=payload.periodo_dia_desejado if not payload.avulso else None,
+        fonte_pagamento=payload.fonte_pagamento if not payload.avulso else None,
+        plano_id=plano.id if plano else None,
+        data_inicio=payload.data_inicio if not payload.avulso else None,
         status=ConviteStatus.PENDENTE,
         expira_em=date.today() + timedelta(days=PRAZO_EXPIRACAO_DIAS),
     )
@@ -150,16 +165,21 @@ def criar_convite(
 
     settings = get_settings()
     link = f"{settings.frontend_url}/convite/{convite.token}"
-    enviar_convite_email(
-        nome=convite.nome,
-        email=convite.email,
-        link=link,
-        point_nome=convite.point.nome,
-        modalidade_nome=modalidade.nome,
-        frequencia=plano.frequencia_semanal,
-        preco=float(plano.preco),
-        fonte_pagamento=convite.fonte_pagamento,
-    )
+    if payload.avulso:
+        enviar_convite_avulso_email(
+            nome=convite.nome, email=convite.email, link=link, point_nome=convite.point.nome
+        )
+    else:
+        enviar_convite_email(
+            nome=convite.nome,
+            email=convite.email,
+            link=link,
+            point_nome=convite.point.nome,
+            modalidade_nome=modalidade.nome,
+            frequencia=plano.frequencia_semanal,
+            preco=float(plano.preco),
+            fonte_pagamento=convite.fonte_pagamento,
+        )
 
     return _para_out(db, convite)
 
@@ -219,7 +239,16 @@ def _convite_valido_ou_erro(db: Session, token: str) -> Convite:
     return convite
 
 
-def _revalidar_e_ativar(db: Session, convite: Convite, aluno_id: int) -> Assinatura:
+def _revalidar_e_ativar(db: Session, convite: Convite, aluno_id: int) -> Assinatura | None:
+    """Convite avulso (pedido do usuário, 2026-09-11) só confirma o aceite —
+    sem assinatura, sem matrícula, sem aula gerada; o aluno compra por
+    conta própria depois (mesmo fluxo de POST /alunos self-service)."""
+    convite.status = ConviteStatus.ACEITO
+    convite.aceito_em = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    if convite.avulso:
+        return None
+
     turmas_validadas = validar_turmas_para_plano(
         db,
         point_id=convite.point_id,
@@ -238,8 +267,6 @@ def _revalidar_e_ativar(db: Session, convite: Convite, aluno_id: int) -> Assinat
         escolhas=turmas_validadas,
         data_inicio=convite.data_inicio,
     )
-    convite.status = ConviteStatus.ACEITO
-    convite.aceito_em = datetime.now(timezone.utc).replace(tzinfo=None)
     convite.assinatura_id = assinatura.id
     return assinatura
 
@@ -267,7 +294,9 @@ def aceitar_convite_novo(
         nome=convite.nome,
         contato=payload.celular,
         email=convite.email,
-        forma_pagamento_preferida=FormaPagamento(convite.fonte_pagamento.value),
+        forma_pagamento_preferida=(
+            FormaPagamento(convite.fonte_pagamento.value) if convite.fonte_pagamento else None
+        ),
     )
     db.add(aluno)
     db.flush()
@@ -291,16 +320,19 @@ def aceitar_convite_novo(
     return TokenResponse(access_token=token_acesso, user=user)
 
 
-@router.post("/{token}/aceitar", response_model=AssinaturaOut)
+@router.post("/{token}/aceitar", response_model=AssinaturaOut | None)
 def aceitar_convite(
     token: str,
     db: Annotated[Session, Depends(get_db)],
     aluno_user: Annotated[User, Depends(require_role(Role.ALUNO))],
-) -> Assinatura:
+) -> Assinatura | None:
     """Quem recebeu o convite já tem conta — só faz login (na tela de
-    aceite) e confirma; não precisa criar senha de novo."""
+    aceite) e confirma; não precisa criar senha de novo. Convite avulso
+    (pedido do usuário, 2026-09-11) devolve None — não tem assinatura
+    nenhuma pra devolver."""
     convite = _convite_valido_ou_erro(db, token)
     assinatura = _revalidar_e_ativar(db, convite, aluno_user.aluno_id)
     db.commit()
-    db.refresh(assinatura)
+    if assinatura is not None:
+        db.refresh(assinatura)
     return assinatura

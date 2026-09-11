@@ -15,6 +15,11 @@ class Aluno(TimestampMixin, Base):
     nome: Mapped[str] = mapped_column(String(120))
     contato: Mapped[str] = mapped_column(String(30))  # celular
     email: Mapped[str] = mapped_column(String(255))
-    forma_pagamento_preferida: Mapped[FormaPagamento] = mapped_column(Enum(FormaPagamento))
+    # Nullable (pedido do usuário, 2026-09-11) — aluno vindo de convite
+    # avulso não informa forma de pagamento nenhuma no cadastro; escolhe na
+    # hora de comprar a primeira aula.
+    forma_pagamento_preferida: Mapped[FormaPagamento | None] = mapped_column(
+        Enum(FormaPagamento), nullable=True
+    )
 
     matriculas: Mapped[list["Matricula"]] = relationship(back_populates="aluno")  # noqa: F821

@@ -43,9 +43,8 @@ export default function AdminPointConvidarAluno() {
         <h1>Convidar aluno</h1>
       </div>
       <p className="empty-state" style={{ paddingTop: 0 }}>
-        Você decide a assinatura inteira; o aluno só aceita — se ainda não tem conta, cria a própria
-        senha no aceite; se já tem, só confirma. Ativa sozinha assim que ele aceitar. Pagamento é só
-        via Pix.
+        Com plano: você decide a assinatura inteira, o aluno só aceita e ela ativa sozinha. Avulso: o
+        aluno só entra na plataforma e escolhe/compra as próprias aulas depois.
       </p>
 
       {user?.point_id ? (
@@ -65,6 +64,10 @@ function ConvidarForm({ pointId }: { pointId: number }) {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  // Avulso (pedido do usuário, 2026-09-11: "pode ser um aluno avulso...
+  // abre opção se for avulso não preenche plano, data início, forma de
+  // pagto, turma, nada disso") — só cria a conta, sem assinatura.
+  const [avulso, setAvulso] = useState(false);
   const [modalidades, setModalidades] = useState<Modalidade[]>([]);
   const [modalidadeId, setModalidadeId] = useState<number | null>(null);
   const [planos, setPlanos] = useState<Plano[]>([]);
@@ -137,29 +140,36 @@ function ConvidarForm({ pointId }: { pointId: number }) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (modalidadeId === null || planoId === null) return;
+    if (!avulso && (modalidadeId === null || planoId === null)) return;
     setErro(null);
     setEnviando(true);
     try {
-      const turmas = Object.entries(diasPorTurma)
-        .filter(([, dias]) => dias.length > 0)
-        .map(([turmaId, dias]) => ({ turma_id: Number(turmaId), dias_semana: dias }));
-      // O backend ainda guarda um período preferido (é o que aparece no
-      // perfil do aluno) — deriva da primeira turma escolhida em vez de
-      // perguntar de novo pro admin, que já escolheu o horário exato logo
-      // abaixo (pedido do usuário, 2026-08-26).
-      const primeiraTurmaId = Number(Object.keys(diasPorTurma).find((id) => diasPorTurma[Number(id)].length > 0));
-      const primeiraTurma = turmasDisponiveis.find((t) => t.id === primeiraTurmaId);
-      await api.post("/convites", {
-        nome,
-        email,
-        modalidade_id: modalidadeId,
-        periodo_dia_desejado: primeiraTurma ? periodoDaHora(primeiraTurma.horario) : "noite",
-        fonte_pagamento: fontePagamento,
-        plano_id: planoId,
-        turmas,
-        data_inicio: dataInicio,
-      });
+      if (avulso) {
+        await api.post("/convites", { nome, email, avulso: true });
+      } else {
+        const turmas = Object.entries(diasPorTurma)
+          .filter(([, dias]) => dias.length > 0)
+          .map(([turmaId, dias]) => ({ turma_id: Number(turmaId), dias_semana: dias }));
+        // O backend ainda guarda um período preferido (é o que aparece no
+        // perfil do aluno) — deriva da primeira turma escolhida em vez de
+        // perguntar de novo pro admin, que já escolheu o horário exato logo
+        // abaixo (pedido do usuário, 2026-08-26).
+        const primeiraTurmaId = Number(
+          Object.keys(diasPorTurma).find((id) => diasPorTurma[Number(id)].length > 0),
+        );
+        const primeiraTurma = turmasDisponiveis.find((t) => t.id === primeiraTurmaId);
+        await api.post("/convites", {
+          nome,
+          email,
+          avulso: false,
+          modalidade_id: modalidadeId,
+          periodo_dia_desejado: primeiraTurma ? periodoDaHora(primeiraTurma.horario) : "noite",
+          fonte_pagamento: fontePagamento,
+          plano_id: planoId,
+          turmas,
+          data_inicio: dataInicio,
+        });
+      }
       // Volta pra lista de alunos ao enviar (pedido do usuário, 2026-08-26)
       // — leva o nome pra Alunos mostrar a confirmação por lá.
       navigate("/admin-point/aluno", { state: { convidado: nome } });
@@ -171,15 +181,32 @@ function ConvidarForm({ pointId }: { pointId: number }) {
     }
   }
 
-  if (modalidades.length === 0) {
-    return <p className="form-error">Cadastre uma modalidade (Ver mais) antes.</p>;
+  if (!avulso && modalidades.length === 0) {
+    return <p className="form-error">Cadastre uma modalidade (Ver mais) antes, ou convide avulso.</p>;
   }
-  if (planos.length === 0) {
-    return <p className="form-error">Cadastre um plano (Ver mais) antes.</p>;
+  if (!avulso && planos.length === 0) {
+    return <p className="form-error">Cadastre um plano (Ver mais) antes, ou convide avulso.</p>;
   }
 
   return (
     <form className="form-card" onSubmit={handleSubmit} style={{ maxWidth: "none" }}>
+      <div className="toggle-grid">
+        <button
+          type="button"
+          className={!avulso ? "toggle-chip active" : "toggle-chip"}
+          onClick={() => setAvulso(false)}
+        >
+          Com plano
+        </button>
+        <button
+          type="button"
+          className={avulso ? "toggle-chip active" : "toggle-chip"}
+          onClick={() => setAvulso(true)}
+        >
+          Avulso
+        </button>
+      </div>
+
       <div className="form-row">
         <label>
           Nome do aluno
@@ -191,105 +218,117 @@ function ConvidarForm({ pointId }: { pointId: number }) {
         </label>
       </div>
 
-      <div className="form-row">
-        <label>
-          Modalidade
-          <select value={modalidadeId ?? ""} onChange={(e) => setModalidadeId(Number(e.target.value))}>
-            {modalidades.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Plano
-          <select
-            value={planoId ?? ""}
-            onChange={(e) => {
-              setPlanoId(Number(e.target.value));
-              setDiasPorTurma({});
-            }}
-          >
-            {planos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.frequencia_semanal}x por semana — {formatarReais(p.preco)}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="form-row">
-        <label>
-          Data de início
-          <input
-            type="date"
-            value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Forma de pagamento
-          <select
-            value={fontePagamento}
-            onChange={(e) => setFontePagamento(e.target.value as PagamentoMeio)}
-          >
-            <option value="pix">Pix</option>
-            <option value="wellhub">Wellhub</option>
-            <option value="totalpass">TotalPass</option>
-          </select>
-        </label>
-      </div>
-
-      <label>
-        Turmas ({diasEscolhidos} de {frequenciaAlvo} dia(s) por semana escolhidos)
-        {turmasDisponiveis.length === 0 ? (
-          <p className="empty-state" style={{ padding: "4px 0 0" }}>
-            Nenhuma turma dessa modalidade ainda — crie uma turma antes, ou peça pro professor.
-          </p>
-        ) : (
-          <div className="turma-escolha-lista">
-            {turmasDisponiveis.map((t) => {
-              const selecionada = t.id in diasPorTurma;
-              const diasDaTurma = diasPorTurma[t.id] ?? [];
-              return (
-                <div key={t.id} className="turma-escolha-item">
-                  <button
-                    type="button"
-                    className={selecionada ? "toggle-chip active" : "toggle-chip"}
-                    onClick={() => alternarTurma(t.id)}
-                  >
-                    {rotuloTurma(t.dias_semana, t.horario)} · {t.tipo_turma.nome}
-                    {t.privada && " (privada)"}
-                  </button>
-                  {selecionada && (
-                    <div className="toggle-grid" style={{ marginTop: 6, marginLeft: 12 }}>
-                      {t.dias_semana.map((dia) => (
-                        <button
-                          key={dia}
-                          type="button"
-                          className={diasDaTurma.includes(dia) ? "toggle-chip active" : "toggle-chip"}
-                          onClick={() => alternarDia(t.id, dia)}
-                        >
-                          {DIAS_SEMANA.find((d) => d.value === dia)?.label ?? dia}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+      {avulso ? (
+        <p className="empty-state" style={{ padding: 0 }}>
+          Sem plano, turma, forma de pagamento nem data de início — o aluno entra na plataforma e
+          compra as próprias aulas quando quiser.
+        </p>
+      ) : (
+        <>
+          <div className="form-row">
+            <label>
+              Modalidade
+              <select
+                value={modalidadeId ?? ""}
+                onChange={(e) => setModalidadeId(Number(e.target.value))}
+              >
+                {modalidades.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Plano
+              <select
+                value={planoId ?? ""}
+                onChange={(e) => {
+                  setPlanoId(Number(e.target.value));
+                  setDiasPorTurma({});
+                }}
+              >
+                {planos.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.frequencia_semanal}x por semana — {formatarReais(p.preco)}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-        )}
-      </label>
+
+          <div className="form-row">
+            <label>
+              Data de início
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => setDataInicio(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Forma de pagamento
+              <select
+                value={fontePagamento}
+                onChange={(e) => setFontePagamento(e.target.value as PagamentoMeio)}
+              >
+                <option value="pix">Pix</option>
+                <option value="wellhub">Wellhub</option>
+                <option value="totalpass">TotalPass</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Turmas ({diasEscolhidos} de {frequenciaAlvo} dia(s) por semana escolhidos)
+            {turmasDisponiveis.length === 0 ? (
+              <p className="empty-state" style={{ padding: "4px 0 0" }}>
+                Nenhuma turma dessa modalidade ainda — crie uma turma antes, ou peça pro professor.
+              </p>
+            ) : (
+              <div className="turma-escolha-lista">
+                {turmasDisponiveis.map((t) => {
+                  const selecionada = t.id in diasPorTurma;
+                  const diasDaTurma = diasPorTurma[t.id] ?? [];
+                  return (
+                    <div key={t.id} className="turma-escolha-item">
+                      <button
+                        type="button"
+                        className={selecionada ? "toggle-chip active" : "toggle-chip"}
+                        onClick={() => alternarTurma(t.id)}
+                      >
+                        {rotuloTurma(t.dias_semana, t.horario)} · {t.tipo_turma.nome}
+                        {t.privada && " (privada)"}
+                      </button>
+                      {selecionada && (
+                        <div className="toggle-grid" style={{ marginTop: 6, marginLeft: 12 }}>
+                          {t.dias_semana.map((dia) => (
+                            <button
+                              key={dia}
+                              type="button"
+                              className={diasDaTurma.includes(dia) ? "toggle-chip active" : "toggle-chip"}
+                              onClick={() => alternarDia(t.id, dia)}
+                            >
+                              {DIAS_SEMANA.find((d) => d.value === dia)?.label ?? dia}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </label>
+        </>
+      )}
 
       {erro && <p className="form-error">{erro}</p>}
 
       <button
         type="submit"
-        disabled={enviando || !nome || !email || diasEscolhidos !== frequenciaAlvo}
+        disabled={enviando || !nome || !email || (!avulso && diasEscolhidos !== frequenciaAlvo)}
       >
         {enviando ? "Enviando..." : "Enviar convite"}
       </button>

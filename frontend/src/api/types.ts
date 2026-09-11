@@ -312,14 +312,17 @@ export interface Convite {
   nome: string;
   email: string;
   point: PointResumo;
-  modalidade: Modalidade;
-  plano: Plano;
+  // Convite avulso (pedido do usuário, 2026-09-11) — só entra na
+  // plataforma, sem assinatura nenhuma; os campos abaixo vêm todos null.
+  avulso: boolean;
+  modalidade: Modalidade | null;
+  plano: Plano | null;
   // Wellhub/TotalPass mostra o benefício em vez do preço na tela de aceite
   // (pedido do usuário, 2026-09-01) — quem paga é o benefício, não o
   // aluno via Pix pro Point.
-  fonte_pagamento: PagamentoMeio;
+  fonte_pagamento: PagamentoMeio | null;
   turmas: ConviteTurmaEscolha[];
-  data_inicio: string;
+  data_inicio: string | null;
   status: ConviteStatus;
   expira_em: string;
   expirado: boolean;
