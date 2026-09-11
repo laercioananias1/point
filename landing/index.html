@@ -67,7 +67,7 @@
     font-size: 16px;
     line-height: 1.55;
   }
-  h1, h2, h3 { font-family: "Archivo", sans-serif; text-wrap: balance; margin: 0; }
+  h1, h2, h3, h4 { font-family: "Archivo", sans-serif; text-wrap: balance; margin: 0; }
   a { color: inherit; }
   .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
@@ -107,22 +107,32 @@
     background: rgba(14, 149, 148, 0.16); border: 1px solid rgba(14, 149, 148, 0.35);
     padding: 6px 12px; border-radius: 100px; margin-bottom: 18px;
   }
-  .hero h1 { font-size: 44px; line-height: 1.08; font-weight: 800; letter-spacing: -0.01em; }
-  .hero h1 em { font-style: normal; color: #6fd6d1; }
+  .hero h1 { font-size: 46px; line-height: 1.06; font-weight: 800; letter-spacing: -0.01em; }
+  .hero h1 .line-muted { display: block; color: var(--navy-text-muted); }
+  .hero h1 .line-accent { display: block; color: #6fd6d1; }
   .hero p.lede { font-size: 17.5px; color: var(--navy-text-muted); max-width: 46ch; margin: 20px 0 32px; }
-  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 34px; }
-  .hero-proof { display: flex; gap: 28px; flex-wrap: wrap; }
-  .proof-item { display: flex; flex-direction: column; gap: 2px; }
-  .proof-item .num { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 22px; color: #fff; }
-  .proof-item .lbl { font-size: 12.5px; color: var(--navy-text-muted); }
+  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
+  .hero-ctas .fine-print { font-size: 12.5px; color: var(--navy-text-muted); display: inline-flex; align-items: center; gap: 6px; }
+  .hero-sports {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--navy-text-muted); margin-bottom: 30px;
+  }
+  .hero-proof { display: flex; gap: 12px; flex-wrap: wrap; }
+  .proof-item {
+    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.06); border: 1px solid var(--navy-line); border-radius: 12px;
+  }
+  .proof-item .num { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 26px; color: #fff; line-height: 1; flex-shrink: 0; }
+  .proof-item .lbl { font-size: 12.5px; color: var(--navy-text-muted); line-height: 1.3; max-width: 15ch; }
 
   /* ---- Hero mock: grade de ocupação ---- */
   .mock-card { background: var(--surface); color: var(--ink); border-radius: 16px; box-shadow: var(--shadow-pop); padding: 20px 20px 18px; position: relative; }
-  .mock-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .mock-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
   .mock-head h3 { font-size: 15px; }
-  .mock-head .pct { font-size: 13px; color: var(--ink-muted); }
-  .mock-bar-track { height: 6px; border-radius: 4px; background: var(--line); overflow: hidden; margin-bottom: 14px; }
-  .mock-bar-fill { height: 100%; width: 71%; background: var(--accent); border-radius: 4px; }
+  .mock-mode-pill {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--accent-strong); background: var(--accent-soft); padding: 4px 10px; border-radius: 100px;
+  }
   .mock-grid { display: grid; grid-template-columns: 40px repeat(5, 1fr); gap: 5px; }
   .mock-cell { border-radius: 7px; min-height: 30px; display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; }
   .mock-head-cell { background: transparent; color: var(--ink-muted); font-family: "Work Sans", sans-serif; font-weight: 700; font-size: 10.5px; }
@@ -132,31 +142,70 @@
   .mock-legend span { display: inline-flex; align-items: center; gap: 5px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
   .mock-float {
-    position: absolute; right: -14px; bottom: -18px; background: var(--navy); color: var(--navy-text);
-    border-radius: 12px; padding: 12px 16px; box-shadow: var(--shadow-pop); font-size: 12.5px;
-    display: flex; align-items: center; gap: 10px; border: 1px solid var(--navy-line);
+    position: absolute; right: 16px; top: 100%; margin-top: -8px; background: var(--navy);
+    color: var(--navy-text); border-radius: 12px; padding: 12px 16px; box-shadow: var(--shadow-pop);
+    font-size: 12.5px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--navy-line);
   }
 
   /* ---- Sections ---- */
   section { padding: 88px 0; }
   .section-head { max-width: 640px; margin-bottom: 48px; }
-  .section-head .eyebrow-plain { font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 10px; display: block; }
+  .eyebrow-line {
+    display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 16px;
+  }
+  .eyebrow-line::before { content: ""; width: 28px; height: 2px; background: var(--accent); flex-shrink: 0; }
   .section-head h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 14px; }
   .section-head p { color: var(--ink-muted); font-size: 16.5px; max-width: 56ch; }
 
-  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .feature-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 12px; }
-  .feature-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-strong); }
-  .feature-card h3 { font-size: 17px; font-weight: 700; }
-  .feature-card p { color: var(--ink-muted); font-size: 14.5px; margin: 0; }
-  .feature-card .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  /* ---- O problema ---- */
+  .problem { background: var(--surface-sunk); }
+  .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
+  .problem-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-card); }
+  .problem-card .file-icon { color: var(--ink-muted); margin-bottom: 12px; }
+  .problem-card h4 { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--ink); }
+  .problem-card p { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
+
+  /* ---- Recursos: grid numerado ---- */
+  .numbered-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line); border-left: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  }
+  .numbered-item {
+    padding: 28px 26px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 10px; background: var(--surface);
+  }
+  .numbered-item .num-row { display: flex; align-items: center; justify-content: space-between; }
+  .numbered-item .icon { color: var(--accent-strong); }
+  .numbered-item .num { font-size: 12px; color: var(--ink-muted); font-weight: 600; }
+  .numbered-item h3 { font-size: 16px; font-weight: 700; }
+  .numbered-item p { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
+  .numbered-item .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
   .tag { font-size: 11.5px; font-weight: 600; padding: 4px 9px; border-radius: 100px; background: var(--surface-sunk); color: var(--ink-muted); border: 1px solid var(--line); }
 
-  .how { background: var(--surface-sunk); }
-  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-  .step-num { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 13px; color: var(--accent-strong); background: var(--accent-soft); width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
-  .step h3 { font-size: 15.5px; margin-bottom: 6px; }
-  .step p { color: var(--ink-muted); font-size: 14px; margin: 0; }
+  /* ---- Como funciona ---- */
+  .how { background: var(--navy); color: var(--navy-text); }
+  .how .eyebrow-line { color: #6fd6d1; }
+  .how .eyebrow-line::before { background: var(--accent); }
+  .how .section-head h2 { color: #fff; }
+  .how .section-head p { color: var(--navy-text-muted); }
+  .how-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; }
+  .steps { display: flex; flex-direction: column; gap: 26px; }
+  .step { display: flex; gap: 16px; }
+  .step-num {
+    font-family: "Archivo", sans-serif; font-weight: 800; font-size: 13px; color: var(--navy);
+    background: #6fd6d1; width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step h3 { font-size: 15.5px; margin-bottom: 4px; color: #fff; }
+  .step p { color: var(--navy-text-muted); font-size: 14px; margin: 0; }
+
+  /* Mockup de mensagem de WhatsApp do convite */
+  .wa-mock { background: var(--surface); color: var(--ink); border-radius: 16px; box-shadow: var(--shadow-pop); padding: 16px; }
+  .wa-mock-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--ink-muted); margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .wa-mock-head .wa-dot { width: 8px; height: 8px; border-radius: 50%; background: #25d366; display: inline-block; }
+  .wa-bubble { background: var(--accent-soft); border-radius: 12px 12px 12px 4px; padding: 12px 14px; font-size: 13.5px; line-height: 1.5; }
+  .wa-btn { display: block; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(14, 149, 148, 0.25); color: var(--accent-strong); font-weight: 700; font-size: 13px; }
 
   .who-row { display: flex; gap: 12px; flex-wrap: wrap; }
   .who-pill { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 100px; padding: 10px 18px 10px 14px; font-weight: 600; font-size: 14.5px; box-shadow: var(--shadow-card); }
@@ -180,14 +229,15 @@
     .nav-links { display: none; }
     .hero-grid { grid-template-columns: 1fr; }
     .hero h1 { font-size: 34px; }
-    .feature-grid { grid-template-columns: 1fr 1fr; }
-    .steps { grid-template-columns: 1fr 1fr; }
+    .problem-grid { grid-template-columns: 1fr 1fr; }
+    .numbered-grid { grid-template-columns: 1fr 1fr; }
+    .how-grid { grid-template-columns: 1fr; }
     .foot-grid { grid-template-columns: 1fr 1fr; }
     .mock-float { display: none; }
   }
   @media (max-width: 560px) {
-    .feature-grid { grid-template-columns: 1fr; }
-    .steps { grid-template-columns: 1fr; }
+    .problem-grid { grid-template-columns: 1fr; }
+    .numbered-grid { grid-template-columns: 1fr; }
     .foot-grid { grid-template-columns: 1fr; }
     .cta-inner { flex-direction: column; align-items: flex-start; }
     .wrap { padding: 0 20px; }
@@ -206,6 +256,7 @@
       OPoint
     </div>
     <div class="nav-links">
+      <a href="#problema">O problema</a>
       <a href="#recursos">Recursos</a>
       <a href="#como-funciona">Como funciona</a>
       <a href="#quem-usa">Pra quem é</a>
@@ -221,7 +272,10 @@
   <div class="wrap hero-grid">
     <div>
       <span class="eyebrow">Gestão de arenas esportivas</span>
-      <h1>Sua quadra, suas turmas, sua agenda — <em>sem depender de planilha e grupo de WhatsApp</em>.</h1>
+      <h1>
+        <span class="line-muted">Chega de planilha e grupo de WhatsApp.</span>
+        <span class="line-accent">Sua arena, no controle.</span>
+      </h1>
       <p class="lede">
         O OPoint organiza modalidades, quadras, turmas e matrículas do seu Point — e ainda mostra em tempo
         real quanta vaga sobrou em cada horário, colorida por nível de aluno.
@@ -230,8 +284,9 @@
         <a class="btn btn-primary" href="https://app.opoint.com.br">Entrar</a>
         <a class="btn btn-ghost-on-navy" href="#recursos">Ver recursos</a>
       </div>
+      <div class="hero-sports">Beach tennis · Futevôlei · Tênis · Padel · Funcional</div>
       <div class="hero-proof">
-        <div class="proof-item"><span class="num mono">4</span><span class="lbl">papéis num só app — dono, admin, professor, aluno</span></div>
+        <div class="proof-item"><span class="num mono">3</span><span class="lbl">papéis num só app — admin, professor, aluno</span></div>
         <div class="proof-item"><span class="num mono">3</span><span class="lbl">formas de pagamento — Pix, Wellhub, TotalPass</span></div>
         <div class="proof-item"><span class="num mono">1</span><span class="lbl">agenda por Point, sem duplicar em planilha</span></div>
       </div>
@@ -240,9 +295,8 @@
     <div class="mock-card">
       <div class="mock-head">
         <h3>Quadra de Areia 1</h3>
-        <span class="pct mono">71% ocupada</span>
+        <span class="mock-mode-pill">Disponibilidade</span>
       </div>
-      <div class="mock-bar-track"><div class="mock-bar-fill"></div></div>
       <div class="mock-grid">
         <div class="mock-cell mock-head-cell"></div>
         <div class="mock-cell mock-head-cell">SEG</div>
@@ -252,25 +306,25 @@
         <div class="mock-cell mock-head-cell">SEX</div>
 
         <div class="mock-cell mock-hour">17h</div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.42)">4/4</div>
+        <div class="mock-cell" style="background:#f6dfda;color:#c13b2e">✕</div>
         <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.42)">3/4</div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.35);color:#1f9d5d">✓</div>
         <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(242,84,45,.32)">2/2</div>
+        <div class="mock-cell" style="background:#f6dfda;color:#c13b2e">✕</div>
 
         <div class="mock-cell mock-hour">18h</div>
-        <div class="mock-cell" style="background:rgba(201,127,18,.28)">1/6</div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.28)">2/4</div>
+        <div class="mock-cell" style="background:rgba(201,127,18,.35);color:#1f9d5d">✓</div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.35);color:#1f9d5d">✓</div>
         <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(201,127,18,.4)">4/6</div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.42)">4/4</div>
+        <div class="mock-cell" style="background:rgba(201,127,18,.35);color:#1f9d5d">✓</div>
+        <div class="mock-cell" style="background:#f6dfda;color:#c13b2e">✕</div>
 
         <div class="mock-cell mock-hour">19h</div>
         <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(242,84,45,.14)">0/2</div>
-        <div class="mock-cell" style="background:rgba(201,127,18,.4)">5/6</div>
+        <div class="mock-cell" style="background:rgba(242,84,45,.35);color:#1f9d5d">✓</div>
+        <div class="mock-cell" style="background:rgba(201,127,18,.35);color:#1f9d5d">✓</div>
         <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.28)">2/4</div>
+        <div class="mock-cell" style="background:rgba(14,149,148,.35);color:#1f9d5d">✓</div>
       </div>
       <div class="mock-legend">
         <span><i class="dot" style="background:#0e9594"></i>Iniciante</span>
@@ -285,106 +339,154 @@
   </div>
 </header>
 
+<section class="problem" id="problema">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow-line">O problema</span>
+      <h2>Cada turma vive numa aba de planilha diferente.</h2>
+      <p>Planilha pra matrícula, grupo de WhatsApp pra avisar aula, caderno pra crédito de reposição —
+        nenhum dos três fala com o outro. Quem sofre é sempre na hora de cobrar ou remarcar.</p>
+    </div>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="file-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l3 3v15a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6"/><path d="M9 12h6M9 16h6M9 8h3" stroke="currentColor" stroke-width="1.6"/></svg>
+        </div>
+        <h4>matriculas_setembro_v2.xlsx</h4>
+        <p>Aluno de nível avançado matriculado na turma errada, categoria trocada, célula quebrada na
+          linha 42.</p>
+      </div>
+      <div class="problem-card">
+        <div class="file-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H9l-5 4V5z" stroke="currentColor" stroke-width="1.6"/></svg>
+        </div>
+        <h4>WhatsApp — Grupo Beach Tennis Terça</h4>
+        <p>"Professor, ainda tem vaga pra hoje às 18h?" — mandada às 23h de ontem, sem resposta.</p>
+      </div>
+      <div class="problem-card">
+        <div class="file-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h7M8 13h7M8 17h4" stroke="currentColor" stroke-width="1.6"/></svg>
+        </div>
+        <h4>Caderno de reposição</h4>
+        <p>Crédito da aula cancelada semana passada, anotado numa página que ninguém mais encontra.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="recursos">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow-plain">Recursos</span>
+      <span class="eyebrow-line">Recursos</span>
       <h2>Feito do jeito que uma arena de verdade funciona</h2>
       <p>Cada tela resolve um problema que quem toca uma quadra esportiva já teve — não é um CRM genérico
         forçado a caber no seu negócio.</p>
     </div>
 
-    <div class="feature-grid">
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+    <div class="numbered-grid">
+      <div class="numbered-item">
+        <div class="num-row">
+          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></span>
+          <span class="num mono">01</span>
         </div>
-        <h3>Categoria por cor, tipo por finalidade</h3>
-        <p>Cadastre os níveis do seu Point (iniciante, intermediário, avançado) com uma cor própria, e o
-          tipo de cada turma — padrão, dupla, família ou aula individual.</p>
-        <div class="tag-row"><span class="tag">Turma privada</span><span class="tag">Nível por cor</span></div>
-      </article>
+        <h3>Categoria por cor</h3>
+        <p>Nível do aluno (iniciante, intermediário, avançado) com cor própria, usada em toda a agenda.</p>
+      </div>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2"/></svg>
+      <div class="numbered-item">
+        <div class="num-row">
+          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="10" r="2.3" stroke="currentColor" stroke-width="2"/><path d="M3.5 20c0-3 2.4-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="num mono">02</span>
         </div>
-        <h3>Agenda que também é vitrine</h3>
-        <p>A mesma grade que o admin usa pra acompanhar ocupação real vira, com um clique, o modo que o
-          aluno vê pra saber se ainda tem vaga — sem expor quem está matriculado.</p>
-        <div class="tag-row"><span class="tag">Ocupação real</span><span class="tag">Modo disponibilidade</span></div>
-      </article>
+        <h3>Tipo de turma</h3>
+        <p>Padrão, dupla, família ou aula individual — com a opção de deixar a turma privada.</p>
+      </div>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8l7-5 7 5M5 8v9a2 2 0 002 2h10a2 2 0 002-2V8" stroke="currentColor" stroke-width="2"/></svg>
+      <div class="numbered-item">
+        <div class="num-row">
+          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="num mono">03</span>
         </div>
-        <h3>Matrícula avulsa ou mensal</h3>
-        <p>Aluno compra uma aula avulsa quando quiser, ou assina um plano mensal por frequência semanal —
-          com crédito de reposição quando cancela dentro do prazo.</p>
-        <div class="tag-row"><span class="tag">Crédito de reposição</span><span class="tag">Assinatura</span></div>
-      </article>
+        <h3>Agenda com dois modos</h3>
+        <p>Ocupação real pra você, "tem vaga ou não" pro aluno — sem expor quem está matriculado.</p>
+      </div>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10h18M6 15h4M3 6h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="2"/></svg>
+      <div class="numbered-item">
+        <div class="num-row">
+          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v6H4zM4 14h10v6H4z" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="num mono">04</span>
+        </div>
+        <h3>Convite com plano ou avulso</h3>
+        <p>Aluno com assinatura pronta, ou só um acesso pra ele comprar as próprias aulas quando quiser.</p>
+      </div>
+
+      <div class="numbered-item">
+        <div class="num-row">
+          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10h18M6 15h4M3 6h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="num mono">05</span>
         </div>
         <h3>Pagamento sem planilha</h3>
-        <p>Pix direto no app, ou check-in automático de quem já paga por Wellhub e TotalPass — nada de
-          cruzar comprovante com caderno.</p>
-        <div class="tag-row"><span class="tag">Pix</span><span class="tag">Wellhub</span><span class="tag">TotalPass</span></div>
-      </article>
+        <p>Pix, Wellhub ou TotalPass — cobrança e crédito de reposição controlados sozinhos.</p>
+      </div>
 
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="2"/><path d="M3 20c0-3 2.5-5 6-5s6 2 6 5M15.5 15.2c2.4.4 4 1.9 4.3 4.3" stroke="currentColor" stroke-width="2"/></svg>
+      <div class="numbered-item">
+        <div class="num-row">
+          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H9l-5 4V5z" stroke="currentColor" stroke-width="2"/></svg></span>
+          <span class="num mono">06</span>
         </div>
-        <h3>Um app, quatro papéis</h3>
-        <p>Dono do Point acompanha tudo; professor cria e gerencia as próprias turmas; aluno agenda e
-          cancela sozinho — cada um vê só o que precisa.</p>
-        <div class="tag-row"><span class="tag">Multi-Point</span><span class="tag">Professor autônomo</span></div>
-      </article>
-
-      <article class="feature-card">
-        <div class="feature-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v6H4zM4 14h10v6H4z" stroke="currentColor" stroke-width="2"/></svg>
-        </div>
-        <h3>Convite, não cadastro forçado</h3>
-        <p>Professor e aluno recebem um convite por e-mail já com tudo preenchido — só confirmam. Sem
-          formulário de dez campos pra alguém desistir no meio.</p>
-        <div class="tag-row"><span class="tag">Convite por e-mail</span></div>
-      </article>
+        <h3>Convite por e-mail e WhatsApp</h3>
+        <p>Professor e aluno recebem tudo pronto, num toque de distância — sem formulário de dez campos.</p>
+      </div>
     </div>
   </div>
 </section>
 
 <section class="how" id="como-funciona">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow-plain">Como funciona</span>
-      <h2>Do cadastro à primeira turma rodando</h2>
-      <p>Leva uma tarde pra configurar o Point inteiro — não semanas de implantação.</p>
+  <div class="wrap how-grid">
+    <div>
+      <span class="eyebrow-line">Como funciona</span>
+      <div class="section-head" style="margin-bottom: 32px;">
+        <h2>Do cadastro à primeira turma rodando.</h2>
+        <p>Leva uma tarde pra configurar o Point inteiro — não semanas de implantação.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num mono">1</div>
+          <div>
+            <h3>Cadastre o Point</h3>
+            <p>Quadras, modalidades, categorias de nível e horário de funcionamento.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num mono">2</div>
+          <div>
+            <h3>Convide professor e aluno</h3>
+            <p>Recebem por e-mail e WhatsApp, criam a senha e já entram direto na própria agenda.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num mono">3</div>
+          <div>
+            <h3>Turmas rodam sozinhas</h3>
+            <p>Recorrência semanal, exceção por feriado, reposição de crédito — sem replanejar todo mês.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num mono">4</div>
+          <div>
+            <h3>Você acompanha, não digita</h3>
+            <p>Ocupação, pagamento e repasse de professor num painel só, atualizado sozinho.</p>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num mono">1</div>
-        <h3>Cadastre o Point</h3>
-        <p>Quadras, modalidades, categorias de nível e horário de funcionamento.</p>
-      </div>
-      <div class="step">
-        <div class="step-num mono">2</div>
-        <h3>Convide professor e aluno</h3>
-        <p>Cada um recebe um link, cria a senha e já entra direto na própria agenda.</p>
-      </div>
-      <div class="step">
-        <div class="step-num mono">3</div>
-        <h3>Turmas rodam sozinhas</h3>
-        <p>Recorrência semanal, exceção por feriado, reposição de crédito — sem replanejar todo mês.</p>
-      </div>
-      <div class="step">
-        <div class="step-num mono">4</div>
-        <h3>Você acompanha, não digita</h3>
-        <p>Ocupação, pagamento e repasse de professor num painel só, atualizado sozinho.</p>
+
+    <div class="wa-mock">
+      <div class="wa-mock-head"><span class="wa-dot"></span> WhatsApp — Point Beach Tennis</div>
+      <div class="wa-bubble">
+        Olá Maria! O Point Beach Tennis liberou seu acesso na plataforma OPoint.
+        <span class="wa-btn">↗ Confirmar acesso</span>
       </div>
     </div>
   </div>
@@ -393,7 +495,7 @@
 <section id="quem-usa">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow-plain">Pra quem é</span>
+      <span class="eyebrow-line">Pra quem é</span>
       <h2>Qualquer arena que vende hora de quadra e aula</h2>
       <p>Se a sua agenda hoje vive no grupo de WhatsApp, o OPoint foi pensado pra você.</p>
     </div>
@@ -434,6 +536,7 @@
       </div>
       <div class="foot-col">
         <h4>Produto</h4>
+        <a href="#problema">O problema</a>
         <a href="#recursos">Recursos</a>
         <a href="#como-funciona">Como funciona</a>
         <a href="#quem-usa">Pra quem é</a>
