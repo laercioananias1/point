@@ -143,3 +143,20 @@ def enviar_cancelamento_aula_whatsapp(
         template=template,
         variaveis_corpo=[nome, turma_nome, data, motivo],
     )
+
+
+def enviar_confirmacao_experimental_whatsapp(
+    *, celular: str, nome: str, modalidade_nome: str, point_nome: str, data_horario: str
+) -> None:
+    """Avisa por WhatsApp quem pediu aula experimental pela página pública
+    que o professor/admin aprovou (pedido do usuário, 2026-09-14: "faca um
+    template para confirmacao de aula experimental no whatsapp") — chamado
+    em routers/experimental.py::aprovar_solicitacao. Sem botão, só
+    confirmação; `data_horario` já vem formatado pronto (ex.: "15/09 às
+    06h") pra não precisar de duas variáveis separadas no template."""
+    template = get_settings().whatsapp_template_confirmacao_experimental
+    _enviar_whatsapp(
+        celular=celular,
+        template=template,
+        variaveis_corpo=[nome, modalidade_nome, point_nome, data_horario],
+    )

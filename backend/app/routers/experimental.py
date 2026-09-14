@@ -31,6 +31,7 @@ from app.schemas.solicitacao_experimental import (
 from app.services.aulas import DIAS_SEMANA, vagas_ocupadas_em
 from app.services.feriados import feriados_do_periodo
 from app.services.notificacoes import criar_notificacao
+from app.services.whatsapp import enviar_confirmacao_experimental_whatsapp
 
 router = APIRouter(prefix="/experimental", tags=["experimental"])
 
@@ -254,6 +255,21 @@ def aprovar_solicitacao(
     solicitacao.decidido_em = datetime.now()
     db.commit()
     db.refresh(solicitacao)
+
+    # Confirma por WhatsApp pro visitante (pedido do usuário, 2026-09-14:
+    # "faca um template para confirmacao de aula experimental no
+    # whatsapp") — depois do commit, mesma lógica de "só avisa se
+    # persistiu de verdade" já usada em cancelamento_aula.
+    horario = solicitacao.turma.horario
+    hora_rotulo = f"{int(horario.split(':')[0])}h" if horario.endswith(":00") else horario
+    enviar_confirmacao_experimental_whatsapp(
+        celular=solicitacao.celular,
+        nome=solicitacao.nome,
+        modalidade_nome=solicitacao.turma.modalidade.nome,
+        point_nome=solicitacao.point.nome,
+        data_horario=f"{solicitacao.data.strftime('%d/%m')} às {hora_rotulo}",
+    )
+
     return solicitacao
 
 

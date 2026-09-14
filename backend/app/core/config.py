@@ -79,6 +79,12 @@ class Settings(BaseSettings):
     # pra clicar, é aviso mesmo. Aprovado pela Meta em 2026-09-13, mesmo
     # nome.
     whatsapp_template_cancelamento_aula: str = "cancelamento_aula"
+    # Aula experimental aprovada (pedido do usuário, 2026-09-14: "faca um
+    # template para confirmacao de aula experimental no whatsapp") —
+    # avisa o visitante que pediu pela página pública (routers/
+    # experimental.py::aprovar_solicitacao) que a aula foi confirmada.
+    # Nome provisório até criar/aprovar na Meta, mesmo fluxo dos outros.
+    whatsapp_template_confirmacao_experimental: str = "confirmacao_experimental"
 
     # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
     # 2026-08-30: deploy em produção) — em dev é só o Vite local; em
