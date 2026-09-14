@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { TurmaResumo, Vinculo } from "../../api/types";
+import type { ExperimentalConfig, TurmaResumo, Vinculo } from "../../api/types";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { Icon, Layout } from "../../components/Layout";
 import { rotuloTurma } from "../../lib/dias";
@@ -110,6 +110,7 @@ export default function ProfessorTurmas() {
                   <TurmaCard
                     key={t.id}
                     turma={t}
+                    onAtualizada={carregar}
                     onProlongar={() =>
                       setProlongando({
                         turmaId: t.id,
@@ -248,7 +249,30 @@ function ProlongarTurmaModal({
   );
 }
 
-function TurmaCard({ turma, onProlongar }: { turma: TurmaResumo; onProlongar: () => void }) {
+function TurmaCard({
+  turma,
+  onProlongar,
+  onAtualizada,
+}: {
+  turma: TurmaResumo;
+  onProlongar: () => void;
+  onAtualizada: () => void;
+}) {
+  const [salvandoExperimental, setSalvandoExperimental] = useState(false);
+
+  async function mudarAulaExperimental(valor: ExperimentalConfig) {
+    setSalvandoExperimental(true);
+    try {
+      await api.patch(`/turmas/${turma.id}/aula-experimental`, { aula_experimental: valor });
+      onAtualizada();
+    } catch {
+      // Sem tratamento especial de erro aqui — é um select simples; se
+      // falhar, a turma continua com o valor antigo na próxima recarga.
+    } finally {
+      setSalvandoExperimental(false);
+    }
+  }
+
   return (
     <div className="item-card" style={{ alignItems: "flex-start" }}>
       <div className="item-card-info" style={{ flex: 1 }}>
@@ -257,6 +281,11 @@ function TurmaCard({ turma, onProlongar }: { turma: TurmaResumo; onProlongar: ()
           {turma.privada && (
             <span className="status-pill status-info" style={{ marginLeft: 8 }}>
               Privada
+            </span>
+          )}
+          {turma.aula_experimental !== "nao" && (
+            <span className="status-pill status-good" style={{ marginLeft: 8 }}>
+              {turma.aula_experimental === "somente" ? "Só experimental" : "Aceita experimental"}
             </span>
           )}
         </span>
@@ -270,6 +299,18 @@ function TurmaCard({ turma, onProlongar }: { turma: TurmaResumo; onProlongar: ()
         <span className="item-card-subtitle">
           {rotuloPeriodo(turma.periodo_inicio, turma.periodo_fim)}
         </span>
+        <label style={{ marginTop: 4 }}>
+          Aula experimental
+          <select
+            value={turma.aula_experimental}
+            disabled={salvandoExperimental}
+            onChange={(e) => mudarAulaExperimental(e.target.value as ExperimentalConfig)}
+          >
+            <option value="nao">Não participa</option>
+            <option value="aceita">Aceita (vaga livre pra visitante)</option>
+            <option value="somente">Somente experimental</option>
+          </select>
+        </label>
       </div>
       <div className="item-card-actions">
         <button className="secondary" onClick={onProlongar}>

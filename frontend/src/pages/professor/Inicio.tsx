@@ -105,6 +105,12 @@ export default function ProfessorInicio() {
                 </span>
                 <span className="quick-action-label">Ocupação de quadra</span>
               </Link>
+              <Link to="/professor/experimental" className="quick-action">
+                <span className="quick-action-icon">
+                  <Icon name="user-plus" />
+                </span>
+                <span className="quick-action-label">Aula experimental</span>
+              </Link>
             </div>
           </section>
 

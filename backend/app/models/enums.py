@@ -131,3 +131,25 @@ class NotificacaoTipo(str, enum.Enum):
     entram aqui conforme forem ganhando uma versão "no app" também."""
 
     CANCELAMENTO_AULA = "cancelamento_aula"
+    SOLICITACAO_EXPERIMENTAL = "solicitacao_experimental"
+
+
+class ExperimentalConfig(str, enum.Enum):
+    """Participação da Turma no programa de aula experimental (pedido do
+    usuário, 2026-09-14: "criar uma pagina publica, sem login, para
+    qualquer pessoa poder solicitar uma aula experimental"). 'aceita' é
+    uma turma normal (com matrícula de verdade) que também deixa visitante
+    pedir uma vaga livre; 'somente' é uma turma dedicada só a
+    experimentais — não some do catálogo de gestão, mas não pode receber
+    matrícula normal (ver bloqueios em routers/matriculas.py e
+    routers/creditos.py, mesmo espírito de Turma.privada)."""
+
+    NAO = "nao"
+    ACEITA = "aceita"
+    SOMENTE = "somente"
+
+
+class SolicitacaoExperimentalStatus(str, enum.Enum):
+    PENDENTE = "pendente"
+    APROVADA = "aprovada"
+    RECUSADA = "recusada"

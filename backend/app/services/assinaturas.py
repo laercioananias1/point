@@ -4,7 +4,14 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.assinatura import Assinatura
-from app.models.enums import MatriculaStatus, MatriculaTipo, PagamentoMeio, PeriodoDia, VinculoStatus
+from app.models.enums import (
+    ExperimentalConfig,
+    MatriculaStatus,
+    MatriculaTipo,
+    PagamentoMeio,
+    PeriodoDia,
+    VinculoStatus,
+)
 from app.models.matricula import Matricula
 from app.models.matricula_dia_semana import MatriculaDiaSemana
 from app.models.plano import Plano
@@ -54,6 +61,11 @@ def validar_turmas_para_plano(
             raise HTTPException(422, "Alguma turma escolhida não é da modalidade pedida")
         if turma.vinculo.status != VinculoStatus.ATIVO:
             raise HTTPException(422, "Alguma turma escolhida tem vínculo inativo")
+        if turma.aula_experimental == ExperimentalConfig.SOMENTE:
+            # Diferente de privada (que o admin pode escolher via convite),
+            # "somente experimental" nunca recebe matrícula normal, nem
+            # pelo admin (pedido do usuário, 2026-09-14).
+            raise HTTPException(422, "Alguma turma escolhida é só pra aula experimental")
 
         dias_unicos = sorted(set(dias))
         if not dias_unicos:

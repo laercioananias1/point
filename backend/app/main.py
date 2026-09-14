@@ -20,6 +20,7 @@ from app.routers import (
     convites_admin,
     convites_vinculo,
     creditos,
+    experimental,
     fechamentos,
     feriados,
     matriculas,
@@ -80,6 +81,7 @@ app.include_router(convites_admin.router)
 app.include_router(checkins.router)
 app.include_router(feriados.router)
 app.include_router(notificacoes.router)
+app.include_router(experimental.router)
 
 # Fotos de Point (pedido do usuário, 2026-08-30) — arquivo estático servido
 # direto, sem passar por rota autenticada (mesma URL vale pra qualquer

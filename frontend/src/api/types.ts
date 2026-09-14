@@ -24,6 +24,9 @@ export interface PointResumo {
   anuncios: string | null;
   banners: string[];
   logo: string | null;
+  // Cor de destaque do Point (pedido do usuário, 2026-09-14) — nula = usa
+  // a cor padrão do sistema. Ver lib/cor.ts.
+  cor_destaque: string | null;
 }
 
 // Resolução do Point do usuário logado pra mostrar no cabeçalho (pedido
@@ -33,6 +36,7 @@ export interface PointLogo {
   point_id: number | null;
   nome: string | null;
   logo: string | null;
+  cor_destaque: string | null;
 }
 
 export interface Point {
@@ -60,6 +64,7 @@ export interface Point {
   anuncios: string | null;
   banners: string[];
   logo: string | null;
+  cor_destaque: string | null;
 }
 
 export interface Checkin {
@@ -163,6 +168,7 @@ export interface TurmaResumo {
   categoria: Categoria;
   tipo_turma: TipoTurma;
   privada: boolean;
+  aula_experimental: ExperimentalConfig;
   capacidade: number;
   dias_semana: string[];
   horario: string;
@@ -402,7 +408,51 @@ export interface Matricula {
   e_reposicao: boolean;
 }
 
-export type NotificacaoTipo = "cancelamento_aula";
+export type NotificacaoTipo = "cancelamento_aula" | "solicitacao_experimental";
+
+// Programa de aula experimental (pedido do usuário, 2026-09-14) — "aceita"
+// é turma normal que também abre vaga livre pra visitante experimentar;
+// "somente" é dedicada só a isso, sem matrícula normal.
+export type ExperimentalConfig = "nao" | "aceita" | "somente";
+
+export type SolicitacaoExperimentalStatus = "pendente" | "aprovada" | "recusada";
+
+// Versão pública da Turma pra página de aula experimental — sem contato
+// do professor, só o nome (ver backend schemas/solicitacao_experimental.py).
+export interface TurmaExperimental {
+  id: number;
+  modalidade: Modalidade;
+  quadra: Quadra;
+  categoria: Categoria;
+  professor_nome: string;
+  dias_semana: string[];
+  horario: string;
+  duracao_minutos: number;
+}
+
+export interface DisponibilidadeDia {
+  data: string;
+  disponivel: boolean;
+}
+
+export interface TurmaExperimentalAgenda extends TurmaExperimental {
+  proximas_datas: DisponibilidadeDia[];
+}
+
+export interface SolicitacaoExperimental {
+  id: number;
+  turma: TurmaExperimental;
+  point: PointResumo;
+  data: string;
+  nome: string;
+  email: string;
+  celular: string;
+  tem_raquete: boolean;
+  status: SolicitacaoExperimentalStatus;
+  motivo_recusa: string | null;
+  created_at: string;
+  decidido_em: string | null;
+}
 
 export interface Notificacao {
   id: number;

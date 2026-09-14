@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Categoria, Modalidade, Quadra, TipoTurma, Vinculo } from "../../api/types";
+import type { Categoria, ExperimentalConfig, Modalidade, Quadra, TipoTurma, Vinculo } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA } from "../../lib/dias";
 
@@ -99,6 +99,7 @@ function CriarTurmaForm({
   const [tiposTurma, setTiposTurma] = useState<TipoTurma[]>([]);
   const [tipoTurmaId, setTipoTurmaId] = useState<number | null>(null);
   const [privada, setPrivada] = useState(false);
+  const [aulaExperimental, setAulaExperimental] = useState<ExperimentalConfig>("nao");
 
   const [capacidade, setCapacidade] = useState("4");
   const [duracaoMinutos, setDuracaoMinutos] = useState("60");
@@ -188,6 +189,7 @@ function CriarTurmaForm({
         categoria_id: categoriaId,
         tipo_turma_id: tipoTurmaId,
         privada,
+        aula_experimental: aulaExperimental,
         capacidade: Number(capacidade),
         periodo_inicio: periodoInicio,
         periodo_fim: recorrente ? null : periodoFim,
@@ -305,6 +307,23 @@ function CriarTurmaForm({
       <p className="empty-state" style={{ padding: 0 }}>
         Turma privada não aparece pro aluno comprar avulsa ou reagendar crédito sozinho — só o
         professor ou o admin do Point matriculam alguém aqui (ex.: aula individual, dupla, família).
+      </p>
+
+      <label>
+        Aula experimental
+        <select
+          value={aulaExperimental}
+          onChange={(e) => setAulaExperimental(e.target.value as ExperimentalConfig)}
+        >
+          <option value="nao">Não participa</option>
+          <option value="aceita">Aceita — turma normal, com vaga livre pra visitante experimentar</option>
+          <option value="somente">Somente experimental — não recebe matrícula normal</option>
+        </select>
+      </label>
+      <p className="empty-state" style={{ padding: 0 }}>
+        Define se essa turma aparece na página pública de aula experimental (Ver mais → Aula
+        experimental). "Aceita" compartilha a mesma vaga com quem já é aluno; "somente experimental"
+        é dedicada só a visitantes.
       </p>
 
       {quadras.length === 0 ? (

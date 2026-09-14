@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { TurmaResumo } from "../../api/types";
+import type { ExperimentalConfig, TurmaResumo } from "../../api/types";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { Icon, Layout } from "../../components/Layout";
 import { rotuloTurma } from "../../lib/dias";
@@ -10,6 +10,62 @@ import { rotuloTurma } from "../../lib/dias";
 function rotuloPeriodo(inicio: string, fim: string | null): string {
   const data = (iso: string) => new Date(iso + "T00:00").toLocaleDateString("pt-BR");
   return fim === null ? `desde ${data(inicio)} · recorrente` : `${data(inicio)} – ${data(fim)}`;
+}
+
+function TurmaLinha({ turma: t, onAtualizada }: { turma: TurmaResumo; onAtualizada: () => void }) {
+  const [salvando, setSalvando] = useState(false);
+
+  async function mudarAulaExperimental(valor: ExperimentalConfig) {
+    setSalvando(true);
+    try {
+      await api.patch(`/turmas/${t.id}/aula-experimental`, { aula_experimental: valor });
+      onAtualizada();
+    } catch {
+      // Select simples — sem tratamento de erro dedicado; falha só deixa o
+      // valor antigo até a próxima recarga.
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <div className="item-card">
+      <div className="item-card-info">
+        <span className="item-card-title">
+          {rotuloTurma(t.dias_semana, t.horario)}
+          {t.privada && (
+            <span className="status-pill status-info" style={{ marginLeft: 8 }}>
+              Privada
+            </span>
+          )}
+          {t.aula_experimental !== "nao" && (
+            <span className="status-pill status-good" style={{ marginLeft: 8 }}>
+              {t.aula_experimental === "somente" ? "Só experimental" : "Aceita experimental"}
+            </span>
+          )}
+        </span>
+        <span className="item-card-subtitle">
+          <CategoriaBadge nome={t.categoria.nome} cor={t.categoria.cor} /> · {t.tipo_turma.nome}
+        </span>
+        <span className="item-card-subtitle">
+          {t.modalidade.nome} · {t.quadra.nome} · com {t.vinculo.professor.nome} · {t.capacidade} vaga(s)
+        </span>
+        <span className="item-card-subtitle">{rotuloPeriodo(t.periodo_inicio, t.periodo_fim)}</span>
+        <label style={{ marginTop: 4 }}>
+          Aula experimental
+          <select
+            value={t.aula_experimental}
+            disabled={salvando}
+            onChange={(e) => mudarAulaExperimental(e.target.value as ExperimentalConfig)}
+          >
+            <option value="nao">Não participa</option>
+            <option value="aceita">Aceita (vaga livre pra visitante)</option>
+            <option value="somente">Somente experimental</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
 }
 
 /** Pedido do usuário, 2026-08-26: "deixe tb 2 botões (iguais do
@@ -118,29 +174,7 @@ export default function AdminPointTurmas() {
               ) : (
                 <div className="card-list" style={{ marginTop: 12 }}>
                   {turmasFiltradas.map((t) => (
-                    <div className="item-card" key={t.id}>
-                      <div className="item-card-info">
-                        <span className="item-card-title">
-                          {rotuloTurma(t.dias_semana, t.horario)}
-                          {t.privada && (
-                            <span className="status-pill status-info" style={{ marginLeft: 8 }}>
-                              Privada
-                            </span>
-                          )}
-                        </span>
-                        <span className="item-card-subtitle">
-                          <CategoriaBadge nome={t.categoria.nome} cor={t.categoria.cor} /> ·{" "}
-                          {t.tipo_turma.nome}
-                        </span>
-                        <span className="item-card-subtitle">
-                          {t.modalidade.nome} · {t.quadra.nome} · com {t.vinculo.professor.nome} ·{" "}
-                          {t.capacidade} vaga(s)
-                        </span>
-                        <span className="item-card-subtitle">
-                          {rotuloPeriodo(t.periodo_inicio, t.periodo_fim)}
-                        </span>
-                      </div>
-                    </div>
+                    <TurmaLinha key={t.id} turma={t} onAtualizada={carregar} />
                   ))}
                 </div>
               )}

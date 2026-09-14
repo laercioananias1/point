@@ -55,6 +55,8 @@ import DonoAppPerfil from "./pages/dono-app/Perfil";
 import EsqueciSenha from "./pages/EsqueciSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import Notificacoes from "./pages/Notificacoes";
+import SolicitacoesExperimentais from "./pages/SolicitacoesExperimentais";
+import ExperimentalPublico from "./pages/ExperimentalPublico";
 
 // Ordem de prioridade pra decidir a HOME inicial de quem tem mais de um
 // papel (pedido do usuário, 2026-08-26 — dono do Point que também é
@@ -86,6 +88,7 @@ export default function App() {
       <Route path="/convite/:token" element={<ConviteAceite />} />
       <Route path="/convite-vinculo/:token" element={<ConviteVinculoAceite />} />
       <Route path="/convite-admin/:token" element={<ConviteAdminAceite />} />
+      <Route path="/experimental/:pointId" element={<ExperimentalPublico />} />
       <Route
         path="/"
         element={
@@ -335,6 +338,14 @@ export default function App() {
         }
       />
       <Route
+        path="/admin-point/experimental"
+        element={
+          <ProtectedRoute>
+            <SolicitacoesExperimentais />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/professor"
         element={
           <ProtectedRoute>
@@ -395,6 +406,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Notificacoes />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/professor/experimental"
+        element={
+          <ProtectedRoute>
+            <SolicitacoesExperimentais />
           </ProtectedRoute>
         }
       />

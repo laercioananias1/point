@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, PagamentoMeio, PeriodoDia, Plano, TurmaResumo } from "../../api/types";
@@ -28,6 +28,12 @@ function periodoDaHora(horario: string): PeriodoDia {
 export default function AdminPointConvidarAluno() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Pré-preenche vindo de uma solicitação de aula experimental aprovada
+  // (pedido do usuário, 2026-09-14: "depois da aula experimental o
+  // professor pode convidá-lo a virar um aluno" — ver
+  // SolicitacoesExperimentais.tsx, que navega pra aqui com esses dados).
+  const prefill = location.state as { nome?: string; email?: string; celular?: string } | null;
 
   return (
     <Layout>
@@ -48,7 +54,7 @@ export default function AdminPointConvidarAluno() {
       </p>
 
       {user?.point_id ? (
-        <ConvidarForm pointId={user.point_id} />
+        <ConvidarForm pointId={user.point_id} prefill={prefill} />
       ) : (
         <p className="empty-state">Não foi possível identificar o seu Point.</p>
       )}
@@ -60,14 +66,20 @@ export default function AdminPointConvidarAluno() {
  * usuário, 2026-08-20 — o aluno cadastra a própria conta, o admin não cria
  * senha por ele). Se o aluno já tiver conta, só confirma o aceite; se não
  * tiver, cria a senha na hora — nos dois casos a assinatura ativa sozinha. */
-function ConvidarForm({ pointId }: { pointId: number }) {
+function ConvidarForm({
+  pointId,
+  prefill,
+}: {
+  pointId: number;
+  prefill: { nome?: string; email?: string; celular?: string } | null;
+}) {
   const navigate = useNavigate();
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
+  const [nome, setNome] = useState(prefill?.nome ?? "");
+  const [email, setEmail] = useState(prefill?.email ?? "");
   // Obrigatório (pedido do usuário, 2026-09-11: "não é mais opcional o
   // celular, devido agora começar utilizar whats precisa") — o convite
   // sempre sai por WhatsApp também, além do e-mail.
-  const [celular, setCelular] = useState("");
+  const [celular, setCelular] = useState(prefill?.celular ?? "");
   // Avulso (pedido do usuário, 2026-09-11: "pode ser um aluno avulso...
   // abre opção se for avulso não preenche plano, data início, forma de
   // pagto, turma, nada disso") — só cria a conta, sem assinatura.

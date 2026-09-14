@@ -1,10 +1,11 @@
 from datetime import date
 
-from sqlalchemy import Boolean, Date, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.base import TimestampMixin
+from app.models.enums import ExperimentalConfig
 
 
 class Turma(TimestampMixin, Base):
@@ -49,6 +50,15 @@ class Turma(TimestampMixin, Base):
     # routers/creditos.py::_reagendar_credito.
     privada: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Programa de aula experimental (pedido do usuário, 2026-09-14) — 'nao'
+    # (padrão) não participa; 'aceita' é turma normal que também abre vaga
+    # livre pra visitante experimentar; 'somente' é dedicada só a isso, sem
+    # matrícula normal (ver ExperimentalConfig.__doc__, bloqueios em
+    # matriculas.py/creditos.py mesmo espírito de `privada`).
+    aula_experimental: Mapped[ExperimentalConfig] = mapped_column(
+        Enum(ExperimentalConfig), default=ExperimentalConfig.NAO
+    )
+
     capacidade: Mapped[int] = mapped_column(Integer)
 
     horario: Mapped[str] = mapped_column(String(5))  # "HH:00" — sempre hora cheia
@@ -69,6 +79,13 @@ class Turma(TimestampMixin, Base):
     dias_semana_rel: Mapped[list["TurmaDiaSemana"]] = relationship(  # noqa: F821
         cascade="all, delete-orphan"
     )
+
+    @property
+    def professor_nome(self) -> str:
+        """Só o nome, pra vitrine pública de aula experimental (pedido do
+        usuário, 2026-09-14) — sem expor contato/e-mail do professor pra
+        quem não está logado."""
+        return self.vinculo.professor.nome
 
     @property
     def excecoes(self) -> list[date]:

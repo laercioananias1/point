@@ -7,7 +7,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import require_role
 from app.models.credito_reposicao import CreditoReposicao
-from app.models.enums import CreditoStatus, MatriculaStatus, MatriculaTipo, Role, VinculoStatus
+from app.models.enums import (
+    CreditoStatus,
+    ExperimentalConfig,
+    MatriculaStatus,
+    MatriculaTipo,
+    Role,
+    VinculoStatus,
+)
 from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.user import User
@@ -53,6 +60,11 @@ def _reagendar_credito(
         raise HTTPException(
             403, "Essa turma é privada — só o professor ou o admin do Point matricula alunos aqui"
         )
+    if nova_turma.aula_experimental == ExperimentalConfig.SOMENTE:
+        # Diferente de privada, ninguém reagenda crédito numa turma
+        # "somente experimental" — nem admin (pedido do usuário,
+        # 2026-09-14): ela não é pra matrícula normal em hipótese nenhuma.
+        raise HTTPException(403, "Essa turma é só pra aula experimental, não aceita reagendamento")
 
     # Pedido do usuário, 2026-08-25: "ele só pode reagendar com o professor
     # que já dá aula pra ele" — não vale usar o crédito numa turma de outro

@@ -92,6 +92,14 @@ export default function AdminPointVerMais() {
             <span className="quick-action-label">Tipos de turma</span>
           </Link>
         </div>
+        <div className="quick-actions">
+          <Link to="/admin-point/experimental" className="quick-action">
+            <span className="quick-action-icon">
+              <Icon name="user-plus" />
+            </span>
+            <span className="quick-action-label">Aula experimental</span>
+          </Link>
+        </div>
       </section>
     </Layout>
   );

@@ -11,6 +11,7 @@ from app.models.credito_reposicao import CreditoReposicao
 from app.models.enums import (
     CreditoMotivo,
     CreditoStatus,
+    ExperimentalConfig,
     MatriculaStatus,
     MatriculaTipo,
     NotificacaoTipo,
@@ -32,6 +33,7 @@ from app.models.user import User
 from app.models.vinculo import Vinculo
 from app.schemas.turma import (
     RemocaoTurmaOut,
+    TurmaAulaExperimental,
     TurmaCreate,
     TurmaOut,
     TurmaProlongamento,
@@ -159,6 +161,7 @@ def criar_turmas(
             categoria_id=categoria.id,
             tipo_turma_id=tipo_turma.id,
             privada=payload.privada,
+            aula_experimental=payload.aula_experimental,
             capacidade=payload.capacidade,
             horario=horario,
             duracao_minutos=duracao,
@@ -413,6 +416,33 @@ def prolongar_turma(
     return turma
 
 
+@router.patch("/turmas/{turma_id}/aula-experimental", response_model=TurmaOut)
+def definir_aula_experimental(
+    turma_id: int,
+    payload: TurmaAulaExperimental,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR, Role.ADMIN_POINT))],
+) -> Turma:
+    """Liga/desliga uma Turma já existente no programa de aula experimental
+    (pedido do usuário, 2026-09-14) — separado da criação porque a maioria
+    das turmas que vão querer participar já existe hoje; não faz sentido
+    forçar recriar. Mesma checagem de dono que as outras ações de turma
+    (professor do vínculo ou admin do Point)."""
+    turma = db.get(Turma, turma_id)
+    if turma is None:
+        raise HTTPException(404, "Turma não encontrada")
+    pode = (user.tem_role(Role.PROFESSOR) and turma.vinculo.professor_id == user.professor_id) or (
+        user.tem_role(Role.ADMIN_POINT) and turma.vinculo.point_id == user.point_id
+    )
+    if not pode:
+        raise HTTPException(404, "Turma não encontrada")
+
+    turma.aula_experimental = payload.aula_experimental
+    db.commit()
+    db.refresh(turma)
+    return turma
+
+
 @router.get("/professores/me/turmas", response_model=list[TurmaOut])
 def minhas_turmas(
     db: Annotated[Session, Depends(get_db)],
@@ -471,6 +501,11 @@ def buscar_turmas(
     )
     if not user.tem_role(Role.ADMIN_POINT) and not user.tem_role(Role.PROFESSOR):
         query = query.filter(Turma.privada.is_(False))
+        # Turma "somente experimental" (pedido do usuário, 2026-09-14)
+        # também não entra no catálogo de matrícula normal — mesmo
+        # espírito de privada, ela só existe pra receber visitante via
+        # /experimental, não pra um aluno escolher sozinho.
+        query = query.filter(Turma.aula_experimental != ExperimentalConfig.SOMENTE)
     if modalidade:
         query = query.join(Modalidade, Turma.modalidade_id == Modalidade.id).filter(
             Modalidade.nome.ilike(f"%{modalidade}%")

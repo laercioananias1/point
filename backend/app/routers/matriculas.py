@@ -12,6 +12,7 @@ from app.models.credito_reposicao import CreditoReposicao
 from app.models.enums import (
     CreditoMotivo,
     CreditoStatus,
+    ExperimentalConfig,
     MatriculaStatus,
     MatriculaTipo,
     PagamentoMeio,
@@ -88,6 +89,11 @@ def solicitar_matricula(
         raise HTTPException(
             403, "Essa turma é privada — só o professor ou o admin do Point matricula alunos aqui"
         )
+    if turma.aula_experimental == ExperimentalConfig.SOMENTE:
+        # Turma "somente experimental" (pedido do usuário, 2026-09-14) não
+        # recebe matrícula normal nenhuma — só solicitação pela página
+        # pública (routers/experimental.py).
+        raise HTTPException(403, "Essa turma é só pra aula experimental, não aceita matrícula")
 
     if payload.tipo == MatriculaTipo.AVULSA:
         if payload.data_aula is None:

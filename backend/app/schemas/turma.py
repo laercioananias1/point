@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import field_validator
 
+from app.models.enums import ExperimentalConfig
 from app.schemas.categoria import CategoriaOut
 from app.schemas.common import ORMModel
 from app.schemas.modalidade import ModalidadeOut
@@ -34,6 +35,10 @@ class TurmaCreate(ORMModel):
     categoria_id: int
     tipo_turma_id: int
     privada: bool = False
+    # Programa de aula experimental (pedido do usuário, 2026-09-14) — ver
+    # ExperimentalConfig.__doc__. Default 'nao': a maioria das turmas não
+    # participa, é uma escolha explícita do professor/admin.
+    aula_experimental: ExperimentalConfig = ExperimentalConfig.NAO
     capacidade: int
     periodo_inicio: date
     periodo_fim: date | None = None
@@ -72,6 +77,7 @@ class TurmaOut(ORMModel):
     categoria: CategoriaOut
     tipo_turma: TipoTurmaOut
     privada: bool
+    aula_experimental: ExperimentalConfig
     capacidade: int
     dias_semana: list[str]
     horario: str
@@ -82,6 +88,10 @@ class TurmaOut(ORMModel):
     excecoes: list[date]
     cancelamentos: list[TurmaCancelamentoOut]
     vinculo: VinculoOut
+
+
+class TurmaAulaExperimental(ORMModel):
+    aula_experimental: ExperimentalConfig
 
 
 class TurmaProlongamento(ORMModel):

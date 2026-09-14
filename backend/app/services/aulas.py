@@ -177,6 +177,36 @@ def _minutos(horario: str) -> int:
     return int(h) * 60 + int(m)
 
 
+def vagas_ocupadas_em(db: Session, turma: Turma, data: date) -> int:
+    """Quantas vagas da Turma já estão tomadas nessa data específica —
+    matrícula ativa (mesma regra de matricula_tem_aula_em) + solicitação de
+    aula experimental pendente ou aprovada (pedido do usuário, 2026-09-14:
+    "a vaga usada pela aula experimental conta dentro da capacidade normal
+    da turma"). Só recusada libera a vaga de volta; por isso não entra
+    aqui. Usada tanto pra checar vaga livre na hora de aprovar uma
+    solicitação quanto pra montar a agenda pública de disponibilidade
+    (routers/experimental.py) — capacidade real (Turma.capacidade) nunca é
+    checada em mais nenhum outro lugar do sistema hoje (matrícula normal
+    não tem esse controle ainda), então esta função é só pro fluxo
+    experimental."""
+    from app.models.solicitacao_experimental import SolicitacaoExperimental
+    from app.models.enums import SolicitacaoExperimentalStatus
+
+    ocupadas = sum(1 for m in turma.matriculas if matricula_tem_aula_em(m, data))
+    ocupadas += (
+        db.query(SolicitacaoExperimental)
+        .filter(
+            SolicitacaoExperimental.turma_id == turma.id,
+            SolicitacaoExperimental.data == data,
+            SolicitacaoExperimental.status.in_(
+                [SolicitacaoExperimentalStatus.PENDENTE, SolicitacaoExperimentalStatus.APROVADA]
+            ),
+        )
+        .count()
+    )
+    return ocupadas
+
+
 def _horarios_se_sobrepoem(h1: str, dur1: int, h2: str, dur2: int) -> bool:
     ini1, fim1 = _minutos(h1), _minutos(h1) + dur1
     ini2, fim2 = _minutos(h2), _minutos(h2) + dur2
