@@ -65,7 +65,10 @@ class Settings(BaseSettings):
     # /convite-admin/), então não dá pra reaproveitar um template só como
     # antes (quando o link era texto livre no corpo). Ver
     # services/whatsapp.py.
-    whatsapp_template_convite_aluno: str = "invite_point"
+    # Aprovado pela Meta em 2026-09-13 como "acesso_point" (nome mudou do
+    # "invite_point" original durante a resubmissão com o texto revisado
+    # pra categoria Utility — ver histórico do módulo whatsapp.py).
+    whatsapp_template_convite_aluno: str = "acesso_point"
     whatsapp_template_convite_professor: str = "convite_professor"
     whatsapp_template_convite_admin: str = "convite_admin"
     # Cancelamento de aula pelo professor/admin (pedido do usuário,
@@ -73,7 +76,8 @@ class Settings(BaseSettings):
     # pelo professor") — avisa por WhatsApp quem tinha aula justamente na
     # data cancelada (mesma lista que hoje recebe o crédito de reposição,
     # ver routers/turmas.py::remover_turma). Só texto, sem botão — nada
-    # pra clicar, é aviso mesmo.
+    # pra clicar, é aviso mesmo. Aprovado pela Meta em 2026-09-13, mesmo
+    # nome.
     whatsapp_template_cancelamento_aula: str = "cancelamento_aula"
 
     # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
