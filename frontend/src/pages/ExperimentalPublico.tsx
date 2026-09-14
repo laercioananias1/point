@@ -84,7 +84,7 @@ export default function ExperimentalPublico() {
 
   return (
     <div className="auth-screen">
-      <div style={{ width: "100%", maxWidth: 480 }}>
+      <div style={{ width: "100%", maxWidth: 480, margin: "0 auto" }}>
         <PointBrand point={point} />
 
         {carregando && <p className="auth-card">Carregando...</p>}
