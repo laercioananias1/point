@@ -120,9 +120,19 @@ export default function ExperimentalPublico() {
                     {turma.modalidade.nome}
                     <CategoriaBadge nome={turma.categoria.nome} cor={turma.categoria.cor} />
                   </span>
+                  <p
+                    style={{
+                      fontFamily: "Archivo, sans-serif",
+                      fontWeight: 800,
+                      fontSize: 24,
+                      color: "var(--accent)",
+                      margin: "6px 0 2px",
+                    }}
+                  >
+                    Aula às {rotuloHorarioTurma(turma.horario)}
+                  </p>
                   <p className="auth-subtitle" style={{ marginBottom: 10 }}>
-                    Turma {rotuloHorarioTurma(turma.horario)} · {turma.quadra.nome} · com{" "}
-                    {turma.professor_nome}
+                    {turma.quadra.nome} · com {turma.professor_nome}
                   </p>
                   <div className="toggle-grid">
                     {turma.proximas_datas.length === 0 ? (
