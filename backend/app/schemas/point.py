@@ -1,5 +1,17 @@
+import re
+
+from pydantic import field_validator
+
 from app.models.point import DIAS_FIM_DE_SEMANA, DIAS_UTEIS, HORARIOS_PADRAO
 from app.schemas.common import ORMModel
+
+_COR_INVALIDA = "Cor precisa ser um hexadecimal no formato #rrggbb"
+
+
+def _valida_cor(valor: str) -> str:
+    if not re.fullmatch(r"#[0-9a-fA-F]{6}", valor):
+        raise ValueError(_COR_INVALIDA)
+    return valor
 
 
 class PointCreate(ORMModel):
@@ -38,6 +50,7 @@ class PointOut(ORMModel):
     anuncios: str | None
     banners: list[str]
     logo: str | None
+    cor_destaque: str | None
 
 
 class PointLogoOut(ORMModel):
@@ -45,12 +58,16 @@ class PointLogoOut(ORMModel):
     usuário, 2026-08-30: "logomarca... no canto esquerdo", pra todo mundo)
     — usado só pelo cabeçalho (Layout.tsx) pra saber qual logo mostrar,
     sem cada tela repetir essa resolução. Sem Point (dono do app, ou
-    professor/aluno sem nenhum vínculo/matrícula ativa ainda), os três
-    campos vêm nulos e o cabeçalho cai na marca genérica do app."""
+    professor/aluno sem nenhum vínculo/matrícula ativa ainda), os quatro
+    campos vêm nulos e o cabeçalho cai na marca genérica do app.
+    cor_destaque (pedido do usuário, 2026-09-14) entrou aqui pelo mesmo
+    motivo do logo: já resolve certo pra qualquer papel, sem repetir essa
+    lógica de "primeiro vínculo/matrícula ativa" em outro lugar."""
 
     point_id: int | None
     nome: str | None
     logo: str | None
+    cor_destaque: str | None
 
 
 class PointPerfilUpdate(ORMModel):
@@ -60,13 +77,23 @@ class PointPerfilUpdate(ORMModel):
     vai colocar anúncios que também deve ser cadastrado dentro do Meu
     Point" / "precisa tb no cadastro do point: Nome do point, endereço")
     — as fotos/banners têm endpoints próprios (upload multipart não cabe
-    num PATCH de JSON), ver POST/DELETE /points/me/fotos|banners."""
+    num PATCH de JSON), ver POST/DELETE /points/me/fotos|banners.
+
+    cor_destaque (pedido do usuário, 2026-09-14: "personalizar... as cores
+    do portal") entrou aqui, mesmo grupo de campos de identidade visual
+    que logo/sobre — nulo = usa a cor padrão do sistema."""
 
     nome: str
     endereco: str
     sobre: str | None = None
     informacoes_importantes: str | None = None
     anuncios: str | None = None
+    cor_destaque: str | None = None
+
+    @field_validator("cor_destaque")
+    @classmethod
+    def _cor_valida(cls, valor: str | None) -> str | None:
+        return _valida_cor(valor) if valor is not None else None
 
 
 class PointConfiguracoesUpdate(ORMModel):
@@ -117,6 +144,10 @@ class PointResumo(ORMModel):
     anuncios: str | None
     banners: list[str]
     logo: str | None
+    # Pedido do usuário, 2026-09-14: telas públicas que já sabem qual Point
+    # é (convite, aula experimental) aplicam essa cor também, reforçando a
+    # marca do Point desde antes do login.
+    cor_destaque: str | None
 
 
 class PointRankingOut(ORMModel):

@@ -2,8 +2,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
-import { LogoMark } from "../components/LogoMark";
+import { PointBrand } from "../components/PointBrand";
 import type { ConviteVinculo } from "../api/types";
+import { aplicarCorDestaque } from "../lib/cor";
 import { rotuloRepasse } from "../lib/formato";
 
 /** Tela pública (sem login) que o professor abre a partir do link do
@@ -24,18 +25,19 @@ export default function ConviteVinculoAceite() {
     if (!token) return;
     api
       .get<ConviteVinculo>(`/convites-vinculo/${token}`)
-      .then(setConvite)
+      .then((res) => {
+        setConvite(res);
+        aplicarCorDestaque(res.point.cor_destaque);
+      })
       .catch(() => setErroCarregar("Convite não encontrado — confira o link."))
       .finally(() => setCarregando(false));
+    return () => aplicarCorDestaque(null);
   }, [token]);
 
   return (
     <div className="auth-screen">
       <div>
-        <div className="auth-brand">
-          <LogoMark size={28} />
-          <span className="auth-brand-name">OPoint</span>
-        </div>
+        <PointBrand point={convite?.point} />
 
         {carregando && <p className="auth-card">Carregando convite...</p>}
 

@@ -64,8 +64,10 @@ def meu_point_logo(
         point = matricula.turma.vinculo.point if matricula else None
 
     if point is None:
-        return PointLogoOut(point_id=None, nome=None, logo=None)
-    return PointLogoOut(point_id=point.id, nome=point.nome, logo=point.logo)
+        return PointLogoOut(point_id=None, nome=None, logo=None, cor_destaque=None)
+    return PointLogoOut(
+        point_id=point.id, nome=point.nome, logo=point.logo, cor_destaque=point.cor_destaque
+    )
 
 # Pedido do usuário, 2026-08-30: "permitir inserir até 5 fotos do point".
 MAX_FOTOS_POINT = 5
@@ -268,6 +270,7 @@ def atualizar_perfil_do_meu_point(
     point.sobre = payload.sobre or None
     point.informacoes_importantes = payload.informacoes_importantes or None
     point.anuncios = payload.anuncios or None
+    point.cor_destaque = payload.cor_destaque
     db.commit()
     db.refresh(point)
     return point

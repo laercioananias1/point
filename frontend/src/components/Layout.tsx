@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api, urlArquivo } from "../api/client";
 import type { PointLogo } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
+import { aplicarCorDestaque } from "../lib/cor";
 import { LogoMark } from "./LogoMark";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -346,12 +347,22 @@ export function Layout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) {
       setPointLogo(null);
+      aplicarCorDestaque(null);
       return;
     }
     api
       .get<PointLogo>("/points/meu-logo")
-      .then(setPointLogo)
-      .catch(() => setPointLogo(null));
+      .then((res) => {
+        setPointLogo(res);
+        // Cor de destaque do Point (pedido do usuário, 2026-09-14) — mesma
+        // resolução de "qual Point" que já serve o logo, então aplica
+        // junto, sem duplicar a busca.
+        aplicarCorDestaque(res.cor_destaque);
+      })
+      .catch(() => {
+        setPointLogo(null);
+        aplicarCorDestaque(null);
+      });
   }, [user]);
 
   // Selo de não lidas no sininho (pedido do usuário, 2026-09-11: "esse
@@ -408,7 +419,11 @@ export function Layout({ children }: { children: ReactNode }) {
               ) : (
                 <LogoMark />
               )}
-              OPoint
+              {/* Nome do Point no lugar de "OPoint" fixo (pedido do
+                  usuário, 2026-09-14: "dar destaque para o logo de cada
+                  point") — sem Point resolvido (dono do app), continua
+                  mostrando a marca genérica do sistema. */}
+              {pointLogo?.nome ?? "OPoint"}
             </span>
             {links.length > 0 && (
               <nav className="app-nav">

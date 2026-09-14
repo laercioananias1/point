@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError, urlArquivo } from "../../api/client";
 import type { Point } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
+import { aplicarCorDestaque } from "../../lib/cor";
 
 const MAX_FOTOS = 5;
 const MAX_BANNERS = 5;
@@ -300,6 +301,10 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
   const [informacoesImportantes, setInformacoesImportantes] = useState(
     point.informacoes_importantes ?? "",
   );
+  // Cor de destaque do portal (pedido do usuário, 2026-09-14:
+  // "personalizar... as cores do portal") — vazio = usa a cor padrão do
+  // sistema (backend recebe null nesse caso).
+  const [corDestaque, setCorDestaque] = useState(point.cor_destaque ?? "");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
@@ -315,8 +320,12 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
         endereco,
         sobre: sobre || null,
         informacoes_importantes: informacoesImportantes || null,
+        cor_destaque: corDestaque.trim() || null,
       });
       onSalvo(atualizado);
+      // A cor pode ter mudado agora mesmo — reflete na hora, sem esperar
+      // reabrir a tela (mesma função que o Layout usa no login).
+      aplicarCorDestaque(atualizado.cor_destaque);
       setSucesso(true);
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Não foi possível salvar. Tente de novo.");
@@ -335,6 +344,35 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
         Endereço
         <input value={endereco} onChange={(e) => setEndereco(e.target.value)} required />
       </label>
+
+      <label>
+        Cor de destaque do portal (opcional)
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="color"
+            value={corDestaque || "#0e9594"}
+            onChange={(e) => setCorDestaque(e.target.value)}
+            style={{ width: 44, height: 36, padding: 2, flexShrink: 0 }}
+            aria-label="Cor de destaque do portal"
+          />
+          <input
+            value={corDestaque}
+            onChange={(e) => setCorDestaque(e.target.value)}
+            placeholder="Sem cor própria — usa o teal padrão"
+            pattern="^#[0-9a-fA-F]{6}$"
+            maxLength={7}
+          />
+          {corDestaque && (
+            <button type="button" className="secondary" onClick={() => setCorDestaque("")}>
+              Usar padrão
+            </button>
+          )}
+        </div>
+      </label>
+      <p className="empty-state" style={{ padding: 0, marginTop: -6 }}>
+        Substitui a cor teal padrão do sistema (botões, links, destaques) só pra quem está logado
+        nesse Point — inclusive nas páginas de convite e de aula experimental.
+      </p>
 
       <label>
         Sobre

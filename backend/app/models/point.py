@@ -99,5 +99,12 @@ class Point(TimestampMixin, Base):
     # resolve o Point do usuário e devolve isso, ver app/routers/points.py
     # e components/Layout.tsx).
     logo: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Cor de destaque própria do Point (pedido do usuário, 2026-09-14:
+    # "personalizar... a Logomarca do point, as cores do portal") —
+    # sobrescreve --accent/--accent-strong/--accent-soft (botões, links,
+    # chips) pra quem está logado nesse Point; nula = usa o teal padrão
+    # do sistema. Ver lib/cor.ts no frontend, que deriva as variações
+    # clara/escura a partir só desse valor.
+    cor_destaque: Mapped[str | None] = mapped_column(String(7), nullable=True)
 
     vinculos: Mapped[list["Vinculo"]] = relationship(back_populates="point")  # noqa: F821
