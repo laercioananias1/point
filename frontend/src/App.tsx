@@ -88,7 +88,7 @@ export default function App() {
       <Route path="/convite/:token" element={<ConviteAceite />} />
       <Route path="/convite-vinculo/:token" element={<ConviteVinculoAceite />} />
       <Route path="/convite-admin/:token" element={<ConviteAdminAceite />} />
-      <Route path="/experimental/:pointId" element={<ExperimentalPublico />} />
+      <Route path="/experimental/:link" element={<ExperimentalPublico />} />
       <Route
         path="/"
         element={

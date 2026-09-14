@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type {
+  Point,
   PointResumo,
   SolicitacaoExperimental,
   SolicitacaoExperimentalStatus,
@@ -44,6 +45,15 @@ export default function SolicitacoesExperimentais() {
   const admin = user?.roles.includes("admin_point") ?? false;
   const area = ORDEM_PRIORIDADE.find((p) => user?.roles.includes(p));
   const rotaVoltar = area ? PREFIXO_ROTA[area] : "/";
+
+  // Point do admin, só pra pegar o token do link público (pedido do
+  // usuário, 2026-09-14: "nao identificar o id na url") — user.point_id
+  // continua existindo, mas a URL usa link_experimental, não o id.
+  const [pointAdmin, setPointAdmin] = useState<Point | null>(null);
+  useEffect(() => {
+    if (!admin) return;
+    api.get<Point>("/points/me").then(setPointAdmin);
+  }, [admin]);
 
   // Pontos onde o professor tem vínculo (pedido do usuário, 2026-09-14:
   // "esse link o professor pode divulgar") — ele pode dar aula em mais de
@@ -91,9 +101,13 @@ export default function SolicitacoesExperimentais() {
         Pedidos feitos na página pública de aula experimental do seu Point.
       </p>
 
-      {admin && user?.point_id && <LinkPublico nome="Seu Point" pointId={user.point_id} />}
+      {admin && pointAdmin && (
+        <LinkPublico nome="Seu Point" link={pointAdmin.link_experimental} />
+      )}
       {!admin &&
-        pointsProfessor.map((p) => <LinkPublico key={p.id} nome={p.nome} pointId={p.id} />)}
+        pointsProfessor.map((p) => (
+          <LinkPublico key={p.id} nome={p.nome} link={p.link_experimental} />
+        ))}
 
       <div className="toggle-grid" style={{ marginBottom: 16 }}>
         {ABAS.map((a) => (
@@ -128,9 +142,9 @@ export default function SolicitacoesExperimentais() {
   );
 }
 
-function LinkPublico({ nome, pointId }: { nome: string; pointId: number }) {
+function LinkPublico({ nome, link: token }: { nome: string; link: string }) {
   const [copiado, setCopiado] = useState(false);
-  const link = `${window.location.origin}/experimental/${pointId}`;
+  const link = `${window.location.origin}/experimental/${token}`;
 
   async function copiar() {
     try {

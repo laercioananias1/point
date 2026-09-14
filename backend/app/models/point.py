@@ -22,6 +22,13 @@ class Point(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nome: Mapped[str] = mapped_column(String(120))
     endereco: Mapped[str] = mapped_column(String(255))
+    # Token opaco pro link público de aula experimental (pedido do usuário,
+    # 2026-09-14: "colocar o id visivel nao é uma boa... criar uma hash
+    # mas nao identificar o id na url") — a URL usa isso em vez do id
+    # sequencial, pra não dar pra enumerar todos os Points só trocando o
+    # número. Gerado uma vez na criação do Point (secrets.token_urlsafe),
+    # nunca muda.
+    link_experimental: Mapped[str] = mapped_column(String(16), unique=True, index=True)
 
     # Quadras e modalidades viraram entidades próprias (app/models/quadra.py,
     # app/models/modalidade.py) — antes eram só uma lista de nomes aqui.

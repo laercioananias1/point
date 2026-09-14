@@ -51,6 +51,9 @@ class PointOut(ORMModel):
     banners: list[str]
     logo: str | None
     cor_destaque: str | None
+    # Token do link público de aula experimental (pedido do usuário,
+    # 2026-09-14) — ver Point.link_experimental.
+    link_experimental: str
 
 
 class PointLogoOut(ORMModel):
@@ -148,6 +151,8 @@ class PointResumo(ORMModel):
     # é (convite, aula experimental) aplicam essa cor também, reforçando a
     # marca do Point desde antes do login.
     cor_destaque: str | None
+    # Token do link público de aula experimental — ver Point.link_experimental.
+    link_experimental: str
 
 
 class PointRankingOut(ORMModel):

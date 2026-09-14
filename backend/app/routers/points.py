@@ -1,3 +1,4 @@
+import secrets
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -96,7 +97,11 @@ def criar_point(
 ) -> Point:
     # formas_pagamento_habilitadas nasce vazio de propósito: só o dono do app
     # habilita, em uma ação separada (seção 4.1) — nunca no cadastro em si.
-    point = Point(**payload.model_dump(), formas_pagamento_habilitadas=[])
+    point = Point(
+        **payload.model_dump(),
+        formas_pagamento_habilitadas=[],
+        link_experimental=secrets.token_urlsafe(6),
+    )
     db.add(point)
     db.commit()
     db.refresh(point)

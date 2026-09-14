@@ -27,6 +27,10 @@ export interface PointResumo {
   // Cor de destaque do Point (pedido do usuário, 2026-09-14) — nula = usa
   // a cor padrão do sistema. Ver lib/cor.ts.
   cor_destaque: string | null;
+  // Token do link público de aula experimental (pedido do usuário,
+  // 2026-09-14: "nao identificar o id na url") — usa isso em vez do id
+  // sequencial na URL /experimental/....
+  link_experimental: string;
 }
 
 // Resolução do Point do usuário logado pra mostrar no cabeçalho (pedido
@@ -65,6 +69,7 @@ export interface Point {
   banners: string[];
   logo: string | null;
   cor_destaque: string | null;
+  link_experimental: string;
 }
 
 export interface Checkin {

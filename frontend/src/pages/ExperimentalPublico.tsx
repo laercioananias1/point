@@ -37,7 +37,9 @@ type Selecionado = { turmaId: number; data: string; rotulo: string } | null;
  * próprios dados — vira uma SolicitacaoExperimental pendente, que o
  * professor/admin aprova depois (ver SolicitacoesExperimentais.tsx). */
 export default function ExperimentalPublico() {
-  const { pointId } = useParams<{ pointId: string }>();
+  // Token opaco, não o id do Point (pedido do usuário, 2026-09-14: "nao
+  // identificar o id na url") — ver Point.link_experimental no backend.
+  const { link } = useParams<{ link: string }>();
   const [point, setPoint] = useState<PointResumo | null>(null);
   const [turmas, setTurmas] = useState<TurmaExperimentalAgenda[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -46,10 +48,10 @@ export default function ExperimentalPublico() {
   const [enviado, setEnviado] = useState(false);
 
   useEffect(() => {
-    if (!pointId) return;
+    if (!link) return;
     Promise.all([
-      api.get<PointResumo>(`/experimental/${pointId}/point`),
-      api.get<TurmaExperimentalAgenda[]>(`/experimental/${pointId}/agenda?dias=${DIAS_JANELA}`),
+      api.get<PointResumo>(`/experimental/${link}/point`),
+      api.get<TurmaExperimentalAgenda[]>(`/experimental/${link}/agenda?dias=${DIAS_JANELA}`),
     ])
       .then(([p, t]) => {
         setPoint(p);
@@ -59,7 +61,7 @@ export default function ExperimentalPublico() {
       .catch(() => setErroCarregar("Não foi possível carregar essa página — confira o link."))
       .finally(() => setCarregando(false));
     return () => aplicarCorDestaque(null);
-  }, [pointId]);
+  }, [link]);
 
   function aoConfirmar() {
     setEnviado(true);

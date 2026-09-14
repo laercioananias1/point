@@ -40,6 +40,17 @@ router = APIRouter(prefix="/experimental", tags=["experimental"])
 DIAS_AGENDA_PADRAO = 21
 
 
+def _resolver_point_por_link(db: Session, link: str) -> Point:
+    """Resolve o Point pelo token opaco do link público (pedido do
+    usuário, 2026-09-14: "colocar o id visivel nao é uma boa... criar uma
+    hash mas nao identificar o id na url") — nunca pelo id sequencial, pra
+    não dar pra enumerar todos os Points só trocando o número na URL."""
+    point = db.query(Point).filter(Point.link_experimental == link).first()
+    if point is None:
+        raise HTTPException(404, "Point não encontrado")
+    return point
+
+
 def _query_turmas_elegiveis(db: Session, point_id: int):
     return (
         db.query(Turma)
@@ -74,38 +85,33 @@ def _proximas_datas(db: Session, turma: Turma, dias: int) -> list[Disponibilidad
     return resultado
 
 
-@router.get("/{point_id}/point", response_model=PointResumo)
-def ver_point_experimental(point_id: int, db: Annotated[Session, Depends(get_db)]) -> Point:
+@router.get("/{link}/point", response_model=PointResumo)
+def ver_point_experimental(link: str, db: Annotated[Session, Depends(get_db)]) -> Point:
     """Pública, sem login — nome/logo/endereço do Point pra vitrine de aula
     experimental (pedido do usuário, 2026-09-14). Mesmo schema já usado em
     outras telas públicas/semi-públicas (ConviteOut), nada de dado de
     gestão exposto."""
-    point = db.get(Point, point_id)
-    if point is None:
-        raise HTTPException(404, "Point não encontrado")
-    return point
+    return _resolver_point_por_link(db, link)
 
 
-@router.get("/{point_id}/turmas", response_model=list[TurmaExperimentalOut])
-def listar_turmas_experimentais(point_id: int, db: Annotated[Session, Depends(get_db)]) -> list[Turma]:
+@router.get("/{link}/turmas", response_model=list[TurmaExperimentalOut])
+def listar_turmas_experimentais(link: str, db: Annotated[Session, Depends(get_db)]) -> list[Turma]:
     """Pública, sem login — vitrine das turmas que esse Point abriu pra
     aula experimental (pedido do usuário, 2026-09-14)."""
-    if db.get(Point, point_id) is None:
-        raise HTTPException(404, "Point não encontrado")
-    return _query_turmas_elegiveis(db, point_id).all()
+    point = _resolver_point_por_link(db, link)
+    return _query_turmas_elegiveis(db, point.id).all()
 
 
-@router.get("/{point_id}/agenda", response_model=list[TurmaExperimentalAgendaOut])
+@router.get("/{link}/agenda", response_model=list[TurmaExperimentalAgendaOut])
 def agenda_experimental(
-    point_id: int, db: Annotated[Session, Depends(get_db)], dias: int = DIAS_AGENDA_PADRAO
+    link: str, db: Annotated[Session, Depends(get_db)], dias: int = DIAS_AGENDA_PADRAO
 ) -> list[TurmaExperimentalAgendaOut]:
     """Mesma vitrine, já com as próximas datas e se tem vaga em cada uma —
     só ✓/✕ (pedido do usuário, mesmo espírito do modo "disponibilidade" do
     GraficoOcupacao): visitante sem login nunca vê número de ocupação
     real de ninguém."""
-    if db.get(Point, point_id) is None:
-        raise HTTPException(404, "Point não encontrado")
-    turmas = _query_turmas_elegiveis(db, point_id).all()
+    point = _resolver_point_por_link(db, link)
+    turmas = _query_turmas_elegiveis(db, point.id).all()
     dias = max(1, min(dias, 60))
     return [
         TurmaExperimentalAgendaOut(
