@@ -85,6 +85,21 @@ export function MiniCalendario({
     }
   }
 
+  // Dia selecionado navegável pra frente/trás (pedido do usuário,
+  // 2026-09-15: "coloca o dia navegavel para frente ou tras") — diferente
+  // de `navegar` acima, que pagina a grade inteira (semana/mês); isso aqui
+  // só troca o dia escolhido, um de cada vez. Se o novo dia sair da janela
+  // visível (ex.: virou a semana), desliza a referência junto — senão o
+  // dia escolhido ficaria selecionado mas escondido, fora da grade.
+  function mudarDiaSelecionado(direcao: 1 | -1) {
+    const novoDia = somarDias(diaSelecionado, direcao);
+    onSelecionarDia(novoDia);
+    const iso = toISODate(novoDia);
+    if (!diasGrade.some((d) => toISODate(d) === iso)) {
+      setReferencia(novoDia);
+    }
+  }
+
   const tituloMes = referencia
     .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
     .replace(/^\w/, (c) => c.toUpperCase());
@@ -162,9 +177,27 @@ export function MiniCalendario({
         })}
       </div>
 
-      <h3 className="mini-calendar-dia-titulo">
-        {diaSelecionado.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-      </h3>
+      <div className="mini-calendar-dia-nav">
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => mudarDiaSelecionado(-1)}
+          aria-label="Dia anterior"
+        >
+          ‹
+        </button>
+        <h3 className="mini-calendar-dia-titulo">
+          {diaSelecionado.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+        </h3>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => mudarDiaSelecionado(1)}
+          aria-label="Próximo dia"
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 }

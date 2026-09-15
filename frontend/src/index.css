@@ -1424,7 +1424,22 @@ button.danger:hover:not(:disabled) {
 .mini-calendar-dia-titulo {
   font-size: 14px;
   font-weight: 700;
+  margin: 0;
+}
+
+/* Navegação de um dia por vez (pedido do usuário, 2026-09-15: "coloca o
+   dia navegavel para frente ou tras") — diferente da paginação de
+   semana/mês em .mini-calendar-nav, acima. */
+.mini-calendar-dia-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   margin: 14px 0 8px;
+}
+
+.mini-calendar-dia-nav .secondary {
+  padding: 6px 12px;
 }
 
 .info-box {
@@ -1452,6 +1467,36 @@ button.danger:hover:not(:disabled) {
 .status-pill.status-good {
   background: var(--good-soft);
   color: var(--good);
+}
+
+/* Resumo do dia — % ocupação e qtde de alunos (pedido do usuário,
+   2026-09-15: "tambem mostra % ocupacao e qtde de alunos"). */
+.agenda-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 10px 0 16px;
+}
+
+.agenda-stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.agenda-stats-numero {
+  font-family: "Archivo", sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.agenda-stats-rotulo {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
 }
 
 /* Agenda em grade — quadra × horário (pedido do usuário, 2026-09-15:

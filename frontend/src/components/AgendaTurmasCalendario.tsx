@@ -345,6 +345,31 @@ export function AgendaTurmasCalendario({
         coresDoDia={coresDoDia}
       />
 
+      {ocorrenciasAtivas.length > 0 &&
+        (() => {
+          // Resumo do dia (pedido do usuário, 2026-09-15: "tambem mostra
+          // % ocupacao e qtde de alunos") — soma todas as aulas ativas do
+          // dia selecionado, mesma conta de vaga usada em cada bloco.
+          const capacidadeDia = ocorrenciasAtivas.reduce((soma, oc) => soma + oc.capacidade, 0);
+          const pessoasDia = ocorrenciasAtivas.reduce(
+            (soma, oc) => soma + pessoasDaOcorrencia(oc).length,
+            0,
+          );
+          const pctOcupacao = capacidadeDia > 0 ? Math.round((pessoasDia / capacidadeDia) * 100) : 0;
+          return (
+            <div className="agenda-stats-row">
+              <div className="agenda-stats-item">
+                <span className="agenda-stats-numero">{pctOcupacao}%</span>
+                <span className="agenda-stats-rotulo">Ocupação</span>
+              </div>
+              <div className="agenda-stats-item">
+                <span className="agenda-stats-numero">{pessoasDia}</span>
+                <span className="agenda-stats-rotulo">Alunos</span>
+              </div>
+            </div>
+          );
+        })()}
+
       {nomeFeriadoDoDia && (
         <div className="item-card" style={{ marginBottom: 8 }}>
           <div className="item-card-info">
