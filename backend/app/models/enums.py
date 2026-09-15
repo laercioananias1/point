@@ -93,6 +93,12 @@ class CheckinOrigem(str, enum.Enum):
     # WELLHUB continua reservado pra quando a mesma integração for feita
     # pro Wellhub (mesmo desenho, API diferente).
     WELLHUB = "wellhub"
+    # Visitante de aula experimental aprovada (pedido do usuário,
+    # 2026-09-15: "na realidade o experimental é quase um aluno, ele só
+    # não tem uma senha para entrar") — mesmo espírito do check-in
+    # TotalPass (sem matrícula por trás), mas com
+    # Checkin.solicitacao_experimental_id em vez de beneficiario_nome.
+    EXPERIMENTAL = "experimental"
 
 
 class CheckinStatus(str, enum.Enum):

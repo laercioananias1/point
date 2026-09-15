@@ -21,10 +21,20 @@ class PresencaMarcar(ORMModel):
     data: date
 
 
+class PresencaExperimentalMarcar(ORMModel):
+    """Presença de um visitante de aula experimental APROVADA (pedido do
+    usuário, 2026-09-15: "na realidade o experimental é quase um aluno,
+    ele só não tem uma senha para entrar") — a solicitação já sabe
+    turma/data, não precisa repetir aqui como em PresencaMarcar."""
+
+    solicitacao_experimental_id: int
+
+
 class CheckinOut(ORMModel):
     id: int
     turma_id: int
     matricula_id: int | None
+    solicitacao_experimental_id: int | None
     aluno_nome: str | None
     data_hora: datetime
     origem: CheckinOrigem

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Matricula, TurmaResumo } from "../../api/types";
+import type { Matricula, SolicitacaoExperimental, TurmaResumo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { AgendaTurmasCalendario } from "../../components/AgendaTurmasCalendario";
 
@@ -14,6 +14,9 @@ export default function AdminPointAgenda() {
   const { user } = useAuth();
   const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
+  const [solicitacoesExperimentais, setSolicitacoesExperimentais] = useState<
+    SolicitacaoExperimental[]
+  >([]);
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   // Filtros por professor e por quadra (pedido do usuário, 2026-08-26) —
@@ -24,14 +27,20 @@ export default function AdminPointAgenda() {
   const carregar = useCallback(async () => {
     setErro(null);
     try {
-      const [turmasRes, matriculasRes] = await Promise.all([
+      const [turmasRes, matriculasRes, experimentaisRes] = await Promise.all([
         user?.point_id
           ? api.get<TurmaResumo[]>(`/turmas?point_id=${user.point_id}`)
           : Promise.resolve([]),
         api.get<Matricula[]>("/matriculas"),
+        // Aprovadas contam como gente esperada na aula, igual matrícula
+        // (pedido do usuário, 2026-09-15: "quase um aluno, só não tem
+        // senha") — GET /experimental/solicitacoes já escopa o Point do
+        // admin logado.
+        api.get<SolicitacaoExperimental[]>("/experimental/solicitacoes?status=aprovada"),
       ]);
       setTurmas(turmasRes);
       setMatriculas(matriculasRes);
+      setSolicitacoesExperimentais(experimentaisRes);
       setPronto(true);
     } catch {
       setErro("Não foi possível carregar a agenda do Point. Tente novamente.");
@@ -93,7 +102,12 @@ export default function AdminPointAgenda() {
             </div>
           )}
 
-          <AgendaTurmasCalendario turmas={turmasFiltradas} matriculas={matriculas} onMudanca={carregar} />
+          <AgendaTurmasCalendario
+            turmas={turmasFiltradas}
+            matriculas={matriculas}
+            solicitacoesExperimentais={solicitacoesExperimentais}
+            onMudanca={carregar}
+          />
         </section>
       )}
     </Layout>

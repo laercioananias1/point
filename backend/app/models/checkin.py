@@ -29,6 +29,13 @@ class Checkin(TimestampMixin, Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     matricula_id: Mapped[int | None] = mapped_column(ForeignKey("matriculas.id"), nullable=True)
     turma_id: Mapped[int] = mapped_column(ForeignKey("turmas.id"))
+    # Presença de visitante de aula experimental aprovada (pedido do
+    # usuário, 2026-09-15: "quase um aluno, só não tem senha") — mesmo
+    # espírito de matricula_id, mas pra quem não tem matrícula nenhuma.
+    # Nunca preenchido junto com matricula_id.
+    solicitacao_experimental_id: Mapped[int | None] = mapped_column(
+        ForeignKey("solicitacoes_experimentais.id"), nullable=True
+    )
 
     data_hora: Mapped[datetime] = mapped_column(DateTime)
     origem: Mapped[CheckinOrigem] = mapped_column(Enum(CheckinOrigem))
@@ -49,10 +56,17 @@ class Checkin(TimestampMixin, Base):
 
     turma: Mapped["Turma"] = relationship()  # noqa: F821
     matricula: Mapped["Matricula | None"] = relationship()  # noqa: F821
+    solicitacao_experimental: Mapped["SolicitacaoExperimental | None"] = relationship()  # noqa: F821
 
     @property
     def aluno_nome(self) -> str | None:
         """Pra CheckinOut expor direto (pedido do usuário, 2026-08-26) —
         presença marcada tem matrícula (e aluno) de verdade; check-in
-        TotalPass não (usa beneficiario_nome, é gente sem cadastro aqui)."""
-        return self.matricula.aluno.nome if self.matricula else None
+        TotalPass não (usa beneficiario_nome, é gente sem cadastro aqui).
+        Visitante de aula experimental (pedido do usuário, 2026-09-15)
+        também não tem Aluno — o nome vem da própria solicitação."""
+        if self.matricula:
+            return self.matricula.aluno.nome
+        if self.solicitacao_experimental:
+            return self.solicitacao_experimental.nome
+        return None

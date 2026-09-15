@@ -76,9 +76,12 @@ export interface Checkin {
   id: number;
   turma_id: number;
   matricula_id: number | null;
+  // Presença de visitante de aula experimental aprovada (pedido do
+  // usuário, 2026-09-15: "quase um aluno, só não tem senha").
+  solicitacao_experimental_id: number | null;
   aluno_nome: string | null;
   data_hora: string;
-  origem: "presumido" | "totalpass" | "wellhub";
+  origem: "presumido" | "totalpass" | "wellhub" | "experimental";
   status: "confirmado" | "pendente_atribuicao";
   beneficiario_nome: string | null;
   beneficiario_documento: string | null;

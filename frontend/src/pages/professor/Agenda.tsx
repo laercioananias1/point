@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
-import type { Matricula, TurmaResumo } from "../../api/types";
+import type { Matricula, SolicitacaoExperimental, TurmaResumo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { AgendaTurmasCalendario } from "../../components/AgendaTurmasCalendario";
 
@@ -17,6 +17,9 @@ import { AgendaTurmasCalendario } from "../../components/AgendaTurmasCalendario"
 export default function ProfessorAgenda() {
   const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
+  const [solicitacoesExperimentais, setSolicitacoesExperimentais] = useState<
+    SolicitacaoExperimental[]
+  >([]);
   // "pronto" só liga uma vez, no primeiro carregamento — recarregar depois
   // (ex.: após remover uma aula) não pode desmontar o calendário, senão ele
   // perde a visão/posição que o professor tinha escolhido.
@@ -26,12 +29,18 @@ export default function ProfessorAgenda() {
   const carregar = useCallback(async () => {
     setErro(null);
     try {
-      const [turmasRes, matriculasRes] = await Promise.all([
+      const [turmasRes, matriculasRes, experimentaisRes] = await Promise.all([
         api.get<TurmaResumo[]>("/professores/me/turmas"),
         api.get<Matricula[]>("/professores/me/matriculas"),
+        // Aprovadas contam como gente esperada na aula, igual matrícula
+        // (pedido do usuário, 2026-09-15: "quase um aluno, só não tem
+        // senha") — GET /experimental/solicitacoes já escopa só as
+        // turmas do professor logado.
+        api.get<SolicitacaoExperimental[]>("/experimental/solicitacoes?status=aprovada"),
       ]);
       setTurmas(turmasRes);
       setMatriculas(matriculasRes);
+      setSolicitacoesExperimentais(experimentaisRes);
       setPronto(true);
     } catch {
       setErro("Não foi possível carregar sua agenda. Tente novamente.");
@@ -51,7 +60,12 @@ export default function ProfessorAgenda() {
 
       {pronto && (
         <section className="section">
-          <AgendaTurmasCalendario turmas={turmas} matriculas={matriculas} onMudanca={carregar} />
+          <AgendaTurmasCalendario
+            turmas={turmas}
+            matriculas={matriculas}
+            solicitacoesExperimentais={solicitacoesExperimentais}
+            onMudanca={carregar}
+          />
         </section>
       )}
     </Layout>

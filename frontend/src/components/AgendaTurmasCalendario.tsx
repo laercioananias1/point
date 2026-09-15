@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api/client";
-import type { Checkin, Feriado, Matricula, TurmaResumo } from "../api/types";
+import type { Checkin, Feriado, Matricula, SolicitacaoExperimental, TurmaResumo } from "../api/types";
 import { CategoriaBadge } from "./CategoriaBadge";
 import { Icon } from "./Layout";
 import { diaSemanaDeData, toISODate } from "./Calendar";
@@ -107,6 +107,13 @@ function ocorrenciasEmDatas(
   return mapa;
 }
 
+/** Uma pessoa esperada numa ocorrência — aluno matriculado ou visitante
+ * de aula experimental aprovada (pedido do usuário, 2026-09-15: "na
+ * realidade o experimental é quase um aluno, ele só não tem uma senha
+ * para entrar") — mesma lista/checklist de presença pros dois, só o
+ * `tipo` decide qual endpoint marcar/desmarcar chama. */
+type Pessoa = { id: number; nome: string; tipo: "matricula" | "experimental" };
+
 /** Essa matrícula tem mesmo aula nessa turma nessa data — espelha
  * app.services.aulas::matricula_tem_aula_em (pedido do usuário,
  * 2026-08-26: "mostrar também os alunos e um check pra marcar presença de
@@ -134,10 +141,14 @@ function matriculaTemAulaEm(m: Matricula, turmaId: number, iso: string, diaSeman
 export function AgendaTurmasCalendario({
   turmas,
   matriculas,
+  solicitacoesExperimentais = [],
   onMudanca,
 }: {
   turmas: TurmaResumo[];
   matriculas: Matricula[];
+  // Só as aprovadas contam como gente esperada na aula (pedido do
+  // usuário, 2026-09-15) — quem chama já filtra status=aprovada.
+  solicitacoesExperimentais?: SolicitacaoExperimental[];
   onMudanca: () => void;
 }) {
   const [removendo, setRemovendo] = useState<{ ocorrencia: OcorrenciaTurma; alunosCount: number } | null>(
@@ -306,9 +317,19 @@ export function AgendaTurmasCalendario({
 
             const iso = toISODate(oc.data);
             const diaSemana = diaSemanaDeData(oc.data);
-            const alunos = matriculas
-              .filter((m) => matriculaTemAulaEm(m, oc.turmaId, iso, diaSemana))
-              .map((m) => ({ matriculaId: m.id, nome: m.aluno.nome }));
+            // Visitante de aula experimental aprovada entra na mesma
+            // lista de "gente esperada" que aluno matriculado (pedido do
+            // usuário, 2026-09-15: "na realidade o experimental é quase
+            // um aluno, ele só não tem uma senha para entrar") — mesma
+            // conta de vaga que o backend usa (vagas_ocupadas_em).
+            const pessoas: Pessoa[] = [
+              ...matriculas
+                .filter((m) => matriculaTemAulaEm(m, oc.turmaId, iso, diaSemana))
+                .map((m): Pessoa => ({ id: m.id, nome: m.aluno.nome, tipo: "matricula" })),
+              ...solicitacoesExperimentais
+                .filter((s) => s.turma.id === oc.turmaId && s.data === iso)
+                .map((s): Pessoa => ({ id: s.id, nome: s.nome, tipo: "experimental" })),
+            ];
             return (
               <div
                 key={i}
@@ -336,12 +357,12 @@ export function AgendaTurmasCalendario({
                       className="item-card-subtitle"
                       style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
-                      <Icon name="users" /> {alunos.length}/{oc.capacidade} vaga(s)
+                      <Icon name="users" /> {pessoas.length}/{oc.capacidade} vaga(s)
                     </span>
                   </div>
                   <button
                     className="secondary"
-                    onClick={() => setRemovendo({ ocorrencia: oc, alunosCount: alunos.length })}
+                    onClick={() => setRemovendo({ ocorrencia: oc, alunosCount: pessoas.length })}
                   >
                     Cancelar aula
                   </button>
@@ -350,7 +371,7 @@ export function AgendaTurmasCalendario({
                 <PresencaLista
                   turmaId={oc.turmaId}
                   data={oc.data}
-                  alunos={alunos}
+                  pessoas={pessoas}
                   onCancelarAluno={(matriculaId, nome) =>
                     setCancelandoAluno({ matriculaId, nome, ocorrencia: oc })
                   }
@@ -372,22 +393,28 @@ export function AgendaTurmasCalendario({
 function PresencaLista({
   turmaId,
   data,
-  alunos,
+  pessoas,
   onCancelarAluno,
 }: {
   turmaId: number;
   data: Date;
-  alunos: { matriculaId: number; nome: string }[];
+  pessoas: Pessoa[];
   // Cancelar a aula de UM aluno específico, não a turma inteira (pedido
   // do usuário, 2026-09-01: "o professor pode cancelar uma aula de um
   // determinado aluno de última hora, precisa informar o motivo e opção
-  // de gerar crédito ou não").
+  // de gerar crédito ou não") — só existe pra aluno matriculado; visitante
+  // de aula experimental não tem esse fluxo (nem crédito nem matrícula
+  // pra cancelar).
   onCancelarAluno: (matriculaId: number, nome: string) => void;
 }) {
   const iso = toISODate(data);
-  const [presentes, setPresentes] = useState<Set<number>>(new Set());
+  // Chave combinada (pedido do usuário, 2026-09-15: visitante experimental
+  // "quase um aluno") — matricula_id e solicitacao_experimental_id são
+  // FKs de tabelas diferentes, podem colidir no mesmo número.
+  const chave = (p: Pessoa) => `${p.tipo}:${p.id}`;
+  const [presentes, setPresentes] = useState<Set<string>>(new Set());
   const [carregado, setCarregado] = useState(false);
-  const [alterando, setAlterando] = useState<number | null>(null);
+  const [alterando, setAlterando] = useState<string | null>(null);
 
   useEffect(() => {
     setCarregado(false);
@@ -395,32 +422,49 @@ function PresencaLista({
       .get<Checkin[]>(`/checkins/turma/${turmaId}?data=${iso}`)
       .then((checkins) => {
         setPresentes(
-          new Set(checkins.filter((c) => c.matricula_id !== null).map((c) => c.matricula_id as number)),
+          new Set(
+            checkins.flatMap((c) => {
+              if (c.matricula_id !== null) return [`matricula:${c.matricula_id}`];
+              if (c.solicitacao_experimental_id !== null) {
+                return [`experimental:${c.solicitacao_experimental_id}`];
+              }
+              return [];
+            }),
+          ),
         );
       })
       .finally(() => setCarregado(true));
   }, [turmaId, iso]);
 
-  async function alternar(matriculaId: number) {
-    setAlterando(matriculaId);
+  async function alternar(p: Pessoa) {
+    const k = chave(p);
+    setAlterando(k);
     try {
-      if (presentes.has(matriculaId)) {
-        await api.delete(`/checkins/presenca?turma_id=${turmaId}&matricula_id=${matriculaId}&data=${iso}`);
+      if (presentes.has(k)) {
+        if (p.tipo === "matricula") {
+          await api.delete(`/checkins/presenca?turma_id=${turmaId}&matricula_id=${p.id}&data=${iso}`);
+        } else {
+          await api.delete(`/checkins/presenca-experimental?solicitacao_experimental_id=${p.id}`);
+        }
         setPresentes((atual) => {
           const proximo = new Set(atual);
-          proximo.delete(matriculaId);
+          proximo.delete(k);
           return proximo;
         });
       } else {
-        await api.post("/checkins/presenca", { turma_id: turmaId, matricula_id: matriculaId, data: iso });
-        setPresentes((atual) => new Set(atual).add(matriculaId));
+        if (p.tipo === "matricula") {
+          await api.post("/checkins/presenca", { turma_id: turmaId, matricula_id: p.id, data: iso });
+        } else {
+          await api.post("/checkins/presenca-experimental", { solicitacao_experimental_id: p.id });
+        }
+        setPresentes((atual) => new Set(atual).add(k));
       }
     } finally {
       setAlterando(null);
     }
   }
 
-  if (alunos.length === 0) {
+  if (pessoas.length === 0) {
     return (
       <p className="empty-state" style={{ margin: 0, padding: 0 }}>
         Nenhum aluno matriculado nessa aula.
@@ -439,31 +483,36 @@ function PresencaLista({
       }}
     >
       <span className="item-card-subtitle" style={{ fontWeight: 600 }}>
-        Presença {carregado && `(${presentes.size}/${alunos.length})`}
+        Presença {carregado && `(${presentes.size}/${pessoas.length})`}
       </span>
-      {alunos.map((a) => (
+      {pessoas.map((p) => (
         <div
-          key={a.matriculaId}
+          key={chave(p)}
           style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
         >
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
             <input
               type="checkbox"
               style={{ width: "auto" }}
-              checked={presentes.has(a.matriculaId)}
-              disabled={!carregado || alterando === a.matriculaId}
-              onChange={() => alternar(a.matriculaId)}
+              checked={presentes.has(chave(p))}
+              disabled={!carregado || alterando === chave(p)}
+              onChange={() => alternar(p)}
             />
-            {a.nome}
+            {p.nome}
+            {p.tipo === "experimental" && (
+              <span className="status-pill status-good">Experimental</span>
+            )}
           </label>
-          <button
-            type="button"
-            className="link-btn"
-            style={{ padding: 0, fontSize: 12.5 }}
-            onClick={() => onCancelarAluno(a.matriculaId, a.nome)}
-          >
-            Cancelar aula dele
-          </button>
+          {p.tipo === "matricula" && (
+            <button
+              type="button"
+              className="link-btn"
+              style={{ padding: 0, fontSize: 12.5 }}
+              onClick={() => onCancelarAluno(p.id, p.nome)}
+            >
+              Cancelar aula dele
+            </button>
+          )}
         </div>
       ))}
     </div>

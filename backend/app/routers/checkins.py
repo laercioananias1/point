@@ -8,11 +8,17 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import require_role
 from app.models.checkin import Checkin
-from app.models.enums import CheckinOrigem, CheckinStatus, Role
+from app.models.enums import CheckinOrigem, CheckinStatus, Role, SolicitacaoExperimentalStatus
 from app.models.matricula import Matricula
+from app.models.solicitacao_experimental import SolicitacaoExperimental
 from app.models.turma import Turma
 from app.models.user import User
-from app.schemas.checkin import CheckinOut, PresencaMarcar, TotalPassCheckinCreate
+from app.schemas.checkin import (
+    CheckinOut,
+    PresencaExperimentalMarcar,
+    PresencaMarcar,
+    TotalPassCheckinCreate,
+)
 from app.services.aulas import matricula_tem_aula_em
 from app.services.totalpass import TotalPassError, validar_checkin
 
@@ -166,5 +172,63 @@ def desmarcar_presenca(
         Checkin.matricula_id == matricula_id,
         Checkin.turma_id == turma_id,
         func.date(Checkin.data_hora) == data,
+    ).delete(synchronize_session=False)
+    db.commit()
+
+
+@router.post("/presenca-experimental", response_model=CheckinOut, status_code=201)
+def marcar_presenca_experimental(
+    payload: PresencaExperimentalMarcar,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR, Role.ADMIN_POINT))],
+) -> Checkin:
+    """Presença de visitante de aula experimental aprovada (pedido do
+    usuário, 2026-09-15: "na realidade o experimental é quase um aluno,
+    ele só não tem uma senha para entrar") — mesmo espírito de
+    marcar_presenca, só que pra quem não tem Matricula por trás. A
+    solicitação já sabe turma/data, não precisa vir no payload."""
+    solicitacao = db.get(SolicitacaoExperimental, payload.solicitacao_experimental_id)
+    if solicitacao is None:
+        raise HTTPException(404, "Solicitação não encontrada")
+    if not _pode_gerenciar_turma(user, solicitacao.turma):
+        raise HTTPException(403, "Sem acesso a essa turma")
+    if solicitacao.status != SolicitacaoExperimentalStatus.APROVADA:
+        raise HTTPException(422, "Essa solicitação não está aprovada")
+
+    existente = (
+        db.query(Checkin)
+        .filter(Checkin.solicitacao_experimental_id == solicitacao.id)
+        .first()
+    )
+    if existente is not None:
+        return existente
+
+    checkin = Checkin(
+        turma_id=solicitacao.turma_id,
+        solicitacao_experimental_id=solicitacao.id,
+        data_hora=datetime.combine(solicitacao.data, time.fromisoformat(solicitacao.turma.horario)),
+        origem=CheckinOrigem.EXPERIMENTAL,
+        status=CheckinStatus.CONFIRMADO,
+    )
+    db.add(checkin)
+    db.commit()
+    db.refresh(checkin)
+    return checkin
+
+
+@router.delete("/presenca-experimental", status_code=204)
+def desmarcar_presenca_experimental(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR, Role.ADMIN_POINT))],
+    solicitacao_experimental_id: int,
+) -> None:
+    solicitacao = db.get(SolicitacaoExperimental, solicitacao_experimental_id)
+    if solicitacao is None:
+        raise HTTPException(404, "Solicitação não encontrada")
+    if not _pode_gerenciar_turma(user, solicitacao.turma):
+        raise HTTPException(403, "Sem acesso a essa turma")
+
+    db.query(Checkin).filter(
+        Checkin.solicitacao_experimental_id == solicitacao_experimental_id
     ).delete(synchronize_session=False)
     db.commit()
