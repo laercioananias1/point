@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api/client";
 import type { Checkin, Feriado, Matricula, SolicitacaoExperimental, TurmaResumo } from "../api/types";
 import { CategoriaBadge } from "./CategoriaBadge";
 import { Icon } from "./Layout";
-import { diaSemanaDeData, toISODate } from "./Calendar";
-import { MiniCalendario } from "./MiniCalendario";
+import { diaSemanaDeData, somarDias, toISODate } from "./Calendar";
 import { horarioFim } from "../lib/dias";
 import { buscarFeriadosPorPoint } from "../lib/feriados";
 
@@ -181,8 +180,6 @@ export function AgendaTurmasCalendario({
   // clicar).
   const [detalheAberto, setDetalheAberto] = useState<OcorrenciaTurma | null>(null);
   const [diaSelecionado, setDiaSelecionado] = useState(new Date());
-  const [diasVisiveis, setDiasVisiveis] = useState<Date[]>([]);
-  const onDiasVisiveisChange = useCallback((dias: Date[]) => setDiasVisiveis(dias), []);
 
   // Feriados (pedido do usuário, 2026-09-01) — busca própria, mesmo
   // padrão já usado por PresencaLista logo abaixo neste arquivo. Por
@@ -201,23 +198,13 @@ export function AgendaTurmasCalendario({
     () => feriadosNoMapa(turmas, feriadosPorPoint),
     [turmas, feriadosPorPoint],
   );
-  const ocorrenciasPorDia = useMemo(
-    () => ocorrenciasEmDatas(turmas, diasVisiveis, feriadosPorData),
-    [turmas, diasVisiveis, feriadosPorData],
-  );
-  // Cores das categorias com aula nesse dia (pedido do usuário, 2026-09-08:
-  // identificar visualmente a turma por nível na agenda) — só das
-  // ocorrências não canceladas, pra não conflitar com o marcador fixo
-  // "cancelada" (ícone x-circle) que já tem prioridade em marcadorDoDia.
-  const coresDoDia = useCallback(
-    (data: Date) => {
-      const ocs = ocorrenciasPorDia.get(toISODate(data)) ?? [];
-      const ativas = ocs.filter((oc) => !oc.cancelada);
-      return Array.from(new Set(ativas.map((oc) => oc.categoriaCor)));
-    },
-    [ocorrenciasPorDia],
-  );
-  const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
+  // Só o dia selecionado (pedido do usuário, 2026-09-15: "remove esse
+  // calendario de cima" — sem grade de mês/semana com pontinho, não tem
+  // mais janela "visível" nenhuma pra calcular; ocorrenciasEmDatas aceita
+  // uma lista de 1 dia só sem problema).
+  const ocorrenciasDoDia = ocorrenciasEmDatas(turmas, [diaSelecionado], feriadosPorData).get(
+    toISODate(diaSelecionado),
+  ) ?? [];
   const nomeFeriadoDoDia = feriadosPorData.get(toISODate(diaSelecionado)) ?? null;
 
   // Gente esperada numa ocorrência — matrícula ou visitante de aula
@@ -319,31 +306,7 @@ export function AgendaTurmasCalendario({
         />
       )}
 
-      <MiniCalendario
-        // Aqui é por turma, não por matrícula — não tem a distinção
-        // mensal/avulsa que a agenda do aluno tem (ver
-        // AgendaAlunoCalendario.tsx). "feriado" e "cancelada" têm
-        // prioridade sobre o pontinho genérico — são os casos fora do
-        // padrão, o que mais vale destacar no mês; ícone de feriado é
-        // separado do de cancelamento de propósito (pedido do usuário,
-        // 2026-09-01: "não vamos misturar com dia que tem aula
-        // cancelada").
-        marcadorDoDia={(data) => {
-          const iso = toISODate(data);
-          // Feriado é incondicional (pedido do usuário, 2026-09-01: "por
-          // que 25 dezembro não tem nenhum ícone?" — nenhuma turma tinha
-          // aula numa sexta, então o feriado não aparecia) — marca o dia
-          // mesmo sem nenhuma turma rodando nele.
-          if (feriadosPorData.has(iso)) return "feriado";
-          const ocs = ocorrenciasPorDia.get(iso);
-          if (!ocs || ocs.length === 0) return null;
-          return ocs.some((oc) => oc.cancelada) ? "cancelada" : "aula";
-        }}
-        diaSelecionado={diaSelecionado}
-        onSelecionarDia={setDiaSelecionado}
-        onDiasVisiveisChange={onDiasVisiveisChange}
-        coresDoDia={coresDoDia}
-      />
+      <AgendaDiaNav diaSelecionado={diaSelecionado} onSelecionarDia={setDiaSelecionado} />
 
       {ocorrenciasAtivas.length > 0 &&
         (() => {
@@ -629,6 +592,74 @@ function PresencaLista({
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+type Granularidade = "dia" | "semana" | "mes";
+
+/** Navegação do dia selecionado (pedido do usuário, 2026-09-15: "pode
+ * remover esse calendario de cima, deixa somente o debaixo com dia,
+ * semana e mes") — substitui a grade de mês/semana com pontinho
+ * (MiniCalendario, que continua servindo a agenda do aluno) por um
+ * stepper simples: escolhe o passo (dia/semana/mês) e as setinhas
+ * avançam/voltam por esse passo, sempre aterrissando num dia só — a
+ * grade abaixo (AgendaTurmasCalendario) sempre mostra um dia por vez. */
+function AgendaDiaNav({
+  diaSelecionado,
+  onSelecionarDia,
+}: {
+  diaSelecionado: Date;
+  onSelecionarDia: (data: Date) => void;
+}) {
+  const [passo, setPasso] = useState<Granularidade>("dia");
+
+  function navegar(direcao: 1 | -1) {
+    if (passo === "semana") {
+      onSelecionarDia(somarDias(diaSelecionado, direcao * 7));
+    } else if (passo === "mes") {
+      const d = new Date(diaSelecionado);
+      d.setMonth(d.getMonth() + direcao);
+      onSelecionarDia(d);
+    } else {
+      onSelecionarDia(somarDias(diaSelecionado, direcao));
+    }
+  }
+
+  const rotulo =
+    passo === "mes"
+      ? diaSelecionado
+          .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+          .replace(/^\w/, (c) => c.toUpperCase())
+      : diaSelecionado.toLocaleDateString("pt-BR", {
+          weekday: "long",
+          day: "2-digit",
+          month: "long",
+        });
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div className="toggle-grid" style={{ marginBottom: 10 }}>
+        {(["dia", "semana", "mes"] as const).map((g) => (
+          <button
+            key={g}
+            type="button"
+            className={passo === g ? "toggle-chip active" : "toggle-chip"}
+            onClick={() => setPasso(g)}
+          >
+            {g === "dia" ? "Dia" : g === "semana" ? "Semana" : "Mês"}
+          </button>
+        ))}
+      </div>
+      <div className="mini-calendar-dia-nav">
+        <button type="button" className="secondary" onClick={() => navegar(-1)} aria-label="Anterior">
+          ‹
+        </button>
+        <h3 className="mini-calendar-dia-titulo">{rotulo}</h3>
+        <button type="button" className="secondary" onClick={() => navegar(1)} aria-label="Próximo">
+          ›
+        </button>
+      </div>
     </div>
   );
 }
