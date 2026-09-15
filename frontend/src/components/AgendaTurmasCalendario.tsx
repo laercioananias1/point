@@ -107,6 +107,18 @@ function ocorrenciasEmDatas(
   return mapa;
 }
 
+function minutosDoHorario(horario: string): number {
+  const [h, m] = horario.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function hexParaRgba(hex: string, alpha: number): string {
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex);
+  if (!m) return hex;
+  const num = parseInt(m[1], 16);
+  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+}
+
 /** Uma pessoa esperada numa ocorrência — aluno matriculado ou visitante
  * de aula experimental aprovada (pedido do usuário, 2026-09-15: "na
  * realidade o experimental é quase um aluno, ele só não tem uma senha
@@ -163,6 +175,11 @@ export function AgendaTurmasCalendario({
     nome: string;
     ocorrencia: OcorrenciaTurma;
   } | null>(null);
+  // Detalhe de UMA ocorrência (pedido do usuário, 2026-09-15: grade por
+  // quadra/horário no lugar da lista empilhada — não sobra espaço pra
+  // mostrar presença/cancelar dentro do bloco, então abre num modal ao
+  // clicar).
+  const [detalheAberto, setDetalheAberto] = useState<OcorrenciaTurma | null>(null);
   const [diaSelecionado, setDiaSelecionado] = useState(new Date());
   const [diasVisiveis, setDiasVisiveis] = useState<Date[]>([]);
   const onDiasVisiveisChange = useCallback((dias: Date[]) => setDiasVisiveis(dias), []);
@@ -203,6 +220,58 @@ export function AgendaTurmasCalendario({
   const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
   const nomeFeriadoDoDia = feriadosPorData.get(toISODate(diaSelecionado)) ?? null;
 
+  // Gente esperada numa ocorrência — matrícula ou visitante de aula
+  // experimental aprovada (pedido do usuário, 2026-09-15: "quase um
+  // aluno, só não tem senha") — extraído em função porque agora precisa
+  // tanto pro rótulo do bloco na grade quanto pro modal de detalhe.
+  function pessoasDaOcorrencia(oc: OcorrenciaTurma): Pessoa[] {
+    const iso = toISODate(oc.data);
+    const diaSemana = diaSemanaDeData(oc.data);
+    return [
+      ...matriculas
+        .filter((m) => matriculaTemAulaEm(m, oc.turmaId, iso, diaSemana))
+        .map((m): Pessoa => ({ id: m.id, nome: m.aluno.nome, tipo: "matricula" })),
+      ...solicitacoesExperimentais
+        .filter((s) => s.turma.id === oc.turmaId && s.data === iso)
+        .map((s): Pessoa => ({ id: s.id, nome: s.nome, tipo: "experimental" })),
+    ];
+  }
+
+  const ocorrenciasAtivas = ocorrenciasDoDia.filter((oc) => !oc.cancelada);
+  const ocorrenciasCanceladas = ocorrenciasDoDia.filter((oc) => oc.cancelada);
+
+  // Colunas por quadra (pedido do usuário, 2026-09-15: "da para ficar
+  // parecida com esse exemplo de agenda" — grade quadra × horário, não
+  // lista empilhada) — vem de todas as turmas, não só as do dia
+  // selecionado, pra não "pular" coluna ao trocar de dia.
+  const quadras = Array.from(new Set(turmas.map((t) => t.quadra.nome))).sort();
+
+  const horaInicioGrade = ocorrenciasAtivas.length
+    ? Math.max(
+        0,
+        Math.min(...ocorrenciasAtivas.map((oc) => Math.floor(minutosDoHorario(oc.horario) / 60))) - 1,
+      )
+    : 7;
+  const horaFimGrade = ocorrenciasAtivas.length
+    ? Math.min(
+        24,
+        Math.max(
+          ...ocorrenciasAtivas.map((oc) =>
+            Math.ceil((minutosDoHorario(oc.horario) + oc.duracaoMinutos) / 60),
+          ),
+        ) + 1,
+      )
+    : 21;
+  const horasDaGrade = Array.from(
+    { length: Math.max(1, horaFimGrade - horaInicioGrade) },
+    (_, i) => horaInicioGrade + i,
+  );
+  const alturaGrade = (horaFimGrade - horaInicioGrade) * 60;
+
+  const agora = new Date();
+  const ehHoje = toISODate(diaSelecionado) === toISODate(agora);
+  const offsetAgora = agora.getHours() * 60 + agora.getMinutes() - horaInicioGrade * 60;
+
   if (turmas.length === 0) {
     return <p className="empty-state">Nenhuma turma ainda.</p>;
   }
@@ -230,6 +299,22 @@ export function AgendaTurmasCalendario({
           onCancelado={() => {
             setCancelandoAluno(null);
             onMudanca();
+          }}
+        />
+      )}
+
+      {detalheAberto && (
+        <DetalheOcorrenciaModal
+          ocorrencia={detalheAberto}
+          pessoas={pessoasDaOcorrencia(detalheAberto)}
+          onFechar={() => setDetalheAberto(null)}
+          onCancelarTurma={(alunosCount) => {
+            setRemovendo({ ocorrencia: detalheAberto, alunosCount });
+            setDetalheAberto(null);
+          }}
+          onCancelarAluno={(matriculaId, nome) => {
+            setCancelandoAluno({ matriculaId, nome, ocorrencia: detalheAberto });
+            setDetalheAberto(null);
           }}
         />
       )}
@@ -276,10 +361,78 @@ export function AgendaTurmasCalendario({
       {ocorrenciasDoDia.length === 0 ? (
         !nomeFeriadoDoDia && <p className="empty-state">Nenhuma aula nesse dia.</p>
       ) : (
-        <div className="card-list">
-          {ocorrenciasDoDia.map((oc, i) => {
-            if (oc.cancelada) {
-              return (
+        <>
+          {ocorrenciasAtivas.length > 0 && (
+            <div className="agenda-timeline">
+              <div className="agenda-timeline-header">
+                <div className="agenda-timeline-corner" />
+                {quadras.map((q) => (
+                  <div key={q} className="agenda-timeline-quadra-pill">
+                    {q}
+                  </div>
+                ))}
+              </div>
+              <div className="agenda-timeline-body" style={{ height: alturaGrade }}>
+                <div className="agenda-timeline-horas">
+                  {horasDaGrade.map((h) => (
+                    <span
+                      key={h}
+                      className="agenda-timeline-hora-label"
+                      style={{ top: (h - horaInicioGrade) * 60 }}
+                    >
+                      {h}h
+                    </span>
+                  ))}
+                </div>
+                {horasDaGrade.map((h) => (
+                  <div
+                    key={h}
+                    className="agenda-timeline-linha"
+                    style={{ top: (h - horaInicioGrade) * 60 }}
+                  />
+                ))}
+                {ehHoje && offsetAgora >= 0 && offsetAgora <= alturaGrade && (
+                  <div className="agenda-timeline-agora" style={{ top: offsetAgora }} />
+                )}
+                <div className="agenda-timeline-colunas">
+                  {quadras.map((q) => (
+                    <div key={q} className="agenda-timeline-coluna">
+                      {ocorrenciasAtivas
+                        .filter((oc) => oc.quadraNome === q)
+                        .map((oc) => {
+                          const pessoas = pessoasDaOcorrencia(oc);
+                          const top = minutosDoHorario(oc.horario) - horaInicioGrade * 60;
+                          return (
+                            <button
+                              key={oc.turmaId}
+                              type="button"
+                              className="agenda-timeline-bloco"
+                              style={{
+                                top,
+                                height: Math.max(oc.duracaoMinutos, 34),
+                                background: hexParaRgba(oc.categoriaCor, 0.2),
+                                borderColor: oc.categoriaCor,
+                                color: oc.categoriaCor,
+                              }}
+                              onClick={() => setDetalheAberto(oc)}
+                            >
+                              <span className="agenda-timeline-bloco-titulo">{oc.categoriaNome}</span>
+                              <span className="agenda-timeline-bloco-sub">
+                                {pessoas.length}/{oc.capacidade}
+                              </span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {ocorrenciasCanceladas.length > 0 && (
+            <div className="card-list" style={{ marginTop: ocorrenciasAtivas.length > 0 ? 16 : 0 }}>
+              {ocorrenciasCanceladas.map((oc, i) => (
                 <div
                   key={i}
                   className="item-card"
@@ -312,74 +465,10 @@ export function AgendaTurmasCalendario({
                     </div>
                   )}
                 </div>
-              );
-            }
-
-            const iso = toISODate(oc.data);
-            const diaSemana = diaSemanaDeData(oc.data);
-            // Visitante de aula experimental aprovada entra na mesma
-            // lista de "gente esperada" que aluno matriculado (pedido do
-            // usuário, 2026-09-15: "na realidade o experimental é quase
-            // um aluno, ele só não tem uma senha para entrar") — mesma
-            // conta de vaga que o backend usa (vagas_ocupadas_em).
-            const pessoas: Pessoa[] = [
-              ...matriculas
-                .filter((m) => matriculaTemAulaEm(m, oc.turmaId, iso, diaSemana))
-                .map((m): Pessoa => ({ id: m.id, nome: m.aluno.nome, tipo: "matricula" })),
-              ...solicitacoesExperimentais
-                .filter((s) => s.turma.id === oc.turmaId && s.data === iso)
-                .map((s): Pessoa => ({ id: s.id, nome: s.nome, tipo: "experimental" })),
-            ];
-            return (
-              <div
-                key={i}
-                className="item-card"
-                style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                  <div className="item-card-info">
-                    <span className="item-card-title">
-                      {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}
-                    </span>
-                    <span className="item-card-subtitle">
-                      <CategoriaBadge nome={oc.categoriaNome} cor={oc.categoriaCor} />
-                    </span>
-                    <span className="item-card-subtitle">
-                      {oc.modalidadeNome} · com {oc.professorNome}
-                    </span>
-                    <span
-                      className="item-card-subtitle"
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      <Icon name="pin" /> {oc.pointNome} · {oc.quadraNome}
-                    </span>
-                    <span
-                      className="item-card-subtitle"
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      <Icon name="users" /> {pessoas.length}/{oc.capacidade} vaga(s)
-                    </span>
-                  </div>
-                  <button
-                    className="secondary"
-                    onClick={() => setRemovendo({ ocorrencia: oc, alunosCount: pessoas.length })}
-                  >
-                    Cancelar aula
-                  </button>
-                </div>
-
-                <PresencaLista
-                  turmaId={oc.turmaId}
-                  data={oc.data}
-                  pessoas={pessoas}
-                  onCancelarAluno={(matriculaId, nome) =>
-                    setCancelandoAluno({ matriculaId, nome, ocorrencia: oc })
-                  }
-                />
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </>
   );
@@ -515,6 +604,72 @@ function PresencaLista({
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Detalhe de uma ocorrência ao clicar no bloco da grade (pedido do
+ * usuário, 2026-09-15: grade por quadra/horário, "não precisa ter o
+ * horário dentro, só coloca a qtde" — o bloco em si fica pequeno demais
+ * pra presença/cancelamento; isso tudo migrou pra aqui). */
+function DetalheOcorrenciaModal({
+  ocorrencia,
+  pessoas,
+  onFechar,
+  onCancelarTurma,
+  onCancelarAluno,
+}: {
+  ocorrencia: OcorrenciaTurma;
+  pessoas: Pessoa[];
+  onFechar: () => void;
+  onCancelarTurma: (alunosCount: number) => void;
+  onCancelarAluno: (matriculaId: number, nome: string) => void;
+}) {
+  useEffect(() => {
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") onFechar();
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [onFechar]);
+
+  return (
+    <div className="modal-backdrop" onClick={onFechar}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="item-card-info">
+          <span className="item-card-title">
+            {ocorrencia.horario} – {horarioFim(ocorrencia.horario, ocorrencia.duracaoMinutos)}
+          </span>
+          <span className="item-card-subtitle">
+            <CategoriaBadge nome={ocorrencia.categoriaNome} cor={ocorrencia.categoriaCor} />
+          </span>
+          <span className="item-card-subtitle">
+            {ocorrencia.modalidadeNome} · com {ocorrencia.professorNome}
+          </span>
+          <span className="item-card-subtitle" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="pin" /> {ocorrencia.pointNome} · {ocorrencia.quadraNome}
+          </span>
+          <span className="item-card-subtitle" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="users" /> {pessoas.length}/{ocorrencia.capacidade} vaga(s)
+          </span>
+        </div>
+
+        <PresencaLista
+          turmaId={ocorrencia.turmaId}
+          data={ocorrencia.data}
+          pessoas={pessoas}
+          onCancelarAluno={onCancelarAluno}
+        />
+
+        <div className="item-card-actions" style={{ marginTop: 8 }}>
+          <button className="secondary" onClick={() => onCancelarTurma(pessoas.length)}>
+            Cancelar aula
+          </button>
+          <button className="secondary" onClick={onFechar}>
+            Fechar
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
