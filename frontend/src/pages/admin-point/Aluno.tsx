@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Assinatura, Convite, Matricula } from "../../api/types";
+import { AbasPilula } from "../../components/AbasPilula";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { BotaoFlutuante } from "../../components/BotaoFlutuante";
@@ -17,6 +18,8 @@ import { formatarReais, rotuloPagamentoMeio } from "../../lib/formato";
  * quando a integração de verdade existir; os endpoints de pagamento
  * (POST /pagamentos, PATCH .../confirmar|estornar) continuam no backend,
  * só não tem mais nenhuma tela usando. */
+type Aba = "alunos" | "convites" | "assinaturas" | "mensalidades";
+
 export default function AdminPointAluno() {
   // Confirmação de convite enviado (pedido do usuário, 2026-08-26: "quando
   // clicar e efetuar o convite volta para tela anterior") — a tela de
@@ -26,6 +29,8 @@ export default function AdminPointAluno() {
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
   const [convites, setConvites] = useState<Convite[]>([]);
+  // Recém-convidado abre direto em "Convites", onde o convite novo aparece.
+  const [aba, setAba] = useState<Aba>(convidado ? "convites" : "alunos");
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [processando, setProcessando] = useState<Set<string>>(new Set());
@@ -86,7 +91,7 @@ export default function AdminPointAluno() {
 
   return (
     <Layout>
-      <h1>Alunos {pronto && `(${alunosUnicos.length})`}</h1>
+      <h1>Alunos</h1>
 
       {convidado && <p className="form-success">Convite enviado pra {convidado}.</p>}
       {erro && <p className="form-error">{erro}</p>}
@@ -94,95 +99,126 @@ export default function AdminPointAluno() {
 
       {pronto && (
         <>
-          <section className="section">
-            {alunosUnicos.length === 0 ? (
-              <p className="empty-state">Nenhum aluno matriculado ainda — convide um aluno.</p>
-            ) : (
-              <div className="card-list">
-                {alunosUnicos.map((a) => (
-                  <Link
-                    to={`/admin-point/aluno/${a.id}/agenda`}
-                    className="item-card item-card-clickable"
-                    key={a.id}
-                  >
-                    <div className="item-card-info">
-                      {/* Só o nome aqui (pedido do usuário, 2026-09-01:
-                          "deixe somente o nome nessa lista, os detalhes
-                          abre na outra página") — telefone/e-mail
-                          passaram pra Agenda do aluno. */}
-                      <span className="item-card-title">{a.nome}</span>
-                    </div>
-                    <span aria-hidden="true">
-                      <Icon name="chevron-right" />
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
+          <AbasPilula
+            ativa={aba}
+            onMudar={setAba}
+            abas={[
+              { valor: "alunos", rotulo: "Alunos", icone: "users", contagem: alunosUnicos.length },
+              {
+                valor: "convites",
+                rotulo: "Convites pendentes",
+                icone: "mail",
+                contagem: convitesPendentes.length,
+              },
+              {
+                valor: "assinaturas",
+                rotulo: "Assinaturas ativas",
+                icone: "repeat",
+                contagem: assinaturasAtivas.length,
+              },
+              {
+                valor: "mensalidades",
+                rotulo: "Mensalidades em aberto",
+                icone: "dollar",
+                contagem: mensalidadesEmAberto.length,
+              },
+            ]}
+          />
+
+          {aba === "alunos" && (
+            <section className="section">
+              {alunosUnicos.length === 0 ? (
+                <p className="empty-state">Nenhum aluno matriculado ainda — convide um aluno.</p>
+              ) : (
+                <div className="card-list">
+                  {alunosUnicos.map((a) => (
+                    <Link
+                      to={`/admin-point/aluno/${a.id}/agenda`}
+                      className="item-card item-card-clickable"
+                      key={a.id}
+                    >
+                      <div className="item-card-info">
+                        {/* Só o nome aqui (pedido do usuário, 2026-09-01:
+                            "deixe somente o nome nessa lista, os detalhes
+                            abre na outra página") — telefone/e-mail
+                            passaram pra Agenda do aluno. */}
+                        <span className="item-card-title">{a.nome}</span>
+                      </div>
+                      <span aria-hidden="true">
+                        <Icon name="chevron-right" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           <BotaoFlutuante to="/admin-point/aluno/convidar" rotulo="Convidar aluno" />
 
-          <section className="section">
-            <h2>Convites pendentes ({convitesPendentes.length})</h2>
-            {convitesPendentes.length === 0 ? (
-              <p className="empty-state">Nenhum convite aguardando aceite.</p>
-            ) : (
-              <div className="card-list">
-                {convitesPendentes.map((c) => (
-                  <ConvitePendenteRow key={c.id} convite={c} onMudanca={carregar} />
-                ))}
-              </div>
-            )}
-          </section>
+          {aba === "convites" && (
+            <section className="section">
+              {convitesPendentes.length === 0 ? (
+                <p className="empty-state">Nenhum convite aguardando aceite.</p>
+              ) : (
+                <div className="card-list">
+                  {convitesPendentes.map((c) => (
+                    <ConvitePendenteRow key={c.id} convite={c} onMudanca={carregar} />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
-          <section className="section">
-            <h2>Assinaturas ativas ({assinaturasAtivas.length})</h2>
-            {assinaturasAtivas.length === 0 ? (
-              <p className="empty-state">Nenhuma assinatura ativa ainda.</p>
-            ) : (
-              <div className="card-list">
-                {assinaturasAtivas.map((a) => (
-                  <AssinaturaAtivaRow key={a.id} assinatura={a} onMudanca={carregar} />
-                ))}
-              </div>
-            )}
-          </section>
+          {aba === "assinaturas" && (
+            <section className="section">
+              {assinaturasAtivas.length === 0 ? (
+                <p className="empty-state">Nenhuma assinatura ativa ainda.</p>
+              ) : (
+                <div className="card-list">
+                  {assinaturasAtivas.map((a) => (
+                    <AssinaturaAtivaRow key={a.id} assinatura={a} onMudanca={carregar} />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
-          <section className="section">
-            <h2>Mensalidades em aberto ({mensalidadesEmAberto.length})</h2>
-            {mensalidadesEmAberto.length === 0 ? (
-              <p className="empty-state">Ninguém com mensalidade em aberto no mês corrente.</p>
-            ) : (
-              <div className="card-list">
-                {mensalidadesEmAberto.map((m) => (
-                  <div className="item-card" key={m.id}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">
-                        {m.aluno.nome} · {formatarReais(m.valor_mensalidade ?? 0)}
-                        {m.inadimplente && " "}
-                        {m.inadimplente && <StatusPill status="em_atraso" />}
-                      </span>
-                      <span className="item-card-subtitle">{m.turma.modalidade.nome}</span>
+          {aba === "mensalidades" && (
+            <section className="section">
+              {mensalidadesEmAberto.length === 0 ? (
+                <p className="empty-state">Ninguém com mensalidade em aberto no mês corrente.</p>
+              ) : (
+                <div className="card-list">
+                  {mensalidadesEmAberto.map((m) => (
+                    <div className="item-card" key={m.id}>
+                      <div className="item-card-info">
+                        <span className="item-card-title">
+                          {m.aluno.nome} · {formatarReais(m.valor_mensalidade ?? 0)}
+                          {m.inadimplente && " "}
+                          {m.inadimplente && <StatusPill status="em_atraso" />}
+                        </span>
+                        <span className="item-card-subtitle">{m.turma.modalidade.nome}</span>
+                      </div>
+                      <div className="item-card-actions">
+                        <button
+                          className="secondary"
+                          disabled={processando.has(`lembrete-${m.id}`) || lembretesEnviados.has(m.id)}
+                          onClick={() => enviarLembrete(m.id)}
+                        >
+                          {lembretesEnviados.has(m.id)
+                            ? "Lembrete enviado"
+                            : processando.has(`lembrete-${m.id}`)
+                              ? "Enviando..."
+                              : "Lembrar por e-mail"}
+                        </button>
+                      </div>
                     </div>
-                    <div className="item-card-actions">
-                      <button
-                        className="secondary"
-                        disabled={processando.has(`lembrete-${m.id}`) || lembretesEnviados.has(m.id)}
-                        onClick={() => enviarLembrete(m.id)}
-                      >
-                        {lembretesEnviados.has(m.id)
-                          ? "Lembrete enviado"
-                          : processando.has(`lembrete-${m.id}`)
-                            ? "Enviando..."
-                            : "Lembrar por e-mail"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* "Pagamentos pendentes" (conferência manual de Pix) saiu daqui
               (pedido do usuário, 2026-08-30: "o pagamento pix vai ser

@@ -38,3 +38,12 @@ export function salvarTema(tema: Tema) {
   }
   aplicarTema(tema);
 }
+
+/** Tema que está valendo na tela agora — resolve "Sistema" pelo SO. Usado
+ * pelo botão sol/lua do cabeçalho pra saber pra qual lado alternar. */
+export function temaEfetivo(): "claro" | "escuro" {
+  const forcado = document.documentElement.getAttribute("data-theme");
+  if (forcado === "dark") return "escuro";
+  if (forcado === "light") return "claro";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";
+}

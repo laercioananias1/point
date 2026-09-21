@@ -4,6 +4,7 @@ import { api, urlArquivo } from "../api/client";
 import type { PointLogo } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { aplicarCorDestaque } from "../lib/cor";
+import { BotaoTema } from "./BotaoTema";
 import { LogoMark } from "./LogoMark";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -116,6 +117,7 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
     {
       titulo: "Financeiro",
       itens: [
+        { to: "/admin-point/cobrancas", label: "Cobranças", icon: "dollar" },
         { to: "/admin-point/faturamento", label: "Faturamento", icon: "chart" },
         { to: "/admin-point/configuracoes/planos", label: "Planos", icon: "ticket" },
       ],
@@ -207,7 +209,12 @@ export type IconName =
   | "repeat"
   | "x-circle"
   | "flag"
-  | "bell";
+  | "bell"
+  | "edit"
+  | "trash"
+  | "message"
+  | "check"
+  | "dollar";
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -411,6 +418,29 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
         <path d="M13.73 21a2 2 0 0 1-3.46 0" />
       </>
     ),
+    // Ações por linha na tela de Cobranças (pedido do usuário, 2026-09-20).
+    edit: (
+      <>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </>
+    ),
+    trash: (
+      <>
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6M14 11v6" />
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      </>
+    ),
+    message: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />,
+    check: <polyline points="20 6 9 17 4 12" />,
+    dollar: (
+      <>
+        <path d="M12 1v22" />
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </>
+    ),
   };
   return (
     <svg
@@ -535,8 +565,9 @@ export function Layout({ children }: { children: ReactNode }) {
               <LogoMark size={34} />
             )}
             <span className="app-sidebar-marca-texto">
-              <span className="app-sidebar-nome">{pointLogo?.nome ?? "OPoint"}</span>
-              <span className="app-sidebar-papel">{rotuloArea}</span>
+              <span className="app-sidebar-nome" title={pointLogo?.nome ?? "OPoint"}>
+                {pointLogo?.nome ?? "OPoint"}
+              </span>
             </span>
           </div>
           <nav className="app-sidebar-nav">
@@ -625,6 +656,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 <span className="app-user-role">{rotuloArea}</span>
                 <span className="app-user-name">{user.nome}</span>
               </span>
+              <BotaoTema />
               {area && (
                 <button
                   type="button"

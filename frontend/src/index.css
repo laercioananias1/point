@@ -16,6 +16,17 @@
   --navy-text: #eaf1f4;
   --navy-text-muted: #9fb9c4;
 
+  /* Menu lateral (pedido do usuário, 2026-09-20: "em modo claro deixa a
+     lateral clara também") — claro no tema claro, o azul-marinho de sempre
+     no escuro (redefinidos nos blocos dark abaixo). */
+  --side-bg: #ffffff;
+  --side-line: #e4d9c2;
+  --side-text: #12242e;
+  --side-muted: #5b6b72;
+  --side-hover: rgba(14, 58, 83, 0.07);
+  --side-sair: rgba(14, 58, 83, 0.06);
+  --side-sair-hover: rgba(14, 58, 83, 0.12);
+
   /* Brand accent (interactive) */
   --accent: #0e9594;
   --accent-strong: #077372;
@@ -63,6 +74,14 @@
     --navy-text: #eaf1f4;
     --navy-text-muted: #9fb9c4;
 
+    --side-bg: #081c29;
+    --side-line: #1c3a4d;
+    --side-text: #ffffff;
+    --side-muted: #9fb9c4;
+    --side-hover: rgba(255, 255, 255, 0.07);
+    --side-sair: rgba(255, 255, 255, 0.06);
+    --side-sair-hover: rgba(255, 255, 255, 0.12);
+
     --accent: #17a8a0;
     --accent-strong: #5eead4;
     --accent-soft: #123c3b;
@@ -84,6 +103,14 @@
 }
 
 :root[data-theme="dark"] {
+  --side-bg: #081c29;
+  --side-line: #1c3a4d;
+  --side-text: #ffffff;
+  --side-muted: #9fb9c4;
+  --side-hover: rgba(255, 255, 255, 0.07);
+  --side-sair: rgba(255, 255, 255, 0.06);
+  --side-sair-hover: rgba(255, 255, 255, 0.12);
+
   --bg: #0a1a22;
   --surface: #13293a;
   --surface-sunk: #0e2029;
@@ -2448,8 +2475,9 @@ button.danger:hover:not(:disabled) {
     flex-direction: column;
     gap: 8px;
     padding: 18px 12px 14px;
-    background: var(--navy);
-    border-right: 1px solid var(--navy-line);
+    background: var(--side-bg);
+    border-right: 1px solid var(--side-line);
+    box-shadow: var(--shadow-card);
   }
 
   .app-shell-lateral .app-sticky-top,
@@ -2476,6 +2504,12 @@ button.danger:hover:not(:disabled) {
   .app-shell-lateral .app-user-role {
     color: var(--ink-muted);
   }
+
+  /* Nome do usuário no fim da barra, depois dos botões (pedido do
+     usuário, 2026-09-20). */
+  .app-shell-lateral .app-user-text {
+    order: 1;
+  }
 }
 
 .app-sidebar-marca {
@@ -2483,7 +2517,7 @@ button.danger:hover:not(:disabled) {
   align-items: center;
   gap: 10px;
   padding: 4px 8px 14px;
-  border-bottom: 1px solid var(--navy-line);
+  border-bottom: 1px solid var(--side-line);
 }
 
 .app-sidebar-logo {
@@ -2505,15 +2539,17 @@ button.danger:hover:not(:disabled) {
   font-family: "Archivo", sans-serif;
   font-weight: 800;
   font-size: 16px;
-  color: #fff;
+  color: var(--side-text);
+  /* Nome comprido quebra em até 2 linhas (pedido do usuário, 2026-09-20:
+     "o que dá pra fazer quando o nome da arena não cabe na lateral?") —
+     só passando disso vira reticências; o nome inteiro fica no tooltip. */
+  line-height: 1.15;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.app-sidebar-papel {
-  font-size: 11.5px;
-  color: var(--navy-text-muted);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 .app-sidebar-nav {
@@ -2537,7 +2573,7 @@ button.danger:hover:not(:disabled) {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--navy-text-muted);
+  color: var(--side-muted);
   opacity: 0.8;
 }
 
@@ -2549,14 +2585,14 @@ button.danger:hover:not(:disabled) {
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--navy-text-muted);
+  color: var(--side-muted);
   text-decoration: none;
   transition: background-color 120ms ease, color 120ms ease;
 }
 
 .app-sidebar-link:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.07);
+  color: var(--side-text);
+  background: var(--side-hover);
 }
 
 .app-sidebar-link.active {
@@ -2571,14 +2607,14 @@ button.danger:hover:not(:disabled) {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--navy-text);
+  background: var(--side-sair);
+  color: var(--side-text);
   font-size: 14px;
   font-weight: 600;
 }
 
 .app-sidebar-sair:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--side-sair-hover);
 }
 
 /* Gaveta do menu lateral em tela estreita, aberta por "Ver mais" (pedido
@@ -2603,8 +2639,8 @@ button.danger:hover:not(:disabled) {
     flex-direction: column;
     gap: 8px;
     padding: 18px 12px 14px;
-    background: var(--navy);
-    border-right: 1px solid var(--navy-line);
+    background: var(--side-bg);
+    border-right: 1px solid var(--side-line);
     box-shadow: var(--shadow-pop);
   }
 }
@@ -2637,4 +2673,236 @@ button.app-tab {
 
 button.app-tab:hover:not(:disabled) {
   background: transparent;
+}
+
+/* Tela de Cobranças (pedido do usuário, 2026-09-20) — lista financeira por
+   aluno, resumo Em aberto/Atrasado, filtros e ações por linha. */
+.cobranca-subtitulo {
+  margin: 0 0 6px;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.cobranca-auto {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.cobranca-auto svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.cobranca-auto .link-btn {
+  padding: 0;
+  font-size: 13px;
+}
+
+.cobranca-resumo {
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 16px;
+}
+
+.cobranca-valor-atrasado {
+  color: var(--risk);
+}
+
+.cobranca-filtros {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cobranca-chips {
+  margin-bottom: 14px;
+}
+
+.cobranca-item {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.cobranca-aluno {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cobranca-recorrente {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.cobranca-direita {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.cobranca-valor-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.cobranca-valor {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.cobranca-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cobranca-btn-pago {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background: var(--good);
+}
+
+.cobranca-btn-pago:hover:not(:disabled) {
+  background: var(--good);
+  filter: brightness(0.92);
+}
+
+.cobranca-btn-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.cobranca-modal-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cobranca-modal-topo h2 {
+  margin: 0;
+}
+
+.cobranca-dica {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .cobranca-filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .cobranca-item {
+    flex-wrap: wrap;
+  }
+
+  .cobranca-direita {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Abas em pílula (pedido do usuário, 2026-09-20) — botões no topo que
+   trocam a seção exibida, com ícone e selo de contagem. Rolam na
+   horizontal no celular em vez de quebrar linha. */
+.abas-pilula {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.abas-pilula::-webkit-scrollbar {
+  display: none;
+}
+
+.aba-pilula {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border-radius: 100px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.aba-pilula:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.aba-pilula.active,
+.aba-pilula.active:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.aba-pilula-selo {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.aba-pilula.active .aba-pilula-selo {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .aba-pilula {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
+
+/* Botão sol/lua do cabeçalho (pedido do usuário, 2026-09-20). No cabeçalho
+   escuro (celular) herda o contorno do .app-header-icon-btn; com o menu
+   lateral o cabeçalho é claro/transparente, então vira um círculo de
+   superfície com o ícone na cor do texto. */
+@media (min-width: 900px) {
+  .app-shell-lateral .app-tema-btn {
+    background: var(--surface);
+    border-color: var(--line);
+    color: var(--ink);
+    box-shadow: var(--shadow-card);
+  }
+
+  .app-shell-lateral .app-tema-btn:hover {
+    background: var(--surface-sunk);
+  }
 }

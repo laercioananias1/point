@@ -266,6 +266,27 @@ export interface RepasseFechamento {
   valor: number;
 }
 
+export type CobrancaStatus = "aberta" | "paga";
+
+export interface Cobranca {
+  id: number;
+  aluno_id: number;
+  aluno_nome: string;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  status: CobrancaStatus;
+  atrasada: boolean;
+  pago_em: string | null;
+  recorrente: boolean;
+  turma_ids: number[];
+}
+
+export interface CobrancaAluno {
+  id: number;
+  nome: string;
+}
+
 export interface Fechamento {
   id: number;
   point_id: number;

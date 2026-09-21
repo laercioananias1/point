@@ -12,6 +12,7 @@ import AdminPointAgendaProfessor from "./pages/admin-point/AgendaProfessor";
 import AdminPointConvidarAluno from "./pages/admin-point/ConvidarAluno";
 import AdminPointProfessor from "./pages/admin-point/Professor";
 import AdminPointConvidarProfessor from "./pages/admin-point/ConvidarProfessor";
+import AdminPointCobrancas from "./pages/admin-point/Cobrancas";
 import AdminPointFaturamento from "./pages/admin-point/Faturamento";
 import AdminPointPerfil from "./pages/admin-point/Perfil";
 import AdminPointMeuPoint from "./pages/admin-point/MeuPoint";
@@ -149,6 +150,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointAgendaProfessor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/cobrancas"
+        element={
+          <ProtectedRoute>
+            <AdminPointCobrancas />
           </ProtectedRoute>
         }
       />

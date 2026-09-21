@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
 import type { ConviteVinculo, Vinculo } from "../../api/types";
+import { AbasPilula } from "../../components/AbasPilula";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { BotaoFlutuante } from "../../components/BotaoFlutuante";
@@ -19,11 +20,15 @@ import { rotuloRepasse } from "../../lib/formato";
  * que abre uma nova tela no padrão de convidar alunos" — o formulário de
  * convite saiu daqui e virou tela própria (ConvidarProfessor.tsx), igual
  * ConvidarAluno.tsx já funciona pro aluno. */
+type Aba = "professores" | "convites";
+
 export default function AdminPointProfessor() {
   const location = useLocation();
   const convidado = (location.state as { convidado?: string } | null)?.convidado;
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
   const [convitesVinculo, setConvitesVinculo] = useState<ConviteVinculo[]>([]);
+  // Recém-convidado abre direto em "Convites", onde o convite novo aparece.
+  const [aba, setAba] = useState<Aba>(convidado ? "convites" : "professores");
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -50,7 +55,7 @@ export default function AdminPointProfessor() {
 
   return (
     <Layout>
-      <h1>Professores {pronto && `(${vinculos.length})`}</h1>
+      <h1>Professores</h1>
 
       {convidado && <p className="form-success">Convite enviado pra {convidado}.</p>}
       {erro && <p className="form-error">{erro}</p>}
@@ -58,55 +63,77 @@ export default function AdminPointProfessor() {
 
       {pronto && (
         <>
-          <section className="section">
-            {vinculos.length === 0 ? (
-              <p className="empty-state">Nenhum vínculo por aqui ainda — convide um professor.</p>
-            ) : (
-              <div className="card-list">
-                {vinculos.map((v) => (
-                  <Link
-                    to={`/admin-point/professor/${v.professor.id}/agenda`}
-                    className="item-card item-card-clickable"
-                    key={v.id}
-                  >
-                    <div className="item-card-info">
-                      <span className="item-card-title">{v.professor.nome}</span>
-                      <span className="item-card-subtitle">
-                        {/* Professor.modalidades nunca é preenchido por
-                            nenhum fluxo real (aceitar convite, virar
-                            professor do próprio Point sempre criam com
-                            modalidades=[]) — não tem cadastro que preencha
-                            isso hoje, então mostrar aqui só confundia
-                            (pedido do usuário, 2026-09-08). */}
-                        Repasse {rotuloRepasse(v.modelo_repasse, v.valor_repasse)}
-                      </span>
-                    </div>
-                    <div className="item-card-actions">
-                      <StatusPill status={v.status} />
-                      <span aria-hidden="true">
-                        <Icon name="chevron-right" />
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
+          <AbasPilula
+            ativa={aba}
+            onMudar={setAba}
+            abas={[
+              {
+                valor: "professores",
+                rotulo: "Professores",
+                icone: "user-check",
+                contagem: vinculos.length,
+              },
+              {
+                valor: "convites",
+                rotulo: "Convites pendentes",
+                icone: "mail",
+                contagem: convitesVinculoPendentes.length,
+              },
+            ]}
+          />
+
+          {aba === "professores" && (
+            <section className="section">
+              {vinculos.length === 0 ? (
+                <p className="empty-state">Nenhum vínculo por aqui ainda — convide um professor.</p>
+              ) : (
+                <div className="card-list">
+                  {vinculos.map((v) => (
+                    <Link
+                      to={`/admin-point/professor/${v.professor.id}/agenda`}
+                      className="item-card item-card-clickable"
+                      key={v.id}
+                    >
+                      <div className="item-card-info">
+                        <span className="item-card-title">{v.professor.nome}</span>
+                        <span className="item-card-subtitle">
+                          {/* Professor.modalidades nunca é preenchido por
+                              nenhum fluxo real (aceitar convite, virar
+                              professor do próprio Point sempre criam com
+                              modalidades=[]) — não tem cadastro que preencha
+                              isso hoje, então mostrar aqui só confundia
+                              (pedido do usuário, 2026-09-08). */}
+                          Repasse {rotuloRepasse(v.modelo_repasse, v.valor_repasse)}
+                        </span>
+                      </div>
+                      <div className="item-card-actions">
+                        <StatusPill status={v.status} />
+                        <span aria-hidden="true">
+                          <Icon name="chevron-right" />
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           <BotaoFlutuante to="/admin-point/professor/convidar" rotulo="Convidar professor" />
 
-          <section className="section">
-            <h2>Convites de vínculo pendentes ({convitesVinculoPendentes.length})</h2>
-            {convitesVinculoPendentes.length === 0 ? (
-              <p className="empty-state">Nenhum convite aguardando aceite.</p>
-            ) : (
-              <div className="card-list">
-                {convitesVinculoPendentes.map((c) => (
-                  <ConviteVinculoPendenteRow key={c.id} convite={c} onMudanca={carregar} />
-                ))}
-              </div>
-            )}
-          </section>
+          {aba === "convites" && (
+            <section className="section">
+              {convitesVinculoPendentes.length === 0 ? (
+                <p className="empty-state">Nenhum convite aguardando aceite.</p>
+              ) : (
+                <div className="card-list">
+                  {convitesVinculoPendentes.map((c) => (
+                    <ConviteVinculoPendenteRow key={c.id} convite={c} onMudanca={carregar} />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </>
       )}
     </Layout>
