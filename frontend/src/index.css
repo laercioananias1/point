@@ -935,8 +935,12 @@ button.danger:hover:not(:disabled) {
 
 /* Atalhos da home do aluno, tipo app de academia (pedido do usuário,
    2026-08-26) — ícone em cima, rótulo embaixo, lado a lado. */
+/* Atalhos compactos, quebrando em quantas colunas couberem (pedido do
+   usuário, 2026-09-20: "faca icones menores") — antes eram 2 cards enormes
+   por linha. */
 .quick-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 128px);
   gap: 10px;
 }
 
@@ -945,9 +949,9 @@ button.danger:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 8px;
-  border-radius: 16px;
+  gap: 6px;
+  padding: 12px 6px;
+  border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-card);
@@ -966,16 +970,23 @@ button.danger:hover:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent-strong);
 }
 
 .quick-action-label {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.quick-action-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* Placeholder de banner (pedido do usuário, 2026-08-26: "deixa um espaço

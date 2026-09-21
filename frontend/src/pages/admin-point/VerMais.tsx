@@ -21,7 +21,7 @@ export default function AdminPointVerMais() {
     <Layout>
       <h1>Ver mais</h1>
 
-      <section className="section" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <section className="section">
         <div className="quick-actions">
           <Link to="/admin-point/meu-point" className="quick-action">
             <span className="quick-action-icon">
@@ -35,8 +35,7 @@ export default function AdminPointVerMais() {
             </span>
             <span className="quick-action-label">Feriados</span>
           </Link>
-        </div>
-        <div className="quick-actions">
+        
           <Link to="/admin-point/configuracoes/prazos" className="quick-action">
             <span className="quick-action-icon">
               <Icon name="clock" />
@@ -49,8 +48,7 @@ export default function AdminPointVerMais() {
             </span>
             <span className="quick-action-label">Horários</span>
           </Link>
-        </div>
-        <div className="quick-actions">
+        
           <Link to="/admin-point/configuracoes/modalidades" className="quick-action">
             <span className="quick-action-icon">
               <Icon name="grid" />
@@ -63,8 +61,7 @@ export default function AdminPointVerMais() {
             </span>
             <span className="quick-action-label">Quadras</span>
           </Link>
-        </div>
-        <div className="quick-actions">
+        
           <Link to="/admin-point/configuracoes/planos" className="quick-action">
             <span className="quick-action-icon">
               <Icon name="ticket" />
@@ -77,8 +74,7 @@ export default function AdminPointVerMais() {
             </span>
             <span className="quick-action-label">Faturamento</span>
           </Link>
-        </div>
-        <div className="quick-actions">
+        
           <Link to="/admin-point/configuracoes/categorias" className="quick-action">
             <span className="quick-action-icon">
               <Icon name="list" />
@@ -91,8 +87,7 @@ export default function AdminPointVerMais() {
             </span>
             <span className="quick-action-label">Tipos de turma</span>
           </Link>
-        </div>
-        <div className="quick-actions">
+        
           <Link to="/admin-point/experimental" className="quick-action">
             <span className="quick-action-icon">
               <Icon name="user-plus" />
