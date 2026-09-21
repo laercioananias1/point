@@ -9,7 +9,7 @@ from app.models.enums import Role, VinculoStatus
 from app.models.professor import Professor
 from app.models.user import User
 from app.models.vinculo import Vinculo
-from app.schemas.vinculo import VinculoOut, VinculoSelfCriar
+from app.schemas.vinculo import VinculoOut
 
 router = APIRouter(prefix="/vinculos", tags=["vinculos"])
 
@@ -30,7 +30,6 @@ def listar_vinculos_do_point(
 
 @router.post("/self", response_model=VinculoOut, status_code=201)
 def virar_professor_do_proprio_point(
-    payload: VinculoSelfCriar,
     db: Annotated[Session, Depends(get_db)],
     admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
 ) -> Vinculo:
@@ -65,8 +64,6 @@ def virar_professor_do_proprio_point(
     vinculo = Vinculo(
         professor_id=admin.professor_id,
         point_id=admin.point_id,
-        modelo_repasse=payload.modelo_repasse,
-        valor_repasse=payload.valor_repasse,
         status=VinculoStatus.ATIVO,
     )
     db.add(vinculo)

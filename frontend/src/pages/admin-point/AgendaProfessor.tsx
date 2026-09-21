@@ -6,7 +6,6 @@ import type { Matricula, SolicitacaoExperimental, TurmaResumo, Vinculo } from ".
 import { AgendaTurmasCalendario } from "../../components/AgendaTurmasCalendario";
 import { Icon, Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
-import { rotuloRepasse } from "../../lib/formato";
 
 /** Agenda de um professor específico, do lado do admin (pedido do usuário,
  * 2026-09-08: "faca uma tela de edicao do professor, da mesma forma q é do
@@ -75,8 +74,7 @@ export default function AdminPointAgendaProfessor() {
 
       {vinculo && (
         <p className="empty-state" style={{ paddingTop: 0, display: "flex", alignItems: "center", gap: 8 }}>
-          {vinculo.professor.contato} · {vinculo.professor.email} · repasse{" "}
-          {rotuloRepasse(vinculo.modelo_repasse, vinculo.valor_repasse)}
+          {vinculo.professor.contato} · {vinculo.professor.email}
           <StatusPill status={vinculo.status} />
         </p>
       )}

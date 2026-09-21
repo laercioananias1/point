@@ -14,6 +14,7 @@ from app.models.user import User
 from app.models.vinculo import Vinculo
 from app.schemas.pagamento import PagamentoCreate, PagamentoOut
 from app.services.aulas import gerar_aulas_do_mes
+from app.services.caixa import registrar_entrada_pagamento, remover_entrada_pagamento
 
 router = APIRouter(prefix="/pagamentos", tags=["pagamentos"])
 
@@ -149,6 +150,8 @@ def confirmar_pagamento(
         raise HTTPException(422, "Só um pagamento pendente pode ser confirmado")
 
     pagamento.status = PagamentoStatus.CONFIRMADO
+    db.flush()
+    registrar_entrada_pagamento(db, pagamento)
     gerar_aulas_do_mes(db, pagamento.matricula)
     db.commit()
     db.refresh(pagamento)
@@ -165,6 +168,7 @@ def estornar_pagamento(
     distingue os dois casos (seção 3, tabela de entidades)."""
     pagamento = _get_pagamento_do_point_do_admin(db, pagamento_id, admin)
     pagamento.status = PagamentoStatus.ESTORNADO
+    remover_entrada_pagamento(db, pagamento)
     db.commit()
     db.refresh(pagamento)
     return _to_out(pagamento)

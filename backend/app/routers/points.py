@@ -2,15 +2,15 @@ import secrets
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_role
 from app.core.security import create_access_token
-from app.models.enums import MatriculaStatus, PagamentoStatus, Role, VinculoStatus
-from app.models.fechamento import Fechamento
+from app.models.caixa import LancamentoCaixa
+from app.models.enums import LancamentoTipo, MatriculaStatus, Role, VinculoStatus
 from app.models.matricula import Matricula
-from app.models.pagamento import Pagamento
 from app.models.point import DIAS_FIM_DE_SEMANA, DIAS_UTEIS, HORARIOS_PADRAO, Point
 from app.models.turma import Turma
 from app.models.user import User
@@ -25,7 +25,6 @@ from app.schemas.point import (
     PointRankingOut,
     PointResumo,
 )
-from app.services.configuracao import get_ou_criar_configuracao
 from app.services.uploads import TAMANHO_MAXIMO_BYTES, remover_imagem_point, salvar_imagem_point
 
 router = APIRouter(prefix="/points", tags=["points"])
@@ -146,14 +145,8 @@ def ranking_points(
     """Dashboard comparativo entre Points (seção 6.5) — só o dono do app vê
     isso; é a única exceção ao isolamento entre Points (seção 3.1).
 
-    total_taxa_servico e total_pago_confirmado são calculados na hora,
-    direto dos pagamentos confirmados (pedido do usuário, 2026-08-26) — não
-    dependem de alguém ter rodado um fechamento pra esse Point antes, senão
-    um Point com movimento real aparecia com R$0. total_repassado continua
-    vindo só dos fechamentos já gerados (dinheiro já reconciliado de
-    verdade — não dá pra estimar isso ao vivo sem risco de errar, ver
-    schemas/point.py)."""
-    config = get_ou_criar_configuracao(db)
+    total_recebido é a soma das entradas do Caixa de cada Point (taxa de
+    serviço e repasse saíram do sistema, pedido do usuário, 2026-09-20)."""
     resultado = []
     for point in db.query(Point).all():
         professores_ativos = (
@@ -169,19 +162,14 @@ def ranking_points(
             .distinct()
             .count()
         )
-        pagamentos_confirmados = (
-            db.query(Pagamento)
-            .join(Matricula, Pagamento.matricula_id == Matricula.id)
-            .join(Turma, Matricula.turma_id == Turma.id)
-            .join(Vinculo, Turma.vinculo_id == Vinculo.id)
-            .filter(Vinculo.point_id == point.id, Pagamento.status == PagamentoStatus.CONFIRMADO)
-            .all()
+        total_recebido = float(
+            db.query(func.coalesce(func.sum(LancamentoCaixa.valor), 0))
+            .filter(
+                LancamentoCaixa.point_id == point.id,
+                LancamentoCaixa.tipo == LancamentoTipo.ENTRADA,
+            )
+            .scalar()
         )
-        total_taxa = len(pagamentos_confirmados) * float(config.taxa_servico)
-        total_pago_confirmado = sum(float(p.valor) for p in pagamentos_confirmados)
-
-        fechamentos = db.query(Fechamento).filter(Fechamento.point_id == point.id).all()
-        total_repassado = sum(float(r.valor) for f in fechamentos for r in f.repasses)
 
         resultado.append(
             PointRankingOut(
@@ -189,13 +177,11 @@ def ranking_points(
                 nome=point.nome,
                 professores_ativos=professores_ativos,
                 alunos_ativos=alunos_ativos,
-                total_taxa_servico=total_taxa,
-                total_repassado=total_repassado,
-                total_pago_confirmado=total_pago_confirmado,
+                total_recebido=total_recebido,
             )
         )
 
-    return sorted(resultado, key=lambda r: r.total_taxa_servico, reverse=True)
+    return sorted(resultado, key=lambda r: r.total_recebido, reverse=True)
 
 
 @router.get("/me", response_model=PointOut)

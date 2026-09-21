@@ -40,8 +40,6 @@ def _para_out(db: Session, convite: ConviteVinculo) -> ConviteVinculoOut:
         celular=convite.celular,
         email=convite.email,
         point=convite.point,
-        modelo_repasse=convite.modelo_repasse,
-        valor_repasse=convite.valor_repasse,
         status=convite.status,
         expira_em=convite.expira_em,
         expirado=convite.expirado,
@@ -55,7 +53,7 @@ def criar_convite_vinculo(
     db: Annotated[Session, Depends(get_db)],
     admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
 ) -> ConviteVinculoOut:
-    """Admin decide o acordo de repasse e convida o professor por e-mail
+    """Admin convida o professor por e-mail
     (pedido do usuário, 2026-08-21 — o professor não solicita mais vínculo;
     preço de aula avulsa/plano é tabela do Point por modalidade, não entra
     aqui)."""
@@ -107,8 +105,6 @@ def criar_convite_vinculo(
         nome=payload.nome,
         celular=payload.celular,
         email=payload.email,
-        modelo_repasse=payload.modelo_repasse,
-        valor_repasse=payload.valor_repasse,
         status=ConviteStatus.PENDENTE,
         expira_em=date.today() + timedelta(days=PRAZO_EXPIRACAO_DIAS),
     )
@@ -123,8 +119,6 @@ def criar_convite_vinculo(
         email=convite.email,
         link=link,
         point_nome=convite.point.nome,
-        modelo_repasse=convite.modelo_repasse.value,
-        valor_repasse=float(convite.valor_repasse),
     )
     enviar_convite_whatsapp(
         celular=convite.celular,
@@ -211,8 +205,6 @@ def _ativar(db: Session, convite: ConviteVinculo, professor_id: int) -> Vinculo:
     vinculo = Vinculo(
         professor_id=professor_id,
         point_id=convite.point_id,
-        modelo_repasse=convite.modelo_repasse,
-        valor_repasse=convite.valor_repasse,
         status=VinculoStatus.ATIVO,
     )
     db.add(vinculo)

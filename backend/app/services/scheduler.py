@@ -21,6 +21,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.core.database import SessionLocal
 from app.services.aulas import gerar_aulas_do_mes_em_lote
+from app.services.caixa import gerar_lancamentos_fixos
 from app.services.cobrancas import gerar_mensalidades
 
 # print(), não logging — mesmo padrão já usado em app/services/email.py (o
@@ -58,6 +59,23 @@ def _rodar_geracao_de_mensalidades() -> None:
         db.close()
 
 
+def _rodar_lancamentos_fixos() -> None:
+    """Todo dia (pedido do usuário, 2026-09-20: "repetir todo mês, no dia da
+    data") — cada fixo só cria o lançamento do mês uma vez (fixo+mês é
+    único), então rodar diariamente também recupera um dia com o servidor
+    fora."""
+    db = SessionLocal()
+    try:
+        total = gerar_lancamentos_fixos(db)
+        print(f"[scheduler] lançamentos fixos do caixa: {total} criado(s)")
+    except Exception:  # noqa: BLE001 — job de fundo não pode derrubar o processo
+        print("[scheduler] falha ao gerar lançamentos fixos:")
+        traceback.print_exc()
+        db.rollback()
+    finally:
+        db.close()
+
+
 def iniciar_scheduler() -> BackgroundScheduler:
     """Chamada uma vez, no startup da API (ver app/main.py)."""
     global _scheduler
@@ -81,6 +99,14 @@ def iniciar_scheduler() -> BackgroundScheduler:
         hour=4,
         minute=10,
         id="gerar_mensalidades_mensal",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _rodar_lancamentos_fixos,
+        trigger="cron",
+        hour=4,
+        minute=20,
+        id="gerar_lancamentos_fixos_diario",
         replace_existing=True,
     )
     scheduler.start()

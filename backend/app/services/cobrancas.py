@@ -19,6 +19,11 @@ from app.models.enums import (
 )
 from app.models.pagamento import Pagamento
 from app.services.aulas import gerar_aulas_do_mes
+from app.services.caixa import (
+    registrar_entrada_cobranca,
+    remover_entrada_cobranca,
+    remover_entrada_pagamento,
+)
 
 
 def _matriculas_da_mensalidade(assinatura: Assinatura):
@@ -103,14 +108,15 @@ def _ultimo_dia(mes: date) -> date:
 
 
 def marcar_paga(db: Session, cobranca: Cobranca) -> None:
-    """Marca como paga (sem commit). Pra mensalidade, grava também os
+    """Marca como paga (sem commit) e lança a entrada no Caixa. Pra mensalidade, grava também os
     Pagamentos confirmados das matrículas da assinatura — o valor da
     cobrança é da assinatura inteira, então é repartido entre as
     matrículas (o resto dos centavos vai pra primeira) pra soma continuar
-    batendo com o que o fechamento mensal vai somar — e já gera as aulas
+    batendo com o valor da cobrança — e já gera as aulas
     do mês, igual `confirmar_pagamento` faz."""
     cobranca.status = CobrancaStatus.PAGA
     cobranca.pago_em = date.today()
+    registrar_entrada_cobranca(db, cobranca)
 
     if cobranca.assinatura is None or cobranca.mes_referencia is None:
         return
@@ -151,9 +157,11 @@ def reabrir(db: Session, cobranca: Cobranca) -> None:
     for o caso."""
     cobranca.status = CobrancaStatus.ABERTA
     cobranca.pago_em = None
+    remover_entrada_cobranca(db, cobranca)
     if cobranca.assinatura is None or cobranca.mes_referencia is None:
         return
     for matricula in _matriculas_da_mensalidade(cobranca.assinatura):
         for p in matricula.pagamentos:
             if p.status == PagamentoStatus.CONFIRMADO and p.mes_referencia == cobranca.mes_referencia:
                 p.status = PagamentoStatus.ESTORNADO
+                remover_entrada_pagamento(db, p)

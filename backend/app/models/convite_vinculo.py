@@ -1,21 +1,20 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.models.base import TimestampMixin
-from app.models.enums import ConviteStatus, ModeloRepasse
+from app.models.enums import ConviteStatus
 
 
 class ConviteVinculo(TimestampMixin, Base):
     """Convite de vínculo — mesmo padrão do Convite de assinatura do aluno
     (pedido do usuário, 2026-08-21: "quem manda a solicitação é o admin do
     Point... ficar no mesmo padrão do aluno"). O professor não solicita mais
-    vínculo: o admin decide o acordo de repasse e manda um convite por
-    e-mail — preço de aula avulsa/plano é tabela do Point por modalidade,
-    não entra aqui (pedido do usuário, 2026-08-21: "com o professor só tem
-    o acordo de repasse"). O professor só aceita — se ainda não tem conta,
+    vínculo: o admin manda um convite por e-mail — preço de aula
+    avulsa/plano é tabela do Point por modalidade, não entra aqui. O
+    professor só aceita — se ainda não tem conta,
     cria a própria senha; se já tem, só confirma. Em qualquer um dos dois
     casos, o Vínculo já nasce ATIVO no aceite."""
 
@@ -28,9 +27,6 @@ class ConviteVinculo(TimestampMixin, Base):
     nome: Mapped[str] = mapped_column(String(120))
     celular: Mapped[str] = mapped_column(String(20))
     email: Mapped[str] = mapped_column(String(160))
-
-    modelo_repasse: Mapped[ModeloRepasse] = mapped_column(Enum(ModeloRepasse))
-    valor_repasse: Mapped[float] = mapped_column(Numeric(10, 2))
 
     status: Mapped[ConviteStatus] = mapped_column(Enum(ConviteStatus), default=ConviteStatus.PENDENTE)
     expira_em: Mapped[date] = mapped_column(Date)

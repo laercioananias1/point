@@ -19,10 +19,9 @@ class Modalidade(TimestampMixin, Base):
     na hora de criar (o professor pode sobrescrever por turma).
 
     preco_avulso é a tabela de preços do Point pra aula avulsa (pedido do
-    usuário, 2026-08-21: "esses valores são tabela do point... com o
-    professor só tem o acordo de repasse") — não faz parte do Vínculo. Todo
-    professor que dá aula dessa modalidade nesse Point cobra o mesmo preço;
-    o que varia por professor é só o repasse (Vinculo).
+    usuário, 2026-08-21: "esses valores são tabela do point") — não faz
+    parte do Vínculo. Todo professor que dá aula dessa modalidade nesse
+    Point cobra o mesmo preço.
 
     preco_plano (preço fixo do plano mensal) foi removido daqui (pedido do
     usuário, 2026-09-01: "acho q nao faz mais sentido o preco mensal, pq

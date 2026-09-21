@@ -96,9 +96,7 @@ export default function DonoAppPoints() {
                         {p.professores_ativos} professor(es) · {p.alunos_ativos} aluno(s) ativo(s)
                       </span>
                       <span className="item-card-subtitle">
-                        pago {formatarReais(p.total_pago_confirmado)} · taxa{" "}
-                        {formatarReais(p.total_taxa_servico)} · repassado{" "}
-                        {formatarReais(p.total_repassado)}
+                        recebido {formatarReais(p.total_recebido)}
                       </span>
                       {convidando === p.point_id && (
                         <div style={{ marginTop: 10 }}>

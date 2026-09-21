@@ -162,19 +162,5 @@ class PointRankingOut(ORMModel):
     nome: str
     professores_ativos: int
     alunos_ativos: int
-    # Calculada na hora (pedido do usuário, 2026-08-26: "os números da visão
-    # geral" estavam presos ao fechamento — um Point com pagamento confirmado
-    # de verdade aparecia com R$0 até alguém rodar um fechamento manual pra
-    # ele). Fórmula simples e sem ambiguidade: nº de pagamentos confirmados
-    # × taxa por pagamento vigente agora — a mesma conta que o fechamento já
-    # faz, só que sem esperar ele rodar.
-    total_taxa_servico: float
-    # Continua vindo só dos fechamentos já gerados — é dinheiro que já foi
-    # de fato conferido e reconciliado, não dá pra estimar isso ao vivo sem
-    # arriscar um número errado (repasse "valor fixo mensal" não tem uma
-    # leitura óbvia de "quanto seria até agora" sem fechamento nenhum).
-    total_repassado: float
-    # Novo (pedido do usuário, 2026-08-26) — soma bruta de todo pagamento
-    # confirmado desse Point, sem entrar em taxa/repasse: dá visão de
-    # volume mesmo pra quem nunca rodou um fechamento.
-    total_pago_confirmado: float
+    # Soma das entradas do Caixa do Point.
+    total_recebido: float

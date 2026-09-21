@@ -13,7 +13,8 @@ import AdminPointConvidarAluno from "./pages/admin-point/ConvidarAluno";
 import AdminPointProfessor from "./pages/admin-point/Professor";
 import AdminPointConvidarProfessor from "./pages/admin-point/ConvidarProfessor";
 import AdminPointCobrancas from "./pages/admin-point/Cobrancas";
-import AdminPointFaturamento from "./pages/admin-point/Faturamento";
+import AdminPointCaixa from "./pages/admin-point/Caixa";
+import AdminPointRelatorios from "./pages/admin-point/Relatorios";
 import AdminPointPerfil from "./pages/admin-point/Perfil";
 import AdminPointMeuPoint from "./pages/admin-point/MeuPoint";
 import AdminPointPrazos from "./pages/admin-point/Prazos";
@@ -162,13 +163,24 @@ export default function App() {
         }
       />
       <Route
-        path="/admin-point/faturamento"
+        path="/admin-point/caixa"
         element={
           <ProtectedRoute>
-            <AdminPointFaturamento />
+            <AdminPointCaixa />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin-point/relatorios"
+        element={
+          <ProtectedRoute>
+            <AdminPointRelatorios />
+          </ProtectedRoute>
+        }
+      />
+      {/* Faturamento virou Caixa (pedido do usuário, 2026-09-20) — o endereço
+          antigo continua valendo. */}
+      <Route path="/admin-point/faturamento" element={<Navigate to="/admin-point/caixa" replace />} />
       <Route
         path="/admin-point/turmas"
         element={

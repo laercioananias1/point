@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { ModeloRepasse } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
 import { formatarCelular } from "../../lib/formato";
 
@@ -37,18 +36,15 @@ export default function AdminPointConvidarProfessor() {
   );
 }
 
-/** O admin decide o acordo de repasse e convida o professor por e-mail
- * (pedido do usuário, 2026-08-21 — mesmo padrão do convite de assinatura
- * do aluno: o professor não solicita mais vínculo). Preço de aula avulsa/
- * plano é tabela do Point por modalidade (Ver mais), não entra aqui —
- * com o professor só tem o acordo de repasse. */
+/** O admin convida o professor por e-mail (pedido do usuário, 2026-08-21 —
+ * mesmo padrão do convite de assinatura do aluno: o professor não solicita
+ * mais vínculo). Preço de aula avulsa/plano é tabela do Point por
+ * modalidade, não entra aqui; repasse saiu do sistema (2026-09-20). */
 function ConvidarProfessorForm() {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [celular, setCelular] = useState("");
   const [email, setEmail] = useState("");
-  const [modeloRepasse, setModeloRepasse] = useState<ModeloRepasse>("percentual");
-  const [valorRepasse, setValorRepasse] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -61,8 +57,6 @@ function ConvidarProfessorForm() {
         nome,
         celular,
         email,
-        modelo_repasse: modeloRepasse,
-        valor_repasse: Number(valorRepasse),
       });
       // Volta pra lista de professores ao enviar (mesmo padrão de
       // ConvidarAluno.tsx) — leva o nome pra mostrar a confirmação por lá.
@@ -94,31 +88,6 @@ function ConvidarProfessorForm() {
         <label>
           E-mail
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-      </div>
-
-      <div className="form-row">
-        <label>
-          Modelo de repasse
-          <select
-            value={modeloRepasse}
-            onChange={(e) => setModeloRepasse(e.target.value as ModeloRepasse)}
-          >
-            <option value="percentual">Percentual por aula/mensalidade</option>
-            <option value="valor_fixo_mensal">Valor fixo mensal</option>
-            <option value="valor_fixo_por_aula">Valor fixo por aula dada</option>
-          </select>
-        </label>
-        <label>
-          {modeloRepasse === "percentual" ? "Percentual (%)" : "Valor (R$)"}
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={valorRepasse}
-            onChange={(e) => setValorRepasse(e.target.value)}
-            required
-          />
         </label>
       </div>
 

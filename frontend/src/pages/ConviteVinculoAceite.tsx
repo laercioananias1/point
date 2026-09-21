@@ -5,7 +5,6 @@ import { useAuth, type User } from "../auth/AuthContext";
 import { PointBrand } from "../components/PointBrand";
 import type { ConviteVinculo } from "../api/types";
 import { aplicarCorDestaque } from "../lib/cor";
-import { rotuloRepasse } from "../lib/formato";
 
 /** Tela pública (sem login) que o professor abre a partir do link do
  * e-mail de convite de vínculo (pedido do usuário, 2026-08-21 — mesmo
@@ -87,7 +86,7 @@ function ResumoConvite({ convite }: { convite: ConviteVinculo }) {
     <div className="auth-card">
       <h1>Convite — {convite.point.nome}</h1>
       <p className="auth-subtitle">Olá, {convite.nome}!</p>
-      <p>Repasse: {rotuloRepasse(convite.modelo_repasse, convite.valor_repasse)}</p>
+      <p>Você foi convidado(a) para dar aula neste Point.</p>
     </div>
   );
 }

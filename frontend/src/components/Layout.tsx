@@ -118,7 +118,8 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
       titulo: "Financeiro",
       itens: [
         { to: "/admin-point/cobrancas", label: "Cobranças", icon: "dollar" },
-        { to: "/admin-point/faturamento", label: "Faturamento", icon: "chart" },
+        { to: "/admin-point/caixa", label: "Caixa", icon: "chart" },
+        { to: "/admin-point/relatorios", label: "Relatórios", icon: "list" },
         { to: "/admin-point/configuracoes/planos", label: "Planos", icon: "ticket" },
       ],
     },

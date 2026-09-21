@@ -2,16 +2,15 @@ from app.models.aluno import Aluno
 from app.models.aluno_categoria import AlunoCategoria
 from app.models.assinatura import Assinatura
 from app.models.aula import Aula
+from app.models.caixa import ContaCaixa, LancamentoCaixa, LancamentoFixo
 from app.models.categoria import Categoria
 from app.models.checkin import Checkin
 from app.models.cobranca import Cobranca
-from app.models.configuracao import ConfiguracaoPlataforma
 from app.models.convite import Convite
 from app.models.convite_admin import ConviteAdmin
 from app.models.convite_dia_escolhido import ConviteDiaEscolhido
 from app.models.convite_vinculo import ConviteVinculo
 from app.models.credito_reposicao import CreditoReposicao
-from app.models.fechamento import Fechamento, RepasseFechamento
 from app.models.feriado import Feriado
 from app.models.matricula import Matricula
 from app.models.matricula_dia_semana import MatriculaDiaSemana
@@ -36,15 +35,16 @@ __all__ = [
     "Assinatura",
     "Aula",
     "Categoria",
+    "ContaCaixa",
+    "LancamentoCaixa",
+    "LancamentoFixo",
     "Checkin",
     "Cobranca",
-    "ConfiguracaoPlataforma",
     "Convite",
     "ConviteAdmin",
     "ConviteDiaEscolhido",
     "ConviteVinculo",
     "CreditoReposicao",
-    "Fechamento",
     "Feriado",
     "Matricula",
     "MatriculaDiaSemana",
@@ -56,7 +56,6 @@ __all__ = [
     "Professor",
     "Quadra",
     "RedefinicaoSenha",
-    "RepasseFechamento",
     "TipoTurma",
     "Turma",
     "TurmaDiaSemana",

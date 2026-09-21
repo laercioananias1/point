@@ -13,16 +13,15 @@ from app.routers import (
     alunos,
     assinaturas,
     auth,
+    caixa,
     categorias,
     checkins,
     cobrancas,
-    configuracoes,
     convites,
     convites_admin,
     convites_vinculo,
     creditos,
     experimental,
-    fechamentos,
     feriados,
     matriculas,
     modalidades,
@@ -32,6 +31,7 @@ from app.routers import (
     points,
     professores,
     quadras,
+    relatorios,
     tipos_turma,
     turmas,
     vinculos,
@@ -72,9 +72,9 @@ app.include_router(turmas.router)
 app.include_router(matriculas.router)
 app.include_router(pagamentos.router)
 app.include_router(cobrancas.router)
-app.include_router(configuracoes.router)
+app.include_router(caixa.router)
+app.include_router(relatorios.router)
 app.include_router(creditos.router)
-app.include_router(fechamentos.router)
 app.include_router(planos.router)
 app.include_router(assinaturas.router)
 app.include_router(convites.router)

@@ -7,7 +7,6 @@ import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { StatusPill } from "../../components/StatusPill";
-import { rotuloRepasse } from "../../lib/formato";
 
 /** Gestão de professores do Point (pedido do usuário, 2026-08-25: "seguindo
  * o mesmo padrão" — virou aba própria). Vínculos e convite. O cancelamento
@@ -96,15 +95,6 @@ export default function AdminPointProfessor() {
                     >
                       <div className="item-card-info">
                         <span className="item-card-title">{v.professor.nome}</span>
-                        <span className="item-card-subtitle">
-                          {/* Professor.modalidades nunca é preenchido por
-                              nenhum fluxo real (aceitar convite, virar
-                              professor do próprio Point sempre criam com
-                              modalidades=[]) — não tem cadastro que preencha
-                              isso hoje, então mostrar aqui só confundia
-                              (pedido do usuário, 2026-09-08). */}
-                          Repasse {rotuloRepasse(v.modelo_repasse, v.valor_repasse)}
-                        </span>
                       </div>
                       <div className="item-card-actions">
                         <StatusPill status={v.status} />
@@ -178,7 +168,7 @@ function ConviteVinculoPendenteRow({
       {modal}
       <div className="item-card-info">
         <span className="item-card-title">
-          {convite.nome} · repasse {rotuloRepasse(convite.modelo_repasse, convite.valor_repasse)}
+          {convite.nome}
         </span>
         <span className="item-card-subtitle">
           {convite.celular} · {convite.email} · expira em{" "}

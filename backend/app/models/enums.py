@@ -22,12 +22,6 @@ class FormaPagamento(str, enum.Enum):
     TOTALPASS = "totalpass"
 
 
-class ModeloRepasse(str, enum.Enum):
-    PERCENTUAL = "percentual"
-    VALOR_FIXO_MENSAL = "valor_fixo_mensal"
-    VALOR_FIXO_POR_AULA = "valor_fixo_por_aula"
-
-
 class VinculoStatus(str, enum.Enum):
     # "pendente" cobre o intervalo entre o professor solicitar o vínculo e o
     # admin do Point aprovar — o documento (seção 4.1) fala em aprovação, então
@@ -168,3 +162,13 @@ class CobrancaStatus(str, enum.Enum):
 
     ABERTA = "aberta"
     PAGA = "paga"
+
+
+class LancamentoTipo(str, enum.Enum):
+    """Caixa do Point (pedido do usuário, 2026-09-20: "Caixa, onde tem
+    entradas e saídas") — os dois valores já nascem juntos no enum pra não
+    precisar de ALTER de coluna no MySQL quando as saídas entrarem."""
+
+    ENTRADA = "entrada"
+    SAIDA = "saida"
+

@@ -30,9 +30,7 @@ export default function DonoAppInicio() {
     carregar();
   }, [carregar]);
 
-  const totalTaxa = ranking.reduce((soma, p) => soma + p.total_taxa_servico, 0);
-  const totalRepassado = ranking.reduce((soma, p) => soma + p.total_repassado, 0);
-  const totalPagoConfirmado = ranking.reduce((soma, p) => soma + p.total_pago_confirmado, 0);
+  const totalRecebido = ranking.reduce((soma, p) => soma + p.total_recebido, 0);
   const totalProfessores = ranking.reduce((soma, p) => soma + p.professores_ativos, 0);
   const totalAlunos = ranking.reduce((soma, p) => soma + p.alunos_ativos, 0);
 
@@ -63,28 +61,18 @@ export default function DonoAppInicio() {
                 <div className="stat-value">{totalAlunos}</div>
               </div>
               <div className="stat-tile">
-                <div className="stat-label">Pago confirmado (todos os Points)</div>
-                <div className="stat-value">{formatarReais(totalPagoConfirmado)}</div>
-              </div>
-              <div className="stat-tile">
-                <div className="stat-label">Taxa de serviço a receber</div>
-                <div className="stat-value">{formatarReais(totalTaxa)}</div>
-              </div>
-              <div className="stat-tile">
-                <div className="stat-label">Repassado (fechamentos gerados)</div>
-                <div className="stat-value">{formatarReais(totalRepassado)}</div>
+                <div className="stat-label">Recebido (todos os Points)</div>
+                <div className="stat-value">{formatarReais(totalRecebido)}</div>
               </div>
             </div>
             <p className="empty-state" style={{ paddingTop: 8 }}>
-              "Pago confirmado" e "Taxa de serviço" são calculados na hora, direto dos pagamentos
-              confirmados — não dependem de ninguém ter rodado um fechamento ainda. Só "Repassado"
-              vem exclusivamente dos fechamentos já gerados (é dinheiro já reconciliado de verdade).
+              "Recebido" é a soma das entradas do Caixa de cada Point.
             </p>
           </section>
 
           {ranking.length > 0 && (
             <section className="section">
-              <h2>Top 3 por taxa de serviço</h2>
+              <h2>Top 3 por valor recebido</h2>
               <div className="card-list">
                 {ranking.slice(0, 3).map((p, i) => (
                   <div className="item-card" key={p.point_id}>
@@ -97,7 +85,7 @@ export default function DonoAppInicio() {
                       </span>
                     </div>
                     <span className="stat-value" style={{ fontSize: 20 }}>
-                      {formatarReais(p.total_taxa_servico)}
+                      {formatarReais(p.total_recebido)}
                     </span>
                   </div>
                 ))}

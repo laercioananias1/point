@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import Field
 
-from app.models.enums import MatriculaStatus, MatriculaTipo, ModeloRepasse, PagamentoMeio
+from app.models.enums import MatriculaStatus, MatriculaTipo, PagamentoMeio
 from app.schemas.aluno import AlunoOut
 from app.schemas.common import ORMModel
 from app.schemas.credito import CreditoOut
@@ -57,14 +57,6 @@ class PausarAgendaOut(ORMModel):
     creditos_gerados: int
 
 
-class RepasseOverrideUpdate(ORMModel):
-    """None em ambos os campos remove a exceção — volta a usar o padrão do
-    Vínculo (seção 3.2)."""
-
-    modelo: ModeloRepasse | None
-    valor: float | None
-
-
 class MatriculaOut(ORMModel):
     id: int
     aluno_id: int
@@ -75,8 +67,6 @@ class MatriculaOut(ORMModel):
     aluno: AlunoOut
     turma: TurmaOut
     pagamentos: list[PagamentoResumo] = []
-    repasse_override_modelo: ModeloRepasse | None
-    repasse_override_valor: float | None
     # Datas que o aluno cancelou com antecedência nessa matrícula (pedido do
     # usuário, 2026-08-20) — o frontend soma com turma.excecoes pra montar
     # a agenda certa (a turma continua rodando pros outros alunos).

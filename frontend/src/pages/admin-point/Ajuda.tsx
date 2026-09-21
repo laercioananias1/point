@@ -25,7 +25,7 @@ export default function AdminPointAjuda() {
 
       <AjudaCallout>
         <b>A lógica por trás de quase tudo:</b> você monta o convite inteiro — dados da pessoa,
-        plano ou acordo de repasse, turmas — e manda por e-mail e por WhatsApp. Quem recebe só
+        plano, turmas — e manda por e-mail e por WhatsApp. Quem recebe só
         aceita (cria a própria senha, se ainda não tiver conta). Ninguém
         cria senha por outra pessoa: o vínculo/assinatura ativa sozinho no aceite — exceto no
         convite de aluno <b>avulso</b>, que não tem assinatura nenhuma pra ativar (ver abaixo).
@@ -123,10 +123,6 @@ export default function AdminPointAjuda() {
             <ol>
               <li>Aba Professores → Convidar professor.</li>
               <li>Preencha nome, celular, e-mail.</li>
-              <li>
-                Escolha o modelo de repasse: percentual por aula/mensalidade, valor fixo mensal, ou
-                valor fixo por aula dada.
-              </li>
               <li>Enviar convite — ele recebe por e-mail, aceita, o vínculo ativa sozinho.</li>
             </ol>
           </AjudaPergunta>
@@ -261,12 +257,17 @@ export default function AdminPointAjuda() {
       </section>
 
       <section className="section">
-        <h2>Faturamento</h2>
+        <h2>Caixa</h2>
         <div className="card-list">
-          <AjudaPergunta icon="chart" pergunta="Como gerar o fechamento de faturamento?">
+          <AjudaPergunta icon="chart" pergunta="Como lançar uma entrada ou saída no caixa?">
             <ul>
-              <li>Ver mais → Faturamento.</li>
-              <li>Gera o fechamento de um período com o total de taxa e o repasse por professor.</li>
+              <li>Menu → Caixa → botão "Novo lançamento".</li>
+              <li>Escolha Entrada ou Saída, descreva, informe valor e data.</li>
+              <li>
+                Marque "Repetir todo mês" para despesas e receitas fixas (aluguel, internet): elas
+                entram sozinhas no dia escolhido (nos meses mais curtos, no último dia).
+              </li>
+              <li>As cobranças marcadas como pagas já entram no caixa automaticamente.</li>
             </ul>
           </AjudaPergunta>
         </div>

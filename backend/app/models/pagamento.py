@@ -13,8 +13,8 @@ class Pagamento(TimestampMixin, Base):
     de ser aceito (pedido do usuário, 2026-08-26) — o enum `meio` mantém o
     valor DINHEIRO só pra não quebrar pagamentos antigos já lançados assim.
 
-    Sem valor_taxa_servico nem valor_professor aqui — os dois são apurados no
-    fechamento mensal (seção 6.3), não por pagamento.
+    Taxa de serviço e repasse a professor saíram do sistema (pedido do
+    usuário, 2026-09-20) — o pagamento guarda só o valor recebido.
     """
 
     __tablename__ = "pagamentos"

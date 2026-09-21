@@ -32,7 +32,6 @@ from app.schemas.matricula import (
     MatriculaOut,
     PausarAgendaOut,
     PausarAgendaRequest,
-    RepasseOverrideUpdate,
 )
 from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario
 from app.services.feriados import eh_feriado
@@ -538,25 +537,6 @@ def enviar_lembrete_pagamento(
         valor=matricula.valor_mensalidade or 0,
         mes_referencia=mes_referencia.strftime("%m/%Y"),
     )
-
-
-@router.patch("/{matricula_id}/repasse", response_model=MatriculaOut)
-def definir_repasse_excecao(
-    matricula_id: int,
-    payload: RepasseOverrideUpdate,
-    db: Annotated[Session, Depends(get_db)],
-    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
-) -> Matricula:
-    """Exceção de repasse por aluno (seção 3.2/4.2) — o admin do Point decide,
-    caso a caso; não existe regra automática de 'quem captou o aluno leva
-    100%'. Mandar os dois campos null remove a exceção (volta ao padrão do
-    Vínculo)."""
-    matricula = _get_matricula_do_point_do_admin(db, matricula_id, admin)
-    matricula.repasse_override_modelo = payload.modelo
-    matricula.repasse_override_valor = payload.valor
-    db.commit()
-    db.refresh(matricula)
-    return matricula
 
 
 @router.patch("/{matricula_id}/cancelar", response_model=MatriculaOut)

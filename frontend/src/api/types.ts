@@ -1,4 +1,3 @@
-export type ModeloRepasse = "percentual" | "valor_fixo_mensal" | "valor_fixo_por_aula";
 export type VinculoStatus = "pendente" | "ativo" | "inativo" | "recusado";
 export type MatriculaStatus = "em_analise" | "ativa" | "recusada" | "cancelada";
 export type MatriculaTipo = "avulsa" | "mensal";
@@ -151,8 +150,6 @@ export interface Vinculo {
   id: number;
   professor_id: number;
   point_id: number;
-  modelo_repasse: ModeloRepasse;
-  valor_repasse: number;
   status: VinculoStatus;
   professor: ProfessorResumo;
   point: PointResumo;
@@ -260,12 +257,6 @@ export interface Feriado {
   nacional: boolean;
 }
 
-export interface RepasseFechamento {
-  professor_id: number;
-  professor_nome: string;
-  valor: number;
-}
-
 export type CobrancaStatus = "aberta" | "paga";
 
 export interface Cobranca {
@@ -287,15 +278,44 @@ export interface CobrancaAluno {
   nome: string;
 }
 
-export interface Fechamento {
+export type LancamentoTipo = "entrada" | "saida";
+
+export interface LancamentoCaixa {
   id: number;
-  point_id: number;
-  periodo_inicio: string;
-  periodo_fim: string;
-  taxa_servico_unitaria: number;
-  quantidade_pagamentos: number;
-  total_taxa_servico: number;
-  repasses: RepasseFechamento[];
+  tipo: LancamentoTipo;
+  descricao: string;
+  valor: number;
+  data: string;
+  conta_id: number | null;
+  conta_nome: string | null;
+  automatico: boolean;
+  fixo_id: number | null;
+  fixo_ativo: boolean;
+}
+
+export interface ContaCaixa {
+  id: number;
+  nome: string;
+}
+
+export interface RelatorioMes {
+  mes: string;
+  receita: number;
+  despesa: number;
+}
+
+export interface RelatorioResumo {
+  alunos_ativos: number;
+  turmas: number;
+  recebido_mes: number;
+  alunos_inadimplentes: number;
+  inadimplencia_pct: number;
+  serie_mensal: RelatorioMes[];
+  entrou: number;
+  saiu: number;
+  a_receber: number;
+  atrasado: number;
+  saldo: number;
 }
 
 export interface PointRanking {
@@ -303,14 +323,8 @@ export interface PointRanking {
   nome: string;
   professores_ativos: number;
   alunos_ativos: number;
-  // Calculada na hora, direto dos pagamentos confirmados (pedido do
-  // usuário, 2026-08-26) — não depende de fechamento já ter rodado.
-  total_taxa_servico: number;
-  // Só o que já passou por um fechamento gerado — dinheiro reconciliado.
-  total_repassado: number;
-  // Soma bruta de pagamento confirmado desse Point, sem entrar em taxa/
-  // repasse — visão de volume mesmo sem nenhum fechamento gerado.
-  total_pago_confirmado: number;
+  // Soma das entradas do Caixa do Point.
+  total_recebido: number;
 }
 
 export interface Plano {
@@ -374,8 +388,6 @@ export interface ConviteVinculo {
   celular: string;
   email: string;
   point: PointResumo;
-  modelo_repasse: ModeloRepasse;
-  valor_repasse: number;
   status: ConviteStatus;
   expira_em: string;
   expirado: boolean;
@@ -405,8 +417,6 @@ export interface Matricula {
   aluno: AlunoResumo;
   turma: TurmaResumo;
   pagamentos: PagamentoResumo[];
-  repasse_override_modelo: ModeloRepasse | null;
-  repasse_override_valor: number | null;
   // Datas que o próprio aluno cancelou com antecedência nessa matrícula
   // (pedido do usuário, 2026-08-20) — soma com turma.excecoes na agenda.
   excecoes: string[];

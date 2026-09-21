@@ -93,21 +93,18 @@ def enviar_convite_avulso_email(*, nome: str, email: str, link: str, point_nome:
 
 
 def enviar_convite_vinculo_email(
-    *, nome: str, email: str, link: str, point_nome: str, modelo_repasse: str, valor_repasse: float
+    *, nome: str, email: str, link: str, point_nome: str
 ) -> None:
     """E-mail de convite de vínculo (professor) — mesmo padrão do convite de
     assinatura do aluno (pedido do usuário, 2026-08-21: "quem manda a
     solicitação é o admin do Point... ficar no mesmo padrão do aluno").
-    Preço de aula avulsa/plano é tabela do Point, não entra aqui — o
-    professor só decide o acordo de repasse."""
-    repasse_legivel = modelo_repasse.replace("_", " ")
+    Preço de aula avulsa/plano é tabela do Point, não entra aqui."""
     html = f"""
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
       <h2>Você foi convidado(a) pra dar aula no {point_nome}</h2>
       <p>Olá, {nome}!</p>
       <p>
-        O {point_nome} te convidou pra fazer parte do time de professores — repasse:
-        {repasse_legivel} ({valor_repasse:.2f}).
+        O {point_nome} te convidou pra fazer parte do time de professores.
       </p>
       <p>
         <a href="{link}" style="display:inline-block;padding:10px 20px;background:#0e9594;
@@ -125,7 +122,7 @@ def enviar_convite_admin_email(*, nome: str, email: str, link: str, point_nome: 
     """E-mail de convite de admin do Point — mesmo padrão dos outros dois
     convites (pedido do usuário, 2026-08-26: "não quero criar senha de
     admin, faça o mesmo padrão de aluno e professor"). Sem acordo nenhum
-    pra decidir (não é repasse nem plano) — só o Point de destino."""
+    pra decidir (não é plano nem preço) — só o Point de destino."""
     html = f"""
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
       <h2>Você foi convidado(a) pra administrar o {point_nome}</h2>

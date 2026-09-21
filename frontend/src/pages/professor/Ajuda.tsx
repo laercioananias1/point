@@ -24,7 +24,7 @@ export default function ProfessorAjuda() {
 
       <AjudaCallout>
         <b>Antes de tudo:</b> você só cria turma depois de aceitar um convite de vínculo de um
-        Point — quem decide o acordo de repasse é o admin, você só confirma.
+        Point — o admin te convida e você só aceita.
       </AjudaCallout>
 
       <section className="section">

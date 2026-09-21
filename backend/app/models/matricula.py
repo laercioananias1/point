@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, object_session, relationship
 
 from app.core.database import Base
@@ -8,7 +8,6 @@ from app.models.base import TimestampMixin
 from app.models.enums import (
     MatriculaStatus,
     MatriculaTipo,
-    ModeloRepasse,
     PagamentoMeio,
     PagamentoStatus,
 )
@@ -44,18 +43,11 @@ class Matricula(TimestampMixin, Base):
     # campo existir (cai no fallback abaixo, mesmo comportamento de sempre).
     data_avulsa: Mapped[date | None] = mapped_column(Date, nullable=True)
 
-    # Exceção de repasse por aluno (seção 3.2) — quando nulo, usa o padrão do Vínculo.
-    repasse_override_modelo: Mapped[ModeloRepasse | None] = mapped_column(
-        Enum(ModeloRepasse), nullable=True
-    )
-    repasse_override_valor: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
-
     # Histórico de cancelamento (pedido do usuário, 2026-09-01: "sim,
     # inclusive coloca usuario q fez acao" / "e datahora") — quem cancelou
     # essa matrícula (aluno desistindo da própria avulsa, ou admin
     # cancelando a assinatura/avulsa em nome dele) e quando. Campo próprio
-    # em vez de reaproveitar updated_at (esse já muda por outro motivo —
-    # PATCH .../repasse — e não seria mais "data do cancelamento").
+    # em vez de reaproveitar updated_at (que muda por qualquer edição).
     cancelado_por_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     cancelado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

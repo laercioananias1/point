@@ -67,13 +67,12 @@ point/
 
 - Cobrança Pix/dinheiro e geração de check-in "presumido"
 - Cancelamento e crédito de reposição
-- Fechamento mensal (fatura de taxa de serviço + relatório de repasse)
 - Dashboards (admin do Point e dono do app)
 - Reserva de vaga em tempo real / lista de espera
 - Integração TotalPass/Wellhub (Fase 2 — fora do MVP núcleo)
 
-Várias dessas etapas dependem de decisões de negócio ainda em aberto (valor da
-taxa de serviço, SLA de aprovação de matrícula, regras de reposição) — ver a
+Várias dessas etapas dependem de decisões de negócio ainda em aberto (SLA de
+aprovação de matrícula, regras de reposição) — ver a
 seção 10 do plano de arquitetura antes de começar.
 
 ## Testes
