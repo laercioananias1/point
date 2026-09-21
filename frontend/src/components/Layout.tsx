@@ -78,6 +78,107 @@ const NAV_LINKS: Record<string, { to: string; label: string; tab: string; icon: 
   ],
 };
 
+// Menu lateral no desktop (pedido do usuário, 2026-09-20: "quero o layout
+// com os menus na lateral") — mesmo destino das abas do celular, mas com
+// tudo agrupado e visível de uma vez em vez de esconder atrás de "Ver
+// mais". Abaixo de 900px continua valendo a barra de abas/menu do topo.
+type ItemMenu = { to: string; label: string; icon: IconName; end?: boolean };
+type GrupoMenu = { titulo: string | null; itens: ItemMenu[] };
+
+const SIDEBAR: Record<string, GrupoMenu[]> = {
+  admin_point: [
+    {
+      titulo: null,
+      itens: [
+        { to: "/admin-point", label: "Início", icon: "home", end: true },
+        { to: "/admin-point/agenda", label: "Agenda", icon: "calendar" },
+      ],
+    },
+    {
+      titulo: "Pessoas",
+      itens: [
+        { to: "/admin-point/aluno", label: "Alunos", icon: "users" },
+        { to: "/admin-point/professor", label: "Professores", icon: "user-check" },
+        { to: "/admin-point/experimental", label: "Aula experimental", icon: "user-plus" },
+      ],
+    },
+    {
+      titulo: "Quadras e aulas",
+      itens: [
+        { to: "/admin-point/turmas", label: "Turmas", icon: "grid" },
+        { to: "/admin-point/ocupacao", label: "Ocupação", icon: "chart" },
+        { to: "/admin-point/configuracoes/quadras", label: "Quadras", icon: "pin" },
+        { to: "/admin-point/configuracoes/modalidades", label: "Modalidades", icon: "list" },
+        { to: "/admin-point/configuracoes/categorias", label: "Categorias", icon: "list" },
+        { to: "/admin-point/configuracoes/tipos-turma", label: "Tipos de turma", icon: "repeat" },
+      ],
+    },
+    {
+      titulo: "Financeiro",
+      itens: [
+        { to: "/admin-point/faturamento", label: "Faturamento", icon: "chart" },
+        { to: "/admin-point/configuracoes/planos", label: "Planos", icon: "ticket" },
+      ],
+    },
+    {
+      titulo: "Configurações",
+      itens: [
+        { to: "/admin-point/meu-point", label: "Meu Point", icon: "home" },
+        { to: "/admin-point/configuracoes/horarios", label: "Horários", icon: "calendar" },
+        { to: "/admin-point/configuracoes/prazos", label: "Prazos", icon: "clock" },
+        { to: "/admin-point/configuracoes/feriados", label: "Feriados", icon: "flag" },
+        { to: "/admin-point/ajuda", label: "Ajuda", icon: "help" },
+        { to: "/admin-point/perfil", label: "Perfil", icon: "user" },
+      ],
+    },
+  ],
+  professor: [
+    {
+      titulo: null,
+      itens: [
+        { to: "/professor", label: "Início", icon: "home", end: true },
+        { to: "/professor/agenda", label: "Agenda", icon: "calendar" },
+      ],
+    },
+    {
+      titulo: "Aulas",
+      itens: [
+        { to: "/professor/turmas", label: "Turmas", icon: "grid" },
+        { to: "/professor/ocupacao", label: "Ocupação", icon: "chart" },
+        { to: "/professor/experimental", label: "Aula experimental", icon: "user-plus" },
+      ],
+    },
+    {
+      titulo: "Conta",
+      itens: [
+        { to: "/professor/ajuda", label: "Ajuda", icon: "help" },
+        { to: "/professor/perfil", label: "Perfil", icon: "user" },
+      ],
+    },
+  ],
+  aluno: [
+    {
+      titulo: null,
+      itens: [
+        { to: "/aluno", label: "Início", icon: "home", end: true },
+        { to: "/aluno/agenda", label: "Agenda", icon: "calendar" },
+        { to: "/aluno/creditos", label: "Créditos", icon: "ticket" },
+        { to: "/aluno/perfil", label: "Perfil", icon: "user" },
+      ],
+    },
+  ],
+  super_admin: [
+    {
+      titulo: null,
+      itens: [
+        { to: "/dono-app", label: "Início", icon: "home", end: true },
+        { to: "/dono-app/points", label: "Points", icon: "grid" },
+        { to: "/dono-app/perfil", label: "Perfil", icon: "user" },
+      ],
+    },
+  ],
+};
+
 export type IconName =
   | "home"
   | "chart"
@@ -334,6 +435,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const area = areaDaRota(location.pathname);
   const links = area ? (NAV_LINKS[area] ?? []) : [];
+  const grupos = area ? (SIDEBAR[area] ?? []) : [];
   const rotuloArea = area ? (ROLE_LABEL[area] ?? area) : "";
 
   // Logomarca do Point no canto esquerdo (pedido do usuário, 2026-08-30:
@@ -397,7 +499,50 @@ export function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={grupos.length > 0 ? "app-shell app-shell-lateral" : "app-shell"}>
+      {grupos.length > 0 && (
+        <aside className="app-sidebar">
+          <div className="app-sidebar-marca">
+            {pointLogo?.logo ? (
+              <img
+                src={urlArquivo(pointLogo.logo)}
+                alt={pointLogo.nome ?? "Logo do Point"}
+                className="app-sidebar-logo"
+              />
+            ) : (
+              <LogoMark size={34} />
+            )}
+            <span className="app-sidebar-marca-texto">
+              <span className="app-sidebar-nome">{pointLogo?.nome ?? "OPoint"}</span>
+              <span className="app-sidebar-papel">{rotuloArea}</span>
+            </span>
+          </div>
+          <nav className="app-sidebar-nav">
+            {grupos.map((grupo, i) => (
+              <div className="app-sidebar-grupo" key={i}>
+                {grupo.titulo && <span className="app-sidebar-titulo">{grupo.titulo}</span>}
+                {grupo.itens.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) =>
+                      isActive ? "app-sidebar-link active" : "app-sidebar-link"
+                    }
+                  >
+                    <Icon name={item.icon} size={18} />
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            ))}
+          </nav>
+          <button type="button" className="app-sidebar-sair" onClick={handleLogout}>
+            <Icon name="logout" size={18} />
+            Sair da conta
+          </button>
+        </aside>
+      )}
       <div className="app-sticky-top">
         {estaComoSuporte && (
           <div className="app-suporte-faixa">

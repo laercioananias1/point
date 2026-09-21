@@ -2416,3 +2416,156 @@ button.danger:hover:not(:disabled) {
     padding-bottom: calc(150px + env(safe-area-inset-bottom));
   }
 }
+
+/* Menu lateral (pedido do usuário, 2026-09-20: "quero o layout com os
+   menus na lateral") — só no desktop; abaixo de 900px segue a barra de
+   abas/menu do topo de antes. Com a lateral, a marca e os links saem do
+   cabeçalho, que vira só uma barra fina com sino/ajuda/usuário. */
+.app-sidebar {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 250px;
+    z-index: 45;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 12px 14px;
+    background: var(--navy);
+    border-right: 1px solid var(--navy-line);
+  }
+
+  .app-shell-lateral .app-sticky-top,
+  .app-shell-lateral .app-main {
+    margin-left: 250px;
+  }
+
+  .app-shell-lateral .app-header {
+    justify-content: flex-end;
+    padding: 12px 28px;
+    background: transparent;
+    border-bottom: none;
+  }
+
+  .app-shell-lateral .app-header-left,
+  .app-shell-lateral .app-logout-btn {
+    display: none;
+  }
+
+  .app-shell-lateral .app-user {
+    color: var(--ink);
+  }
+
+  .app-shell-lateral .app-user-role {
+    color: var(--ink-muted);
+  }
+}
+
+.app-sidebar-marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 14px;
+  border-bottom: 1px solid var(--navy-line);
+}
+
+.app-sidebar-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.app-sidebar-marca-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.app-sidebar-nome {
+  font-family: "Archivo", sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-sidebar-papel {
+  font-size: 11.5px;
+  color: var(--navy-text-muted);
+}
+
+.app-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 0;
+}
+
+.app-sidebar-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-sidebar-titulo {
+  padding: 6px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--navy-text-muted);
+  opacity: 0.8;
+}
+
+.app-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy-text-muted);
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.app-sidebar-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.app-sidebar-link.active {
+  color: #fff;
+  background: var(--accent);
+}
+
+.app-sidebar-sair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--navy-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.app-sidebar-sair:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
