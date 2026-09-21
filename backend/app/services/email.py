@@ -183,3 +183,24 @@ def enviar_lembrete_mensalidade_email(
     </div>
     """
     _enviar(email=email, assunto=f"Lembrete — mensalidade de {mes_referencia} em aberto", html=html)
+
+
+def enviar_cobranca_email(
+    *, nome: str, email: str, point_nome: str, descricao: str, valor: float, vencimento: str
+) -> None:
+    """Lembrete de cobrança em aberto (pedido do usuário, 2026-09-20: tela
+    de Cobranças) — cobrança pode ser avulsa (uniforme, evento...), então
+    ao contrário de enviar_lembrete_mensalidade_email não amarra a uma
+    modalidade nem manda o aluno pagar por Pix no painel."""
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2>Cobrança em aberto — {point_nome}</h2>
+      <p>Olá, {nome}!</p>
+      <p>
+        Você tem uma cobrança em aberto no {point_nome}: <strong>{descricao}</strong>,
+        no valor de <strong>R$ {valor:.2f}</strong>, com vencimento em <strong>{vencimento}</strong>.
+      </p>
+      <p>Qualquer dúvida, fale com o seu Point.</p>
+    </div>
+    """
+    _enviar(email=email, assunto=f"Cobrança em aberto — {descricao}", html=html)

@@ -159,3 +159,12 @@ class SolicitacaoExperimentalStatus(str, enum.Enum):
     PENDENTE = "pendente"
     APROVADA = "aprovada"
     RECUSADA = "recusada"
+
+
+class CobrancaStatus(str, enum.Enum):
+    """Só dois estados gravados — "atrasada" é derivada (ABERTA com
+    vencimento no passado), não vira valor de coluna pra não precisar de
+    job só pra virar a chave à meia-noite."""
+
+    ABERTA = "aberta"
+    PAGA = "paga"

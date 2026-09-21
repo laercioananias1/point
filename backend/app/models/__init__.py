@@ -4,6 +4,7 @@ from app.models.assinatura import Assinatura
 from app.models.aula import Aula
 from app.models.categoria import Categoria
 from app.models.checkin import Checkin
+from app.models.cobranca import Cobranca
 from app.models.configuracao import ConfiguracaoPlataforma
 from app.models.convite import Convite
 from app.models.convite_admin import ConviteAdmin
@@ -36,6 +37,7 @@ __all__ = [
     "Aula",
     "Categoria",
     "Checkin",
+    "Cobranca",
     "ConfiguracaoPlataforma",
     "Convite",
     "ConviteAdmin",

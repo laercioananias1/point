@@ -85,6 +85,10 @@ class Settings(BaseSettings):
     # experimental.py::aprovar_solicitacao) que a aula foi confirmada.
     # Nome provisório até criar/aprovar na Meta, mesmo fluxo dos outros.
     whatsapp_template_confirmacao_experimental: str = "confirmacao_experimental"
+    # Lembrete de cobrança em aberto (pedido do usuário, 2026-09-20: tela de
+    # Cobranças, botão de WhatsApp em cada linha) — só texto, sem botão.
+    # Nome provisório até criar/aprovar na Meta (categoria Utility).
+    whatsapp_template_cobranca: str = "lembrete_cobranca"
 
     # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
     # 2026-08-30: deploy em produção) — em dev é só o Vite local; em

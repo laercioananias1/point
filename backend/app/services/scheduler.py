@@ -21,6 +21,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.core.database import SessionLocal
 from app.services.aulas import gerar_aulas_do_mes_em_lote
+from app.services.cobrancas import gerar_mensalidades
 
 # print(), não logging — mesmo padrão já usado em app/services/email.py (o
 # projeto não configura handler de logging em lugar nenhum).
@@ -34,6 +35,23 @@ def _rodar_geracao_de_aulas() -> None:
         print(f"[scheduler] geração diária de aulas: {total} aula(s) criada(s)")
     except Exception:  # noqa: BLE001 — job de fundo não pode derrubar o processo
         print("[scheduler] falha ao gerar aulas do mês:")
+        traceback.print_exc()
+        db.rollback()
+    finally:
+        db.close()
+
+
+def _rodar_geracao_de_mensalidades() -> None:
+    """Todo dia 1 (pedido do usuário, 2026-09-20: "as cobranças entram
+    sozinhas todo dia 1") — só uma vez por mês, e não todo dia como as
+    aulas, pra não recriar uma cobrança que o admin apagou de propósito;
+    quem precisar fora do dia 1 usa o "gerar agora" da tela."""
+    db = SessionLocal()
+    try:
+        total = gerar_mensalidades(db)
+        print(f"[scheduler] geração mensal de cobranças: {total} mensalidade(s) criada(s)")
+    except Exception:  # noqa: BLE001 — job de fundo não pode derrubar o processo
+        print("[scheduler] falha ao gerar mensalidades:")
         traceback.print_exc()
         db.rollback()
     finally:
@@ -54,6 +72,15 @@ def iniciar_scheduler() -> BackgroundScheduler:
         hour=4,
         minute=0,
         id="gerar_aulas_do_mes_diario",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _rodar_geracao_de_mensalidades,
+        trigger="cron",
+        day=1,
+        hour=4,
+        minute=10,
+        id="gerar_mensalidades_mensal",
         replace_existing=True,
     )
     scheduler.start()

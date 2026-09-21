@@ -160,3 +160,18 @@ def enviar_confirmacao_experimental_whatsapp(
         template=template,
         variaveis_corpo=[nome, modalidade_nome, point_nome, data_horario],
     )
+
+
+def enviar_cobranca_whatsapp(
+    *, celular: str, nome: str, point_nome: str, descricao: str, valor: str, vencimento: str
+) -> None:
+    """Lembrete de cobrança em aberto (pedido do usuário, 2026-09-20: tela
+    de Cobranças) — disparado à mão pelo admin, no botão de WhatsApp da
+    linha. Sem botão no template, só o aviso; `valor` e `vencimento` já
+    vêm formatados (ex.: "120,00" e "05/09")."""
+    template = get_settings().whatsapp_template_cobranca
+    _enviar_whatsapp(
+        celular=celular,
+        template=template,
+        variaveis_corpo=[nome, point_nome, descricao, valor, vencimento],
+    )

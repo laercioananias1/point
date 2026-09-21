@@ -15,6 +15,7 @@ from app.routers import (
     auth,
     categorias,
     checkins,
+    cobrancas,
     configuracoes,
     convites,
     convites_admin,
@@ -70,6 +71,7 @@ app.include_router(quadras.router)
 app.include_router(turmas.router)
 app.include_router(matriculas.router)
 app.include_router(pagamentos.router)
+app.include_router(cobrancas.router)
 app.include_router(configuracoes.router)
 app.include_router(creditos.router)
 app.include_router(fechamentos.router)
