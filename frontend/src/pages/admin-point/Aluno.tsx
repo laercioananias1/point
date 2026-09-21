@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import type { Assinatura, Convite, Matricula } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { StatusPill } from "../../components/StatusPill";
 import { rotuloTurma } from "../../lib/dias";
 import { formatarReais, rotuloPagamentoMeio } from "../../lib/formato";
@@ -120,22 +121,7 @@ export default function AdminPointAluno() {
             )}
           </section>
 
-          <section className="section">
-            <Link to="/admin-point/aluno/convidar" className="action-card">
-              <span className="action-card-icon">
-                <Icon name="user-plus" />
-              </span>
-              <span className="action-card-info">
-                <span className="action-card-title">Convidar aluno</span>
-                <span className="action-card-subtitle">
-                  Monta a assinatura (plano, turmas, forma de pagamento) e manda o convite por e-mail
-                </span>
-              </span>
-              <span className="action-card-chevron" aria-hidden="true">
-                <Icon name="chevron-right" />
-              </span>
-            </Link>
-          </section>
+          <BotaoFlutuante to="/admin-point/aluno/convidar" rotulo="Convidar aluno" />
 
           <section className="section">
             <h2>Convites pendentes ({convitesPendentes.length})</h2>

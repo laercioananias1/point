@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { ExperimentalConfig, TurmaResumo } from "../../api/types";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { rotuloTurma } from "../../lib/dias";
 
 function rotuloPeriodo(inicio: string, fim: string | null): string {
@@ -184,20 +185,7 @@ export default function AdminPointTurmas() {
       )}
 
       {pronto && (
-        <section className="section">
-          <Link to="/admin-point/turmas/cadastrar" className="action-card">
-            <span className="action-card-icon">
-              <Icon name="plus" />
-            </span>
-            <span className="action-card-info">
-              <span className="action-card-title">Criar turma</span>
-              <span className="action-card-subtitle">Em nome de qualquer professor vinculado a este Point</span>
-            </span>
-            <span className="action-card-chevron" aria-hidden="true">
-              <Icon name="chevron-right" />
-            </span>
-          </Link>
-        </section>
+        <BotaoFlutuante to="/admin-point/turmas/cadastrar" rotulo="Nova turma" />
       )}
     </Layout>
   );

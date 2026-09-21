@@ -2367,3 +2367,52 @@ button.danger:hover:not(:disabled) {
     padding: 10px 14px;
   }
 }
+
+/* Botão flutuante de "novo X" (pedido do usuário, 2026-09-20) — fixo no
+   canto, sempre visível mesmo com lista longa. No celular sobe acima da
+   barra de abas do rodapé. */
+.fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-radius: 100px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  box-shadow: var(--shadow-pop);
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.fab:hover {
+  background: var(--accent-strong);
+}
+
+.fab:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 640px) {
+  .fab {
+    right: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Deixa espaço no fim da lista pro botão flutuante não cobrir o último
+   item (pedido do usuário, 2026-09-20). */
+.app-main:has(.fab) {
+  padding-bottom: 96px;
+}
+
+@media (max-width: 640px) {
+  .app-main-com-abas:has(.fab) {
+    padding-bottom: calc(150px + env(safe-area-inset-bottom));
+  }
+}

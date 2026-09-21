@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import type { ConviteVinculo, Vinculo } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { StatusPill } from "../../components/StatusPill";
 import { rotuloRepasse } from "../../lib/formato";
 
@@ -92,22 +93,7 @@ export default function AdminPointProfessor() {
             )}
           </section>
 
-          <section className="section">
-            <Link to="/admin-point/professor/convidar" className="action-card">
-              <span className="action-card-icon">
-                <Icon name="user-plus" />
-              </span>
-              <span className="action-card-info">
-                <span className="action-card-title">Convidar professor</span>
-                <span className="action-card-subtitle">
-                  Decide o acordo de repasse e manda o convite por e-mail
-                </span>
-              </span>
-              <span className="action-card-chevron" aria-hidden="true">
-                <Icon name="chevron-right" />
-              </span>
-            </Link>
-          </section>
+          <BotaoFlutuante to="/admin-point/professor/convidar" rotulo="Convidar professor" />
 
           <section className="section">
             <h2>Convites de vínculo pendentes ({convitesVinculoPendentes.length})</h2>

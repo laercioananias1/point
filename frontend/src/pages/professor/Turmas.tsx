@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import type { ExperimentalConfig, TurmaResumo, Vinculo } from "../../api/types";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { rotuloTurma } from "../../lib/dias";
 
 function rotuloPeriodo(inicio: string, fim: string | null): string {
@@ -130,20 +131,7 @@ export default function ProfessorTurmas() {
                 Você precisa de um vínculo aprovado por um Point antes de criar turmas.
               </p>
             ) : (
-              <Link to="/professor/turmas/cadastrar" className="action-card">
-                <span className="action-card-icon">
-                  <Icon name="plus" />
-                </span>
-                <span className="action-card-info">
-                  <span className="action-card-title">Criar turma</span>
-                  <span className="action-card-subtitle">
-                    Modalidade, categoria, tipo, quadra, dias e horários
-                  </span>
-                </span>
-                <span className="action-card-chevron" aria-hidden="true">
-                  <Icon name="chevron-right" />
-                </span>
-              </Link>
+              <BotaoFlutuante to="/professor/turmas/cadastrar" rotulo="Nova turma" />
             )}
           </section>
         </>
