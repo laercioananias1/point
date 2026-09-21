@@ -42,7 +42,7 @@ export default function AdminPointTiposTurma() {
         <button
           type="button"
           className="close-btn"
-          onClick={() => navigate("/admin-point/mais")}
+          onClick={() => navigate("/admin-point")}
           aria-label="Voltar"
         >
           <Icon name="chevron-left" />

@@ -14,7 +14,6 @@ import AdminPointProfessor from "./pages/admin-point/Professor";
 import AdminPointConvidarProfessor from "./pages/admin-point/ConvidarProfessor";
 import AdminPointFaturamento from "./pages/admin-point/Faturamento";
 import AdminPointPerfil from "./pages/admin-point/Perfil";
-import AdminPointVerMais from "./pages/admin-point/VerMais";
 import AdminPointMeuPoint from "./pages/admin-point/MeuPoint";
 import AdminPointPrazos from "./pages/admin-point/Prazos";
 import AdminPointHorariosFuncionamento from "./pages/admin-point/HorariosFuncionamento";
@@ -201,14 +200,9 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/admin-point/mais"
-        element={
-          <ProtectedRoute>
-            <AdminPointVerMais />
-          </ProtectedRoute>
-        }
-      />
+      {/* A antiga tela "Ver mais" perdeu o sentido com o menu lateral (pedido do
+          usuário, 2026-09-20) — mantém o endereço antigo funcionando. */}
+      <Route path="/admin-point/mais" element={<Navigate to="/admin-point" replace />} />
       <Route
         path="/admin-point/meu-point"
         element={

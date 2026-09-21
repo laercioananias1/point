@@ -323,7 +323,7 @@ function CriarTurmaForm({
         </select>
       </label>
       <p className="empty-state" style={{ padding: 0 }}>
-        Define se essa turma aparece na página pública de aula experimental (Ver mais → Aula
+        Define se essa turma aparece na página pública de aula experimental (Início → Aula
         experimental). "Aceita" compartilha a mesma vaga com quem já é aluno; "somente experimental"
         é dedicada só a visitantes.
       </p>
