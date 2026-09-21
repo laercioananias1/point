@@ -128,6 +128,7 @@ export default function AdminPointInicio() {
           </section>
 
           <section className="section" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <h2 style={{ marginBottom: 4 }}>Acesso rápido</h2>
             <div className="quick-actions">
               <Link to="/admin-point/aluno" className="quick-action">
                 <span className="quick-action-icon">

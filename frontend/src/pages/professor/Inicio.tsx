@@ -92,6 +92,7 @@ export default function ProfessorInicio() {
       {pronto && (
         <>
           <section className="section">
+            <h2>Acesso rápido</h2>
             <div className="quick-actions">
               <Link to="/professor/turmas" className="quick-action">
                 <span className="quick-action-icon">
