@@ -489,6 +489,24 @@ export function Layout({ children }: { children: ReactNode }) {
     navigate("/login");
   }
 
+  // "Ver mais" abre o menu lateral (pedido do usuário, 2026-09-20: "o Ver
+  // mais também abre o menu na lateral") — abaixo de 900px a barra lateral
+  // vira uma gaveta que desliza por cima; no desktop ela já está sempre
+  // visível, então isso só importa em tela estreita.
+  const [menuAberto, setMenuAberto] = useState(false);
+  useEffect(() => {
+    setMenuAberto(false);
+  }, [location.pathname]);
+  useEffect(() => {
+    if (!menuAberto) return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuAberto(false);
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [menuAberto]);
+  const ROTA_VER_MAIS = "/admin-point/mais";
+
   // Faixa de modo suporte (pedido do usuário, 2026-08-30: dono do app
   // "entrar como" o admin de um Point, com jeito de voltar depois) —
   // fixa em toda tela enquanto durar, pra nunca esquecer que a sessão
@@ -501,7 +519,11 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className={grupos.length > 0 ? "app-shell app-shell-lateral" : "app-shell"}>
       {grupos.length > 0 && (
-        <aside className="app-sidebar">
+        <>
+        {menuAberto && (
+          <div className="app-sidebar-fundo" onClick={() => setMenuAberto(false)} aria-hidden="true" />
+        )}
+        <aside className={menuAberto ? "app-sidebar aberto" : "app-sidebar"}>
           <div className="app-sidebar-marca">
             {pointLogo?.logo ? (
               <img
@@ -542,6 +564,7 @@ export function Layout({ children }: { children: ReactNode }) {
             Sair da conta
           </button>
         </aside>
+        </>
       )}
       <div className="app-sticky-top">
         {estaComoSuporte && (
@@ -572,16 +595,27 @@ export function Layout({ children }: { children: ReactNode }) {
             </span>
             {links.length > 0 && (
               <nav className="app-nav">
-                {links.map((link) => (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    end
-                    className={({ isActive }) => (isActive ? "app-nav-link active" : "app-nav-link")}
-                  >
-                    {link.label}
-                  </NavLink>
-                ))}
+                {links.map((link) =>
+                  link.to === ROTA_VER_MAIS ? (
+                    <button
+                      key={link.to}
+                      type="button"
+                      className={menuAberto ? "app-nav-link active" : "app-nav-link"}
+                      onClick={() => setMenuAberto(true)}
+                    >
+                      {link.label}
+                    </button>
+                  ) : (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      end
+                      className={({ isActive }) => (isActive ? "app-nav-link active" : "app-nav-link")}
+                    >
+                      {link.label}
+                    </NavLink>
+                  ),
+                )}
               </nav>
             )}
           </div>
@@ -653,17 +687,29 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {links.length > 0 && (
         <nav className="app-tabbar">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end
-              className={({ isActive }) => (isActive ? "app-tab active" : "app-tab")}
-            >
-              <Icon name={link.icon} />
-              <span>{link.tab}</span>
-            </NavLink>
-          ))}
+          {links.map((link) =>
+            link.to === ROTA_VER_MAIS ? (
+              <button
+                key={link.to}
+                type="button"
+                className={menuAberto ? "app-tab active" : "app-tab"}
+                onClick={() => setMenuAberto(true)}
+              >
+                <Icon name={link.icon} />
+                <span>{link.tab}</span>
+              </button>
+            ) : (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end
+                className={({ isActive }) => (isActive ? "app-tab active" : "app-tab")}
+              >
+                <Icon name={link.icon} />
+                <span>{link.tab}</span>
+              </NavLink>
+            ),
+          )}
         </nav>
       )}
     </div>

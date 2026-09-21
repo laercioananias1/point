@@ -2569,3 +2569,61 @@ button.danger:hover:not(:disabled) {
 .app-sidebar-sair:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
 }
+
+/* Gaveta do menu lateral em tela estreita, aberta por "Ver mais" (pedido
+   do usuário, 2026-09-20) — o .app-sidebar do desktop, só que deslizando
+   por cima do conteúdo, com um fundo escurecido pra fechar ao tocar. */
+.app-sidebar-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: rgba(5, 17, 25, 0.55);
+}
+
+@media (max-width: 899px) {
+  .app-sidebar.aberto {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(290px, 85vw);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 12px 14px;
+    background: var(--navy);
+    border-right: 1px solid var(--navy-line);
+    box-shadow: var(--shadow-pop);
+  }
+}
+
+@media (min-width: 900px) {
+  .app-sidebar-fundo {
+    display: none;
+  }
+}
+
+/* "Ver mais" agora é <button> no menu do topo e na barra de abas: tira o
+   visual padrão de botão pra ficar igual aos links vizinhos. */
+button.app-nav-link {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.app-nav-link.active {
+  background: var(--accent);
+}
+
+button.app-tab {
+  background: transparent;
+  border-radius: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.app-tab:hover:not(:disabled) {
+  background: transparent;
+}
