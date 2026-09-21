@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import type { ConviteAdmin, PointRanking } from "../../api/types";
 import { useAuth, type User } from "../../auth/AuthContext";
 import { useConfirm } from "../../components/ConfirmModal";
-import { Icon, Layout } from "../../components/Layout";
+import { Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { formatarCelular, formatarReais } from "../../lib/formato";
 
 /** Points da plataforma (pedido do usuário, 2026-08-26: "pode fazer" — a
@@ -132,22 +133,7 @@ export default function DonoAppPoints() {
             )}
           </section>
 
-          <section className="section">
-            <Link to="/dono-app/points/criar" className="action-card">
-              <span className="action-card-icon">
-                <Icon name="plus" />
-              </span>
-              <span className="action-card-info">
-                <span className="action-card-title">Criar Point</span>
-                <span className="action-card-subtitle">
-                  Cadastra a arena e já manda o convite de admin por e-mail
-                </span>
-              </span>
-              <span className="action-card-chevron" aria-hidden="true">
-                <Icon name="chevron-right" />
-              </span>
-            </Link>
-          </section>
+          <BotaoFlutuante to="/dono-app/points/criar" rotulo="Criar Point" />
 
           <section className="section">
             <h2>Convites de admin pendentes ({convitesPendentes.length})</h2>

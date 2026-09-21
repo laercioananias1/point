@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, Quadra } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 
 /** Tela própria pra quadras — saiu de dentro da antiga Configurações
  * (pedido do usuário, 2026-08-30: "Ver Mais" com um botão por seção). */
@@ -80,20 +81,7 @@ export default function AdminPointQuadras() {
               </p>
             </section>
           ) : (
-            <section className="section">
-              <Link to="/admin-point/configuracoes/quadras/cadastrar" className="action-card">
-                <span className="action-card-icon">
-                  <Icon name="plus" />
-                </span>
-                <span className="action-card-info">
-                  <span className="action-card-title">Cadastrar quadra</span>
-                  <span className="action-card-subtitle">Nome e modalidades atendidas</span>
-                </span>
-                <span className="action-card-chevron" aria-hidden="true">
-                  <Icon name="chevron-right" />
-                </span>
-              </Link>
-            </section>
+            <BotaoFlutuante to="/admin-point/configuracoes/quadras/cadastrar" rotulo="Nova quadra" />
           )}
         </>
       )}

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { TipoTurma } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 
 /** Tela própria pra tipos/formatos de turma — mesmo padrão de
  * Categorias.tsx (pedido do usuário, 2026-09-09: "Padrão", "Aula
@@ -68,22 +69,7 @@ export default function AdminPointTiposTurma() {
             )}
           </section>
 
-          <section className="section">
-            <Link to="/admin-point/configuracoes/tipos-turma/cadastrar" className="action-card">
-              <span className="action-card-icon">
-                <Icon name="plus" />
-              </span>
-              <span className="action-card-info">
-                <span className="action-card-title">Cadastrar tipo de turma</span>
-                <span className="action-card-subtitle">
-                  Ex.: aula individual, dupla, família — pra escolher na hora de criar a turma
-                </span>
-              </span>
-              <span className="action-card-chevron" aria-hidden="true">
-                <Icon name="chevron-right" />
-              </span>
-            </Link>
-          </section>
+          <BotaoFlutuante to="/admin-point/configuracoes/tipos-turma/cadastrar" rotulo="Novo tipo de turma" />
         </>
       )}
     </Layout>

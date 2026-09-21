@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Categoria } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 
 /** Tela própria pra categorias (nível de aluno) — mesmo padrão de
  * Modalidades.tsx (pedido do usuário, 2026-09-08: "cada point faz seu
@@ -68,22 +69,7 @@ export default function AdminPointCategorias() {
             )}
           </section>
 
-          <section className="section">
-            <Link to="/admin-point/configuracoes/categorias/cadastrar" className="action-card">
-              <span className="action-card-icon">
-                <Icon name="plus" />
-              </span>
-              <span className="action-card-info">
-                <span className="action-card-title">Cadastrar categoria</span>
-                <span className="action-card-subtitle">
-                  Nível do aluno (ex.: iniciante, intermediário, avançado) e a cor na agenda
-                </span>
-              </span>
-              <span className="action-card-chevron" aria-hidden="true">
-                <Icon name="chevron-right" />
-              </span>
-            </Link>
-          </section>
+          <BotaoFlutuante to="/admin-point/configuracoes/categorias/cadastrar" rotulo="Nova categoria" />
         </>
       )}
     </Layout>

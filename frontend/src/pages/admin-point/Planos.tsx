@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Plano } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { formatarReais } from "../../lib/formato";
 
 /** Tela própria pra planos mensais — saiu de dentro da antiga
@@ -73,20 +74,7 @@ export default function AdminPointPlanos() {
           </section>
 
           {new Set(planos.map((p) => p.frequencia_semanal)).size < 6 && (
-            <section className="section">
-              <Link to="/admin-point/configuracoes/planos/cadastrar" className="action-card">
-                <span className="action-card-icon">
-                  <Icon name="plus" />
-                </span>
-                <span className="action-card-info">
-                  <span className="action-card-title">Cadastrar plano</span>
-                  <span className="action-card-subtitle">Frequência semanal e preço mensal</span>
-                </span>
-                <span className="action-card-chevron" aria-hidden="true">
-                  <Icon name="chevron-right" />
-                </span>
-              </Link>
-            </section>
+            <BotaoFlutuante to="/admin-point/configuracoes/planos/cadastrar" rotulo="Novo plano" />
           )}
         </>
       )}

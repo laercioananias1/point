@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
+import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { formatarReais } from "../../lib/formato";
 
 /** Tela própria pra modalidades — saiu de dentro da antiga Configurações
@@ -68,20 +69,7 @@ export default function AdminPointModalidades() {
             )}
           </section>
 
-          <section className="section">
-            <Link to="/admin-point/configuracoes/modalidades/cadastrar" className="action-card">
-              <span className="action-card-icon">
-                <Icon name="plus" />
-              </span>
-              <span className="action-card-info">
-                <span className="action-card-title">Cadastrar modalidade</span>
-                <span className="action-card-subtitle">Nome, duração padrão da aula e preço da avulsa</span>
-              </span>
-              <span className="action-card-chevron" aria-hidden="true">
-                <Icon name="chevron-right" />
-              </span>
-            </Link>
-          </section>
+          <BotaoFlutuante to="/admin-point/configuracoes/modalidades/cadastrar" rotulo="Nova modalidade" />
         </>
       )}
     </Layout>
