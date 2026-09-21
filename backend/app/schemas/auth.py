@@ -28,6 +28,7 @@ class UserOut(ORMModel):
     # filtrar dados do próprio Point (ex.: listar turmas pra cancelar por
     # força maior) sem precisar de mais uma chamada.
     point_id: int | None = None
+    foto: str | None = None
 
 
 class TokenResponse(ORMModel):

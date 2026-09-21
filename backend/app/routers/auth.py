@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -13,6 +13,7 @@ from app.models.redefinicao_senha import RedefinicaoSenha
 from app.models.user import User
 from app.schemas.auth import EsqueciSenhaRequest, LoginRequest, RedefinirSenhaRequest, TokenResponse, UserOut
 from app.services.email import enviar_redefinicao_senha_email
+from app.services.uploads import TAMANHO_MAXIMO_BYTES, remover_imagem_point, salvar_foto_usuario
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -41,6 +42,45 @@ def login(payload: LoginRequest, db: Annotated[Session, Depends(get_db)]) -> Tok
 def quem_sou_eu(user: Annotated[User, Depends(get_current_user)]) -> User:
     """Rehidrata a sessão no boot do app (recarregar a página não perde o
     usuário, só o token em memória permanece)."""
+    return user
+
+
+@router.post("/me/foto", response_model=UserOut)
+async def definir_minha_foto(
+    user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    arquivo: Annotated[UploadFile, File()],
+) -> User:
+    """Foto de perfil (pedido do usuário, 2026-09-21) — slot único: enviar
+    uma nova substitui a anterior (apaga o arquivo velho do disco)."""
+    conteudo = await arquivo.read()
+    if len(conteudo) > TAMANHO_MAXIMO_BYTES:
+        raise HTTPException(422, "Imagem maior que 5 MB")
+    try:
+        url = salvar_foto_usuario(user.id, arquivo, conteudo)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+
+    foto_antiga = user.foto
+    user.foto = url
+    db.commit()
+    db.refresh(user)
+    if foto_antiga is not None:
+        remover_imagem_point(foto_antiga)
+    return user
+
+
+@router.delete("/me/foto", response_model=UserOut)
+def remover_minha_foto(
+    user: Annotated[User, Depends(get_current_user)], db: Annotated[Session, Depends(get_db)]
+) -> User:
+    if user.foto is None:
+        raise HTTPException(404, "Você não tem foto de perfil")
+    foto_antiga = user.foto
+    user.foto = None
+    db.commit()
+    db.refresh(user)
+    remover_imagem_point(foto_antiga)
     return user
 
 

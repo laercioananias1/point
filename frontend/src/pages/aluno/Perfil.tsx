@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { AlunoResumo, Assinatura, PeriodoDia } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+import { FotoPerfil } from "../../components/FotoPerfil";
 import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 import { rotuloTurma } from "../../lib/dias";
@@ -103,6 +104,8 @@ export default function AlunoPerfil() {
               </>
             )}
           </section>
+
+          <FotoPerfil />
 
           <TemaToggle />
 

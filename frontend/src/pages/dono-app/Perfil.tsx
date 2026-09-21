@@ -1,5 +1,6 @@
 import { useAuth } from "../../auth/AuthContext";
 import { Layout } from "../../components/Layout";
+import { FotoPerfil } from "../../components/FotoPerfil";
 import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
@@ -21,6 +22,8 @@ export default function DonoAppPerfil() {
           </div>
         </div>
       </section>
+
+      <FotoPerfil />
 
       <TemaToggle />
 

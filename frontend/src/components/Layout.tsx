@@ -4,6 +4,7 @@ import { api, urlArquivo } from "../api/client";
 import type { PointLogo } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { aplicarCorDestaque } from "../lib/cor";
+import { Avatar } from "./Avatar";
 import { BotaoTema } from "./BotaoTema";
 import { LogoMark } from "./LogoMark";
 
@@ -131,7 +132,6 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
         { to: "/admin-point/configuracoes/prazos", label: "Prazos", icon: "clock" },
         { to: "/admin-point/configuracoes/feriados", label: "Feriados", icon: "flag" },
         { to: "/admin-point/ajuda", label: "Ajuda", icon: "help" },
-        { to: "/admin-point/perfil", label: "Perfil", icon: "user" },
       ],
     },
   ],
@@ -155,7 +155,6 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
       titulo: "Conta",
       itens: [
         { to: "/professor/ajuda", label: "Ajuda", icon: "help" },
-        { to: "/professor/perfil", label: "Perfil", icon: "user" },
       ],
     },
   ],
@@ -166,7 +165,6 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
         { to: "/aluno", label: "Início", icon: "home", end: true },
         { to: "/aluno/agenda", label: "Agenda", icon: "calendar" },
         { to: "/aluno/creditos", label: "Créditos", icon: "ticket" },
-        { to: "/aluno/perfil", label: "Perfil", icon: "user" },
       ],
     },
   ],
@@ -176,7 +174,6 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
       itens: [
         { to: "/dono-app", label: "Início", icon: "home", end: true },
         { to: "/dono-app/points", label: "Points", icon: "grid" },
-        { to: "/dono-app/perfil", label: "Perfil", icon: "user" },
       ],
     },
   ],
@@ -653,10 +650,21 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
           {user && (
             <div className="app-user">
-              <span className="app-user-text">
-                <span className="app-user-role">{rotuloArea}</span>
-                <span className="app-user-name">{user.nome}</span>
-              </span>
+              {/* Nome + foto levam ao Perfil (pedido do usuário, 2026-09-21:
+                  "deixa o perfil no clique do usuário") — por isso "Perfil"
+                  saiu do menu lateral. */}
+              <button
+                type="button"
+                className="app-user-perfil"
+                onClick={() => area && navigate(`${PREFIXO_ROTA[area]}/perfil`)}
+                aria-label="Abrir meu perfil"
+              >
+                <span className="app-user-text">
+                  <span className="app-user-role">{rotuloArea}</span>
+                  <span className="app-user-name">{user.nome}</span>
+                </span>
+                <Avatar nome={user.nome} foto={user.foto} tamanho={36} />
+              </button>
               <BotaoTema />
               {area && (
                 <button

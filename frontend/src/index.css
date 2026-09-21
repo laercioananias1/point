@@ -2464,11 +2464,14 @@ button.danger:hover:not(:disabled) {
 }
 
 @media (min-width: 900px) {
+  /* Cartão arredondado que flutua sobre a tela (pedido do usuário,
+     2026-09-21: "deixa essa lateral arredondada, sobreposta") — solto das
+     bordas, com sombra, em vez de uma coluna colada na lateral. */
   .app-sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top: 12px;
+    left: 12px;
+    bottom: 12px;
     width: 250px;
     z-index: 45;
     display: flex;
@@ -2476,13 +2479,15 @@ button.danger:hover:not(:disabled) {
     gap: 8px;
     padding: 18px 12px 14px;
     background: var(--side-bg);
-    border-right: 1px solid var(--side-line);
-    box-shadow: var(--shadow-card);
+    border: 1px solid var(--side-line);
+    border-radius: 24px;
+    box-shadow: var(--shadow-pop);
+    overflow: hidden;
   }
 
   .app-shell-lateral .app-sticky-top,
   .app-shell-lateral .app-main {
-    margin-left: 250px;
+    margin-left: 274px;
   }
 
   .app-shell-lateral .app-header {
@@ -2507,7 +2512,7 @@ button.danger:hover:not(:disabled) {
 
   /* Nome do usuário no fim da barra, depois dos botões (pedido do
      usuário, 2026-09-20). */
-  .app-shell-lateral .app-user-text {
+  .app-shell-lateral .app-user-perfil {
     order: 1;
   }
 }
@@ -2630,18 +2635,20 @@ button.danger:hover:not(:disabled) {
 @media (max-width: 899px) {
   .app-sidebar.aberto {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: min(290px, 85vw);
+    top: 10px;
+    left: 10px;
+    bottom: 10px;
+    width: min(290px, calc(100vw - 40px));
     z-index: 60;
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding: 18px 12px 14px;
     background: var(--side-bg);
-    border-right: 1px solid var(--side-line);
+    border: 1px solid var(--side-line);
+    border-radius: 24px;
     box-shadow: var(--shadow-pop);
+    overflow: hidden;
   }
 }
 
@@ -3203,4 +3210,64 @@ button.app-tab:hover:not(:disabled) {
   .rel-kpi-valor {
     font-size: 26px;
   }
+}
+
+/* Foto de perfil (pedido do usuário, 2026-09-21) — avatar redondo com as
+   iniciais quando não há foto; o bloco nome+foto do cabeçalho é um botão
+   que leva ao Perfil. */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.app-user-perfil {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 100px;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+}
+
+.app-user-perfil:hover:not(:disabled) {
+  background: transparent;
+  opacity: 0.85;
+}
+
+.foto-perfil {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.foto-perfil-acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.foto-perfil-dica {
+  font-size: 12.5px;
+  color: var(--ink-muted);
 }

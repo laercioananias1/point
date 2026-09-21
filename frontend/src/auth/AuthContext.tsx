@@ -21,6 +21,7 @@ export interface User {
   // "trocar de área" quando tem mais de um papel (telas de Perfil).
   roles: Role[];
   point_id: number | null;
+  foto: string | null;
 }
 
 interface AuthContextValue {

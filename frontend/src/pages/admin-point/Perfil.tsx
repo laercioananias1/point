@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { Layout } from "../../components/Layout";
+import { FotoPerfil } from "../../components/FotoPerfil";
 import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
@@ -30,6 +31,8 @@ export default function AdminPointPerfil() {
       </section>
 
       {!user?.roles.includes("professor") && <VirarProfessorSection onVirou={atualizarUser} />}
+
+      <FotoPerfil />
 
       <TemaToggle />
 

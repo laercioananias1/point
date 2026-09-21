@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { ProfessorResumo, Vinculo } from "../../api/types";
 import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+import { FotoPerfil } from "../../components/FotoPerfil";
 import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
@@ -79,6 +80,8 @@ export default function ProfessorPerfil() {
               </div>
             )}
           </section>
+
+          <FotoPerfil />
 
           <TemaToggle />
 

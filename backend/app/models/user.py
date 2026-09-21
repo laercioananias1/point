@@ -43,5 +43,9 @@ class User(TimestampMixin, Base):
     aluno_id: Mapped[int | None] = mapped_column(ForeignKey("alunos.id"), nullable=True)
     point_id: Mapped[int | None] = mapped_column(ForeignKey("points.id"), nullable=True)
 
+    # Foto de perfil (pedido do usuário, 2026-09-21: "colocar para o usuário
+    # inserir uma foto") — URL relativa em /uploads, como o logo do Point.
+    foto: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     def tem_role(self, role: Role) -> bool:
         return role.value in self.roles

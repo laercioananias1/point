@@ -35,6 +35,20 @@ def salvar_imagem_point(point_id: int, categoria: str, arquivo: UploadFile, cont
     return f"/uploads/points/{point_id}/{categoria}/{nome_arquivo}"
 
 
+def salvar_foto_usuario(user_id: int, arquivo: UploadFile, conteudo: bytes) -> str:
+    """Foto de perfil de um usuário (pedido do usuário, 2026-09-21) — mesma
+    infra das imagens de Point, em /uploads/users/{id}/foto/."""
+    extensao = Path(arquivo.filename or "").suffix.lower()
+    if extensao not in EXTENSOES_PERMITIDAS:
+        raise ValueError("Formato de imagem não suportado — use jpg, png ou webp")
+
+    pasta = UPLOADS_DIR / "users" / str(user_id) / "foto"
+    pasta.mkdir(parents=True, exist_ok=True)
+    nome_arquivo = f"{uuid.uuid4().hex}{extensao}"
+    (pasta / nome_arquivo).write_bytes(conteudo)
+    return f"/uploads/users/{user_id}/foto/{nome_arquivo}"
+
+
 def remover_imagem_point(url: str) -> None:
     """Apaga o arquivo físico correspondente a uma URL salva por
     salvar_imagem_point — silencioso se o arquivo já não existir mais
