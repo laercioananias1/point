@@ -16,3 +16,17 @@ class Professor(TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(255))
 
     vinculos: Mapped[list["Vinculo"]] = relationship(back_populates="professor")  # noqa: F821
+
+    # Conta de acesso desse professor, só pra ler a foto de perfil (pedido do
+    # usuário, 2026-09-21) — mesmo desenho de Aluno.user.
+    user: Mapped["User | None"] = relationship(  # noqa: F821
+        primaryjoin="User.professor_id == Professor.id",
+        foreign_keys="User.professor_id",
+        uselist=False,
+        viewonly=True,
+        lazy="selectin",
+    )
+
+    @property
+    def foto(self) -> str | None:
+        return self.user.foto if self.user is not None else None

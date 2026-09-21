@@ -13,6 +13,7 @@ import type {
 } from "../../api/types";
 import { diaSemanaDeData, somarDias, toISODate } from "../../components/Calendar";
 import { AgendaAlunoCalendario, type Ocorrencia } from "../../components/AgendaAlunoCalendario";
+import { Avatar } from "../../components/Avatar";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
@@ -145,10 +146,13 @@ export default function AdminPointAgendaAluno() {
           2026-09-01: "deixe somente o nome nessa lista, os detalhes abre
           na outra página") — moram aqui agora. */}
       {alunoResumo && (
-        <p className="empty-state" style={{ paddingTop: 0 }}>
-          {alunoResumo.contato}
-          {alunoResumo.email && ` · ${alunoResumo.email}`}
-        </p>
+        <div className="agenda-pessoa">
+          <Avatar nome={alunoResumo.nome} foto={alunoResumo.foto} tamanho={56} />
+          <p className="empty-state" style={{ padding: 0 }}>
+            {alunoResumo.contato}
+            {alunoResumo.email && ` · ${alunoResumo.email}`}
+          </p>
+        </div>
       )}
 
       {/* Nível/categoria do aluno NESTE Point (pedido do usuário,

@@ -14,3 +14,4 @@ class ProfessorOut(ORMModel):
     nome: str
     contato: str
     email: str
+    foto: str | None = None

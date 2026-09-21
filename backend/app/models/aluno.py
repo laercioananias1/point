@@ -23,3 +23,19 @@ class Aluno(TimestampMixin, Base):
     )
 
     matriculas: Mapped[list["Matricula"]] = relationship(back_populates="aluno")  # noqa: F821
+
+    # Conta de acesso desse aluno, só pra ler a foto de perfil (pedido do
+    # usuário, 2026-09-21: "na tela de alunos mostra a fotinha") — Aluno é
+    # entidade de negócio, a foto mora em User. selectin: carrega a conta de
+    # vários alunos numa consulta só em vez de uma por aluno da lista.
+    user: Mapped["User | None"] = relationship(  # noqa: F821
+        primaryjoin="User.aluno_id == Aluno.id",
+        foreign_keys="User.aluno_id",
+        uselist=False,
+        viewonly=True,
+        lazy="selectin",
+    )
+
+    @property
+    def foto(self) -> str | None:
+        return self.user.foto if self.user is not None else None

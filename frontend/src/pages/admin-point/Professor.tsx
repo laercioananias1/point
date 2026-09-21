@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
 import type { ConviteVinculo, Vinculo } from "../../api/types";
 import { AbasPilula } from "../../components/AbasPilula";
+import { Avatar } from "../../components/Avatar";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { BotaoFlutuante } from "../../components/BotaoFlutuante";
@@ -93,7 +94,8 @@ export default function AdminPointProfessor() {
                       className="item-card item-card-clickable"
                       key={v.id}
                     >
-                      <div className="item-card-info">
+                      <Avatar nome={v.professor.nome} foto={v.professor.foto} tamanho={42} />
+                      <div className="item-card-info" style={{ flex: 1 }}>
                         <span className="item-card-title">{v.professor.nome}</span>
                       </div>
                       <div className="item-card-actions">

@@ -3271,3 +3271,12 @@ button.app-tab:hover:not(:disabled) {
   font-size: 12.5px;
   color: var(--ink-muted);
 }
+
+/* Foto + contato no topo da agenda de um aluno/professor (pedido do
+   usuário, 2026-09-21). */
+.agenda-pessoa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+}

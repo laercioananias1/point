@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Assinatura, Convite, Matricula } from "../../api/types";
 import { AbasPilula } from "../../components/AbasPilula";
+import { Avatar } from "../../components/Avatar";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { BotaoFlutuante } from "../../components/BotaoFlutuante";
@@ -137,7 +138,8 @@ export default function AdminPointAluno() {
                       className="item-card item-card-clickable"
                       key={a.id}
                     >
-                      <div className="item-card-info">
+                      <Avatar nome={a.nome} foto={a.foto} tamanho={42} />
+                      <div className="item-card-info" style={{ flex: 1 }}>
                         {/* Só o nome aqui (pedido do usuário, 2026-09-01:
                             "deixe somente o nome nessa lista, os detalhes
                             abre na outra página") — telefone/e-mail

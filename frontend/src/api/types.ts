@@ -136,6 +136,7 @@ export interface ProfessorResumo {
   nome: string;
   contato: string;
   email: string;
+  foto?: string | null;
 }
 
 export interface AlunoResumo {
@@ -144,6 +145,7 @@ export interface AlunoResumo {
   contato: string;
   email: string | null;
   forma_pagamento_preferida: PagamentoMeio;
+  foto?: string | null;
 }
 
 export interface Vinculo {

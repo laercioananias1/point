@@ -17,3 +17,4 @@ class AlunoOut(ORMModel):
     contato: str
     email: str
     forma_pagamento_preferida: FormaPagamento
+    foto: str | None = None

@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Matricula, SolicitacaoExperimental, TurmaResumo, Vinculo } from "../../api/types";
 import { AgendaTurmasCalendario } from "../../components/AgendaTurmasCalendario";
+import { Avatar } from "../../components/Avatar";
 import { Icon, Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
 
@@ -73,10 +74,13 @@ export default function AdminPointAgendaProfessor() {
       </div>
 
       {vinculo && (
-        <p className="empty-state" style={{ paddingTop: 0, display: "flex", alignItems: "center", gap: 8 }}>
-          {vinculo.professor.contato} · {vinculo.professor.email}
-          <StatusPill status={vinculo.status} />
-        </p>
+        <div className="agenda-pessoa">
+          <Avatar nome={vinculo.professor.nome} foto={vinculo.professor.foto} tamanho={56} />
+          <p className="empty-state" style={{ padding: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            {vinculo.professor.contato} · {vinculo.professor.email}
+            <StatusPill status={vinculo.status} />
+          </p>
+        </div>
       )}
 
       {erro && <p className="form-error">{erro}</p>}
