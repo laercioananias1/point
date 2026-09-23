@@ -3280,3 +3280,155 @@ button.app-tab:hover:not(:disabled) {
   gap: 14px;
   margin-bottom: 8px;
 }
+
+/* Agenda — visões de Semana e Mês (pedido do usuário, 2026-09-21: "troca
+   para semana e mês não muda a agenda"). A semana reaproveita a grade
+   .agenda-timeline com 7 colunas de dia; o mês é uma grade de calendário. */
+.agenda-semana-dia {
+  flex: 1 0 96px;
+  min-width: 96px;
+  margin: 0 3px 8px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--surface-sunk);
+  color: var(--ink-muted);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.agenda-semana-dia strong {
+  font-family: "Archivo", sans-serif;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.agenda-semana-dia:hover:not(:disabled) {
+  background: var(--surface-sunk);
+  border-color: var(--accent);
+}
+
+.agenda-semana-dia.hoje,
+.agenda-semana-dia.hoje:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.agenda-semana-dia.hoje strong {
+  color: #fff;
+}
+
+.agenda-semana-feriado {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.agenda-semana-coluna {
+  flex: 1 0 96px;
+  min-width: 96px;
+}
+
+.agenda-timeline-bloco.cancelada {
+  border-style: dashed;
+  border-color: var(--risk);
+  color: var(--risk);
+  background: var(--risk-soft);
+}
+
+.agenda-mes {
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.agenda-mes-cabecalho,
+.agenda-mes-grade {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(84px, 1fr));
+  gap: 4px;
+}
+
+.agenda-mes-cabecalho {
+  margin-bottom: 4px;
+}
+
+.agenda-mes-cabecalho span {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.agenda-mes-dia {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-height: 104px;
+  padding: 6px;
+  text-align: left;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-weight: 400;
+}
+
+.agenda-mes-dia:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.agenda-mes-dia.fora {
+  background: transparent;
+  border-style: dashed;
+  opacity: 0.45;
+}
+
+.agenda-mes-dia.hoje {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.agenda-mes-numero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.agenda-mes-feriado {
+  color: var(--good);
+  font-size: 12px;
+}
+
+.agenda-mes-chip {
+  display: block;
+  overflow: hidden;
+  padding: 2px 5px;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.agenda-mes-mais,
+.agenda-mes-cancelada {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.agenda-mes-cancelada {
+  color: var(--risk);
+}

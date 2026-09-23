@@ -3,7 +3,7 @@ import { api, ApiError } from "../api/client";
 import type { Checkin, Feriado, Matricula, SolicitacaoExperimental, TurmaResumo } from "../api/types";
 import { CategoriaBadge } from "./CategoriaBadge";
 import { Icon } from "./Layout";
-import { diaSemanaDeData, somarDias, toISODate } from "./Calendar";
+import { diaSemanaDeData, inicioDaSemana, somarDias, toISODate } from "./Calendar";
 import { horarioFim } from "../lib/dias";
 import { buscarFeriadosPorPoint } from "../lib/feriados";
 
@@ -106,6 +106,21 @@ function ocorrenciasEmDatas(
   return mapa;
 }
 
+type Granularidade = "dia" | "semana" | "mes";
+
+/** Datas exibidas conforme a granularidade (pedido do usuário, 2026-09-21:
+ * "troca para semana e mês não muda a agenda") — dia: só o selecionado;
+ * semana: seg→dom da semana dele; mês: todos os dias do mês dele. */
+function datasDoPeriodo(ref: Date, passo: Granularidade): Date[] {
+  if (passo === "dia") return [ref];
+  if (passo === "semana") {
+    const inicio = inicioDaSemana(ref);
+    return Array.from({ length: 7 }, (_, i) => somarDias(inicio, i));
+  }
+  const ultimo = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
+  return Array.from({ length: ultimo }, (_, i) => new Date(ref.getFullYear(), ref.getMonth(), i + 1));
+}
+
 function minutosDoHorario(horario: string): number {
   const [h, m] = horario.split(":").map(Number);
   return h * 60 + m;
@@ -180,6 +195,7 @@ export function AgendaTurmasCalendario({
   // clicar).
   const [detalheAberto, setDetalheAberto] = useState<OcorrenciaTurma | null>(null);
   const [diaSelecionado, setDiaSelecionado] = useState(new Date());
+  const [passo, setPasso] = useState<Granularidade>("dia");
 
   // Feriados (pedido do usuário, 2026-09-01) — busca própria, mesmo
   // padrão já usado por PresencaLista logo abaixo neste arquivo. Por
@@ -202,9 +218,17 @@ export function AgendaTurmasCalendario({
   // calendario de cima" — sem grade de mês/semana com pontinho, não tem
   // mais janela "visível" nenhuma pra calcular; ocorrenciasEmDatas aceita
   // uma lista de 1 dia só sem problema).
-  const ocorrenciasDoDia = ocorrenciasEmDatas(turmas, [diaSelecionado], feriadosPorData).get(
-    toISODate(diaSelecionado),
-  ) ?? [];
+  // Agora acompanha a granularidade (Dia/Semana/Mês) — o dia selecionado
+  // sempre está dentro do período exibido.
+  const datasVisiveis = useMemo(() => datasDoPeriodo(diaSelecionado, passo), [diaSelecionado, passo]);
+  const ocorrenciasPorDia = useMemo(
+    () => ocorrenciasEmDatas(turmas, datasVisiveis, feriadosPorData),
+    [turmas, datasVisiveis, feriadosPorData],
+  );
+  const ocorrenciasDoDia = ocorrenciasPorDia.get(toISODate(diaSelecionado)) ?? [];
+  const ocorrenciasAtivasPeriodo = Array.from(ocorrenciasPorDia.values())
+    .flat()
+    .filter((oc) => !oc.cancelada);
   const nomeFeriadoDoDia = feriadosPorData.get(toISODate(diaSelecionado)) ?? null;
 
   // Gente esperada numa ocorrência — matrícula ou visitante de aula
@@ -233,17 +257,17 @@ export function AgendaTurmasCalendario({
   // selecionado, pra não "pular" coluna ao trocar de dia.
   const quadras = Array.from(new Set(turmas.map((t) => t.quadra.nome))).sort();
 
-  const horaInicioGrade = ocorrenciasAtivas.length
+  const horaInicioGrade = ocorrenciasAtivasPeriodo.length
     ? Math.max(
         0,
-        Math.min(...ocorrenciasAtivas.map((oc) => Math.floor(minutosDoHorario(oc.horario) / 60))) - 1,
+        Math.min(...ocorrenciasAtivasPeriodo.map((oc) => Math.floor(minutosDoHorario(oc.horario) / 60))) - 1,
       )
     : 7;
-  const horaFimGrade = ocorrenciasAtivas.length
+  const horaFimGrade = ocorrenciasAtivasPeriodo.length
     ? Math.min(
         24,
         Math.max(
-          ...ocorrenciasAtivas.map((oc) =>
+          ...ocorrenciasAtivasPeriodo.map((oc) =>
             Math.ceil((minutosDoHorario(oc.horario) + oc.duracaoMinutos) / 60),
           ),
         ) + 1,
@@ -306,19 +330,31 @@ export function AgendaTurmasCalendario({
         />
       )}
 
-      <AgendaDiaNav diaSelecionado={diaSelecionado} onSelecionarDia={setDiaSelecionado} />
+      <AgendaDiaNav
+        diaSelecionado={diaSelecionado}
+        onSelecionarDia={setDiaSelecionado}
+        passo={passo}
+        onMudarPasso={setPasso}
+      />
 
-      {ocorrenciasAtivas.length > 0 &&
+      {ocorrenciasAtivasPeriodo.length > 0 &&
         (() => {
           // Resumo do dia (pedido do usuário, 2026-09-15: "tambem mostra
           // % ocupacao e qtde de alunos") — soma todas as aulas ativas do
           // dia selecionado, mesma conta de vaga usada em cada bloco.
-          const capacidadeDia = ocorrenciasAtivas.reduce((soma, oc) => soma + oc.capacidade, 0);
-          const pessoasDia = ocorrenciasAtivas.reduce(
+          const capacidadeDia = ocorrenciasAtivasPeriodo.reduce((soma, oc) => soma + oc.capacidade, 0);
+          // Vagas ocupadas contam por aula; "Alunos" conta pessoas distintas
+          // no período (na semana/mês o mesmo aluno aparece em várias aulas).
+          const vagasOcupadas = ocorrenciasAtivasPeriodo.reduce(
             (soma, oc) => soma + pessoasDaOcorrencia(oc).length,
             0,
           );
-          const pctOcupacao = capacidadeDia > 0 ? Math.round((pessoasDia / capacidadeDia) * 100) : 0;
+          const pessoasDia = new Set(
+            ocorrenciasAtivasPeriodo.flatMap((oc) =>
+              pessoasDaOcorrencia(oc).map((p) => `${p.tipo}:${p.id}`),
+            ),
+          ).size;
+          const pctOcupacao = capacidadeDia > 0 ? Math.round((vagasOcupadas / capacidadeDia) * 100) : 0;
           return (
             <div className="agenda-stats-row">
               <div className="agenda-stats-item">
@@ -333,130 +369,168 @@ export function AgendaTurmasCalendario({
           );
         })()}
 
-      {nomeFeriadoDoDia && (
-        <div className="item-card" style={{ marginBottom: 8 }}>
-          <div className="item-card-info">
-            <span
-              className="item-card-title"
-              style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--good)" }}
-            >
-              <Icon name="flag" /> Feriado: {nomeFeriadoDoDia}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {ocorrenciasDoDia.length === 0 ? (
-        !nomeFeriadoDoDia && <p className="empty-state">Nenhuma aula nesse dia.</p>
-      ) : (
+      {passo === "dia" && (
         <>
-          {ocorrenciasAtivas.length > 0 && (
-            <div className="agenda-timeline">
-              <div className="agenda-timeline-header">
-                <div className="agenda-timeline-corner" />
-                {quadras.map((q) => (
-                  <div key={q} className="agenda-timeline-quadra-pill">
-                    {q}
-                  </div>
-                ))}
-              </div>
-              <div className="agenda-timeline-body" style={{ height: alturaGrade }}>
-                <div className="agenda-timeline-horas">
-                  {horasDaGrade.map((h) => (
-                    <span
-                      key={h}
-                      className="agenda-timeline-hora-label"
-                      style={{ top: (h - horaInicioGrade) * 60 }}
-                    >
-                      {h}h
-                    </span>
-                  ))}
-                </div>
-                {horasDaGrade.map((h) => (
-                  <div
-                    key={h}
-                    className="agenda-timeline-linha"
-                    style={{ top: (h - horaInicioGrade) * 60 }}
-                  />
-                ))}
-                {ehHoje && offsetAgora >= 0 && offsetAgora <= alturaGrade && (
-                  <div className="agenda-timeline-agora" style={{ top: offsetAgora }} />
-                )}
-                <div className="agenda-timeline-colunas">
-                  {quadras.map((q) => (
-                    <div key={q} className="agenda-timeline-coluna">
-                      {ocorrenciasAtivas
-                        .filter((oc) => oc.quadraNome === q)
-                        .map((oc) => {
-                          const pessoas = pessoasDaOcorrencia(oc);
-                          const top = minutosDoHorario(oc.horario) - horaInicioGrade * 60;
-                          return (
-                            <button
-                              key={oc.turmaId}
-                              type="button"
-                              className="agenda-timeline-bloco"
-                              style={{
-                                top,
-                                height: Math.max(oc.duracaoMinutos, 34),
-                                background: hexParaRgba(oc.categoriaCor, 0.2),
-                                borderColor: oc.categoriaCor,
-                                color: oc.categoriaCor,
-                              }}
-                              onClick={() => setDetalheAberto(oc)}
-                            >
-                              <span className="agenda-timeline-bloco-titulo">{oc.categoriaNome}</span>
-                              <span className="agenda-timeline-bloco-sub">
-                                {pessoas.length}/{oc.capacidade}
-                              </span>
-                            </button>
-                          );
-                        })}
-                    </div>
-                  ))}
-                </div>
+          {nomeFeriadoDoDia && (
+            <div className="item-card" style={{ marginBottom: 8 }}>
+              <div className="item-card-info">
+                <span
+                  className="item-card-title"
+                  style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--good)" }}
+                >
+                  <Icon name="flag" /> Feriado: {nomeFeriadoDoDia}
+                </span>
               </div>
             </div>
           )}
 
-          {ocorrenciasCanceladas.length > 0 && (
-            <div className="card-list" style={{ marginTop: ocorrenciasAtivas.length > 0 ? 16 : 0 }}>
-              {ocorrenciasCanceladas.map((oc, i) => (
-                <div
-                  key={i}
-                  className="item-card"
-                  style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
-                >
-                  <div className="item-card-info">
-                    <span
-                      className="item-card-title"
-                      style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--risk)" }}
-                    >
-                      <Icon name="x-circle" /> {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}{" "}
-                      cancelada
-                    </span>
-                    <span className="item-card-subtitle">
-                      <CategoriaBadge nome={oc.categoriaNome} cor={oc.categoriaCor} />
-                    </span>
-                    <span className="item-card-subtitle">
-                      {oc.modalidadeNome} · com {oc.professorNome}
-                    </span>
-                    <span
-                      className="item-card-subtitle"
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      <Icon name="pin" /> {oc.pointNome} · {oc.quadraNome}
-                    </span>
+          {ocorrenciasDoDia.length === 0 ? (
+            !nomeFeriadoDoDia && <p className="empty-state">Nenhuma aula nesse dia.</p>
+          ) : (
+            <>
+              {ocorrenciasAtivas.length > 0 && (
+                <div className="agenda-timeline">
+                  <div className="agenda-timeline-header">
+                    <div className="agenda-timeline-corner" />
+                    {quadras.map((q) => (
+                      <div key={q} className="agenda-timeline-quadra-pill">
+                        {q}
+                      </div>
+                    ))}
                   </div>
-                  {oc.motivoCancelamento && (
-                    <div className="info-box" style={{ borderColor: "var(--risk)" }}>
-                      <span>Motivo: {oc.motivoCancelamento}</span>
+                  <div className="agenda-timeline-body" style={{ height: alturaGrade }}>
+                    <div className="agenda-timeline-horas">
+                      {horasDaGrade.map((h) => (
+                        <span
+                          key={h}
+                          className="agenda-timeline-hora-label"
+                          style={{ top: (h - horaInicioGrade) * 60 }}
+                        >
+                          {h}h
+                        </span>
+                      ))}
                     </div>
-                  )}
+                    {horasDaGrade.map((h) => (
+                      <div
+                        key={h}
+                        className="agenda-timeline-linha"
+                        style={{ top: (h - horaInicioGrade) * 60 }}
+                      />
+                    ))}
+                    {ehHoje && offsetAgora >= 0 && offsetAgora <= alturaGrade && (
+                      <div className="agenda-timeline-agora" style={{ top: offsetAgora }} />
+                    )}
+                    <div className="agenda-timeline-colunas">
+                      {quadras.map((q) => (
+                        <div key={q} className="agenda-timeline-coluna">
+                          {ocorrenciasAtivas
+                            .filter((oc) => oc.quadraNome === q)
+                            .map((oc) => {
+                              const pessoas = pessoasDaOcorrencia(oc);
+                              const top = minutosDoHorario(oc.horario) - horaInicioGrade * 60;
+                              return (
+                                <button
+                                  key={oc.turmaId}
+                                  type="button"
+                                  className="agenda-timeline-bloco"
+                                  style={{
+                                    top,
+                                    height: Math.max(oc.duracaoMinutos, 34),
+                                    background: hexParaRgba(oc.categoriaCor, 0.2),
+                                    borderColor: oc.categoriaCor,
+                                    color: oc.categoriaCor,
+                                  }}
+                                  onClick={() => setDetalheAberto(oc)}
+                                >
+                                  <span className="agenda-timeline-bloco-titulo">{oc.categoriaNome}</span>
+                                  <span className="agenda-timeline-bloco-sub">
+                                    {pessoas.length}/{oc.capacidade}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {ocorrenciasCanceladas.length > 0 && (
+                <div className="card-list" style={{ marginTop: ocorrenciasAtivas.length > 0 ? 16 : 0 }}>
+                  {ocorrenciasCanceladas.map((oc, i) => (
+                    <div
+                      key={i}
+                      className="item-card"
+                      style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
+                    >
+                      <div className="item-card-info">
+                        <span
+                          className="item-card-title"
+                          style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--risk)" }}
+                        >
+                          <Icon name="x-circle" /> {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}{" "}
+                          cancelada
+                        </span>
+                        <span className="item-card-subtitle">
+                          <CategoriaBadge nome={oc.categoriaNome} cor={oc.categoriaCor} />
+                        </span>
+                        <span className="item-card-subtitle">
+                          {oc.modalidadeNome} · com {oc.professorNome}
+                        </span>
+                        <span
+                          className="item-card-subtitle"
+                          style={{ display: "flex", alignItems: "center", gap: 6 }}
+                        >
+                          <Icon name="pin" /> {oc.pointNome} · {oc.quadraNome}
+                        </span>
+                      </div>
+                      {oc.motivoCancelamento && (
+                        <div className="info-box" style={{ borderColor: "var(--risk)" }}>
+                          <span>Motivo: {oc.motivoCancelamento}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </>
+      )}
+
+      {passo === "semana" && ocorrenciasPorDia.size === 0 && (
+        <p className="empty-state">Nenhuma aula nessa semana.</p>
+      )}
+
+      {passo === "semana" && ocorrenciasPorDia.size > 0 && (
+        <AgendaSemana
+          datas={datasVisiveis}
+          ocorrenciasPorDia={ocorrenciasPorDia}
+          feriadosPorData={feriadosPorData}
+          horaInicioGrade={horaInicioGrade}
+          horasDaGrade={horasDaGrade}
+          alturaGrade={alturaGrade}
+          pessoasDaOcorrencia={pessoasDaOcorrencia}
+          onAbrir={setDetalheAberto}
+          onIrParaDia={(d) => {
+            setDiaSelecionado(d);
+            setPasso("dia");
+          }}
+        />
+      )}
+
+      {passo === "mes" && (
+        <AgendaMes
+          referencia={diaSelecionado}
+          ocorrenciasPorDia={ocorrenciasPorDia}
+          feriadosPorData={feriadosPorData}
+          pessoasDaOcorrencia={pessoasDaOcorrencia}
+          onIrParaDia={(d) => {
+            setDiaSelecionado(d);
+            setPasso("dia");
+          }}
+        />
       )}
     </>
   );
@@ -596,46 +670,56 @@ function PresencaLista({
   );
 }
 
-type Granularidade = "dia" | "semana" | "mes";
-
-/** Navegação do dia selecionado (pedido do usuário, 2026-09-15: "pode
- * remover esse calendario de cima, deixa somente o debaixo com dia,
- * semana e mes") — substitui a grade de mês/semana com pontinho
- * (MiniCalendario, que continua servindo a agenda do aluno) por um
- * stepper simples: escolhe o passo (dia/semana/mês) e as setinhas
- * avançam/voltam por esse passo, sempre aterrissando num dia só — a
- * grade abaixo (AgendaTurmasCalendario) sempre mostra um dia por vez. */
+/** Navegação do período exibido (pedido do usuário, 2026-09-15: "deixa
+ * somente o debaixo com dia, semana e mês"; 2026-09-21: "troca para semana
+ * e mês não muda a agenda") — o passo escolhido (Dia/Semana/Mês) define o
+ * que a agenda mostra abaixo e o quanto as setinhas andam. */
 function AgendaDiaNav({
   diaSelecionado,
   onSelecionarDia,
+  passo,
+  onMudarPasso,
 }: {
   diaSelecionado: Date;
   onSelecionarDia: (data: Date) => void;
+  passo: Granularidade;
+  onMudarPasso: (passo: Granularidade) => void;
 }) {
-  const [passo, setPasso] = useState<Granularidade>("dia");
-
   function navegar(direcao: 1 | -1) {
     if (passo === "semana") {
       onSelecionarDia(somarDias(diaSelecionado, direcao * 7));
     } else if (passo === "mes") {
-      const d = new Date(diaSelecionado);
-      d.setMonth(d.getMonth() + direcao);
-      onSelecionarDia(d);
+      // Dia 31 + 1 mês não pode virar o mês seguinte ao seguinte (31/jan →
+      // "31/fev" = 3/mar) — limita ao último dia do mês de destino.
+      const alvo = new Date(diaSelecionado.getFullYear(), diaSelecionado.getMonth() + direcao, 1);
+      const ultimo = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate();
+      alvo.setDate(Math.min(diaSelecionado.getDate(), ultimo));
+      onSelecionarDia(alvo);
     } else {
       onSelecionarDia(somarDias(diaSelecionado, direcao));
     }
   }
 
-  const rotulo =
-    passo === "mes"
-      ? diaSelecionado
-          .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-          .replace(/^\w/, (c) => c.toUpperCase())
-      : diaSelecionado.toLocaleDateString("pt-BR", {
-          weekday: "long",
-          day: "2-digit",
-          month: "long",
-        });
+  let rotulo: string;
+  if (passo === "mes") {
+    rotulo = diaSelecionado
+      .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+      .replace(/^\w/, (c) => c.toUpperCase());
+  } else if (passo === "semana") {
+    const inicio = inicioDaSemana(diaSelecionado);
+    const fim = somarDias(inicio, 6);
+    const mesFim = fim.toLocaleDateString("pt-BR", { month: "long" });
+    rotulo =
+      inicio.getMonth() === fim.getMonth()
+        ? `${inicio.getDate()} – ${fim.getDate()} de ${mesFim}`
+        : `${inicio.getDate()} de ${inicio.toLocaleDateString("pt-BR", { month: "long" })} – ${fim.getDate()} de ${mesFim}`;
+  } else {
+    rotulo = diaSelecionado.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+    });
+  }
 
   return (
     <div style={{ marginBottom: 8 }}>
@@ -645,7 +729,7 @@ function AgendaDiaNav({
             key={g}
             type="button"
             className={passo === g ? "toggle-chip active" : "toggle-chip"}
-            onClick={() => setPasso(g)}
+            onClick={() => onMudarPasso(g)}
           >
             {g === "dia" ? "Dia" : g === "semana" ? "Semana" : "Mês"}
           </button>
@@ -659,6 +743,237 @@ function AgendaDiaNav({
         <button type="button" className="secondary" onClick={() => navegar(1)} aria-label="Próximo">
           ›
         </button>
+      </div>
+    </div>
+  );
+}
+
+/** Distribui aulas que se sobrepõem no tempo em faixas lado a lado (na
+ * semana várias quadras podem ter aula no mesmo horário e a coluna do dia é
+ * uma só) — devolve, pra cada aula, a faixa e o total de faixas do grupo
+ * de sobreposição dela. */
+function distribuirEmFaixas(
+  ocorrencias: OcorrenciaTurma[],
+): { oc: OcorrenciaTurma; faixa: number; faixas: number }[] {
+  const ordenadas = [...ocorrencias].sort(
+    (a, b) => minutosDoHorario(a.horario) - minutosDoHorario(b.horario),
+  );
+  const resultado: { oc: OcorrenciaTurma; faixa: number; faixas: number }[] = [];
+  let grupo: typeof resultado = [];
+  let fimGrupo = -1;
+  const fecharGrupo = () => {
+    const faixas = Math.max(1, ...grupo.map((g) => g.faixa + 1));
+    for (const g of grupo) g.faixas = faixas;
+    resultado.push(...grupo);
+    grupo = [];
+  };
+  for (const oc of ordenadas) {
+    const inicio = minutosDoHorario(oc.horario);
+    if (grupo.length > 0 && inicio >= fimGrupo) {
+      fecharGrupo();
+      fimGrupo = -1;
+    }
+    const usadas = new Set(
+      grupo
+        .filter((g) => minutosDoHorario(g.oc.horario) + g.oc.duracaoMinutos > inicio)
+        .map((g) => g.faixa),
+    );
+    let faixa = 0;
+    while (usadas.has(faixa)) faixa++;
+    grupo.push({ oc, faixa, faixas: 1 });
+    fimGrupo = Math.max(fimGrupo, inicio + oc.duracaoMinutos);
+  }
+  fecharGrupo();
+  return resultado;
+}
+
+const ROTULO_DIA_CURTO = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+
+/** Visão de semana (pedido do usuário, 2026-09-21) — 7 colunas (seg→dom) ×
+ * horas, mesmo bloco colorido por categoria da visão de dia. Clicar no
+ * bloco abre o detalhe; clicar no cabeçalho do dia abre aquele dia. */
+function AgendaSemana({
+  datas,
+  ocorrenciasPorDia,
+  feriadosPorData,
+  horaInicioGrade,
+  horasDaGrade,
+  alturaGrade,
+  pessoasDaOcorrencia,
+  onAbrir,
+  onIrParaDia,
+}: {
+  datas: Date[];
+  ocorrenciasPorDia: Map<string, OcorrenciaTurma[]>;
+  feriadosPorData: Map<string, string>;
+  horaInicioGrade: number;
+  horasDaGrade: number[];
+  alturaGrade: number;
+  pessoasDaOcorrencia: (oc: OcorrenciaTurma) => Pessoa[];
+  onAbrir: (oc: OcorrenciaTurma) => void;
+  onIrParaDia: (d: Date) => void;
+}) {
+  const hoje = toISODate(new Date());
+  return (
+    <div className="agenda-timeline">
+      <div className="agenda-timeline-header">
+        <div className="agenda-timeline-corner" />
+        {datas.map((d, i) => {
+          const iso = toISODate(d);
+          const feriado = feriadosPorData.get(iso);
+          return (
+            <button
+              key={iso}
+              type="button"
+              className={`agenda-semana-dia${iso === hoje ? " hoje" : ""}`}
+              onClick={() => onIrParaDia(d)}
+              title={feriado ? `Feriado: ${feriado}` : undefined}
+            >
+              <span>{ROTULO_DIA_CURTO[i]}</span>
+              <strong>{d.getDate()}</strong>
+              {feriado && <span className="agenda-semana-feriado">feriado</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div className="agenda-timeline-body" style={{ height: alturaGrade }}>
+        <div className="agenda-timeline-horas">
+          {horasDaGrade.map((h) => (
+            <span
+              key={h}
+              className="agenda-timeline-hora-label"
+              style={{ top: (h - horaInicioGrade) * 60 }}
+            >
+              {h}h
+            </span>
+          ))}
+        </div>
+        {horasDaGrade.map((h) => (
+          <div key={h} className="agenda-timeline-linha" style={{ top: (h - horaInicioGrade) * 60 }} />
+        ))}
+        <div className="agenda-timeline-colunas">
+          {datas.map((d) => {
+            const iso = toISODate(d);
+            const doDia = ocorrenciasPorDia.get(iso) ?? [];
+            return (
+              <div key={iso} className="agenda-timeline-coluna agenda-semana-coluna">
+                {distribuirEmFaixas(doDia).map(({ oc, faixa, faixas }) => {
+                  const top = minutosDoHorario(oc.horario) - horaInicioGrade * 60;
+                  const pessoas = pessoasDaOcorrencia(oc);
+                  const titulo = `${oc.categoriaNome} · ${oc.quadraNome} · ${oc.horario} – ${horarioFim(oc.horario, oc.duracaoMinutos)} · ${oc.professorNome}`;
+                  return (
+                    <button
+                      key={`${oc.turmaId}-${iso}`}
+                      type="button"
+                      className={`agenda-timeline-bloco${oc.cancelada ? " cancelada" : ""}`}
+                      title={oc.cancelada ? `${titulo} — cancelada` : titulo}
+                      style={{
+                        top,
+                        height: Math.max(oc.duracaoMinutos, 34),
+                        left: `calc(${(faixa / faixas) * 100}% + 2px)`,
+                        right: "auto",
+                        width: `calc(${100 / faixas}% - 4px)`,
+                        background: oc.cancelada ? undefined : hexParaRgba(oc.categoriaCor, 0.2),
+                        borderColor: oc.cancelada ? undefined : oc.categoriaCor,
+                        color: oc.cancelada ? undefined : oc.categoriaCor,
+                      }}
+                      onClick={() => (oc.cancelada ? onIrParaDia(d) : onAbrir(oc))}
+                    >
+                      <span className="agenda-timeline-bloco-titulo">{oc.categoriaNome}</span>
+                      <span className="agenda-timeline-bloco-sub">
+                        {oc.cancelada ? "cancelada" : `${pessoas.length}/${oc.capacidade}`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const MAX_CHIPS_POR_DIA = 3;
+
+/** Visão de mês (pedido do usuário, 2026-09-21) — grade de calendário; cada
+ * dia lista as aulas (hora + categoria + ocupação) e clicar abre o dia. */
+function AgendaMes({
+  referencia,
+  ocorrenciasPorDia,
+  feriadosPorData,
+  pessoasDaOcorrencia,
+  onIrParaDia,
+}: {
+  referencia: Date;
+  ocorrenciasPorDia: Map<string, OcorrenciaTurma[]>;
+  feriadosPorData: Map<string, string>;
+  pessoasDaOcorrencia: (oc: OcorrenciaTurma) => Pessoa[];
+  onIrParaDia: (d: Date) => void;
+}) {
+  const primeiro = new Date(referencia.getFullYear(), referencia.getMonth(), 1);
+  const ultimo = new Date(referencia.getFullYear(), referencia.getMonth() + 1, 0);
+  const inicioGrade = inicioDaSemana(primeiro);
+  const totalDias = Math.ceil(((ultimo.getTime() - inicioGrade.getTime()) / 86400000 + 1) / 7) * 7;
+  const dias = Array.from({ length: totalDias }, (_, i) => somarDias(inicioGrade, i));
+  const hoje = toISODate(new Date());
+
+  return (
+    <div className="agenda-mes">
+      <div className="agenda-mes-cabecalho">
+        {ROTULO_DIA_CURTO.map((r) => (
+          <span key={r}>{r}</span>
+        ))}
+      </div>
+      <div className="agenda-mes-grade">
+        {dias.map((d) => {
+          const iso = toISODate(d);
+          const doMes = d.getMonth() === referencia.getMonth();
+          const feriado = feriadosPorData.get(iso);
+          const todas = ocorrenciasPorDia.get(iso) ?? [];
+          const ativas = doMes
+            ? todas
+                .filter((oc) => !oc.cancelada)
+                .sort((a, b) => minutosDoHorario(a.horario) - minutosDoHorario(b.horario))
+            : [];
+          const canceladas = doMes ? todas.filter((oc) => oc.cancelada).length : 0;
+          return (
+            <button
+              key={iso}
+              type="button"
+              className={`agenda-mes-dia${doMes ? "" : " fora"}${iso === hoje ? " hoje" : ""}`}
+              onClick={() => onIrParaDia(d)}
+            >
+              <span className="agenda-mes-numero">
+                {d.getDate()}
+                {feriado && doMes && (
+                  <span className="agenda-mes-feriado" title={`Feriado: ${feriado}`}>
+                    ⚑
+                  </span>
+                )}
+              </span>
+              {ativas.slice(0, MAX_CHIPS_POR_DIA).map((oc) => (
+                <span
+                  key={oc.turmaId}
+                  className="agenda-mes-chip"
+                  style={{
+                    background: hexParaRgba(oc.categoriaCor, 0.2),
+                    color: oc.categoriaCor,
+                    borderColor: oc.categoriaCor,
+                  }}
+                >
+                  {oc.horario.slice(0, 2)}h {oc.categoriaNome} {pessoasDaOcorrencia(oc).length}/
+                  {oc.capacidade}
+                </span>
+              ))}
+              {ativas.length > MAX_CHIPS_POR_DIA && (
+                <span className="agenda-mes-mais">+{ativas.length - MAX_CHIPS_POR_DIA}</span>
+              )}
+              {canceladas > 0 && <span className="agenda-mes-cancelada">{canceladas} cancelada(s)</span>}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
