@@ -43,6 +43,26 @@ class Settings(BaseSettings):
     totalpass_partner_api_key: str = ""
     totalpass_base_url: str = "https://booking-api.staging.totalpass.com"
 
+    # Integração Wellhub/Gympass (mesmo pedido do TotalPass acima, "mesmo
+    # desenho, API diferente" — ver app/services/wellhub.py). Diferente da
+    # TotalPass, a Wellhub não tem um endpoint de login: o Bearer é um
+    # token estático que eles mesmos entregam (confirmado com o time de
+    # parceiros, 2026-09-22 — protocolo 15968485), da plataforma inteira,
+    # igual totalpass_partner_api_key. Quem identifica a unidade em cada
+    # chamada é o header X-Gym-Id, POR Point (Point.wellhub_gym_id). Base
+    # URL aponta pro sandbox por padrão, mesmo cuidado do TotalPass acima.
+    wellhub_auth_token: str = ""
+    wellhub_base_url: str = "https://apitesting.partners.gympass.com/access/v1"
+    # Segredo pra validar o header X-Gympass-Signature (HMAC-SHA1) de todo
+    # webhook recebido — ao contrário do resto das credenciais aqui, esse
+    # é gerado por NÓS (não pela Wellhub) e enviado pra eles cadastrarem
+    # junto com a URL do webhook ("Após finalizar os testes, nos envie
+    # suas URLs de Webhook e o Secret", e-mail do time de parceiros,
+    # 2026-09-29). Vazio = webhook recusa tudo (fail-closed, não fail-open
+    # — sem segredo configurado não dá pra confiar que a chamada é
+    # realmente da Wellhub).
+    wellhub_webhook_secret: str = ""
+
     # Notificações via WhatsApp (pedido do usuário, 2026-09-11: "quero
     # fazer integração com whatsapp para enviar notificações de
     # agendamento de aula, convites, etc") — Meta Cloud API direta (não é

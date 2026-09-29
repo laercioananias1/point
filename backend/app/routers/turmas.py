@@ -318,6 +318,7 @@ def remover_turma(
                 turma_nome=turma.modalidade.nome,
                 data=payload.data.strftime("%d/%m"),
                 motivo=payload.motivo.strip(),
+                point_id=turma.vinculo.point_id,
             )
             notificacoes_whatsapp += 1
 

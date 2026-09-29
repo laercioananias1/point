@@ -54,6 +54,17 @@ export default function AdminPointAgendaAluno() {
   const [categoriaSelecionada, setCategoriaSelecionada] = useState<number | null>(null);
   const [salvandoCategoria, setSalvandoCategoria] = useState(false);
   const [erroCategoria, setErroCategoria] = useState<string | null>(null);
+  // Gympass ID (pedido do usuário, 2026-09-29, protocolo 15968485) — liga
+  // esse Aluno aos check-ins que a Wellhub manda, pro "acerto do mês"
+  // (GET /wellhub/reconciliacao) conseguir comparar check-ins feitos com
+  // aulas frequentadas. undefined = ainda não salvou nada nessa sessão,
+  // usa o que veio junto da matrícula; depois de salvar, sobrescreve local
+  // sem precisar recarregar tudo de novo.
+  const [gympassIdSalvo, setGympassIdSalvo] = useState<string | null | undefined>(undefined);
+  const [editandoGympassId, setEditandoGympassId] = useState(false);
+  const [gympassIdInput, setGympassIdInput] = useState("");
+  const [salvandoGympassId, setSalvandoGympassId] = useState(false);
+  const [erroGympassId, setErroGympassId] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setErro(null);
@@ -123,6 +134,28 @@ export default function AdminPointAgendaAluno() {
   const creditosDisponiveis = creditosDoAluno.filter((c) => c.status === "disponivel");
   const alunoResumo = matriculasDoAluno[0]?.aluno ?? null;
   const nomeAluno = alunoResumo?.nome ?? "";
+  const gympassIdAtual =
+    gympassIdSalvo !== undefined ? gympassIdSalvo : (alunoResumo?.wellhub_gympass_id ?? null);
+
+  async function salvarGympassId() {
+    setErroGympassId(null);
+    setSalvandoGympassId(true);
+    try {
+      const valor = gympassIdInput.trim() || null;
+      const atualizado = await api.patch<{ wellhub_gympass_id: string | null }>(
+        `/alunos/${idAluno}/wellhub`,
+        { gympass_id: valor },
+      );
+      setGympassIdSalvo(atualizado.wellhub_gympass_id);
+      setEditandoGympassId(false);
+    } catch (e) {
+      setErroGympassId(
+        e instanceof ApiError ? e.message : "Não foi possível salvar. Tente de novo.",
+      );
+    } finally {
+      setSalvandoGympassId(false);
+    }
+  }
   const assinaturasAtivasDoAluno = assinaturas.filter(
     (a) => a.aluno.id === idAluno && a.status === "ativa",
   );
@@ -205,6 +238,52 @@ export default function AdminPointAgendaAluno() {
               onClick={() => setEditandoCategoria(true)}
             >
               {categoriaAtual ? "Trocar" : "Definir"}
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* Gympass ID (pedido do usuário, 2026-09-29, protocolo 15968485) —
+          liga esse Aluno aos check-ins que chegam da Wellhub. */}
+      <section className="section" style={{ paddingTop: 0 }}>
+        {editandoGympassId ? (
+          <div className="item-card" style={{ alignItems: "flex-start" }}>
+            <div className="item-card-info" style={{ flex: 1 }}>
+              <label>
+                Gympass ID (Wellhub)
+                <input
+                  value={gympassIdInput}
+                  onChange={(e) => setGympassIdInput(e.target.value)}
+                  placeholder="13 dígitos, do app do aluno"
+                  maxLength={20}
+                />
+              </label>
+              {erroGympassId && <p className="form-error">{erroGympassId}</p>}
+            </div>
+            <div className="item-card-actions">
+              <button disabled={salvandoGympassId} onClick={salvarGympassId}>
+                {salvandoGympassId ? "Salvando..." : "Salvar"}
+              </button>
+              <button className="secondary" onClick={() => setEditandoGympassId(false)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="item-card">
+            <div className="item-card-info">
+              <span className="item-card-subtitle">Gympass ID (Wellhub)</span>
+              <span className="item-card-title">{gympassIdAtual ?? "Não vinculado"}</span>
+              {erroGympassId && <p className="form-error">{erroGympassId}</p>}
+            </div>
+            <button
+              className="secondary"
+              onClick={() => {
+                setGympassIdInput(gympassIdAtual ?? "");
+                setEditandoGympassId(true);
+              }}
+            >
+              {gympassIdAtual ? "Trocar" : "Vincular"}
             </button>
           </div>
         )}

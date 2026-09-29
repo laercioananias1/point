@@ -33,6 +33,7 @@ from datetime import datetime, timedelta
 import httpx
 
 from app.core.config import get_settings
+from app.services.integracao_logs import registrar_em_sessao_propria
 
 _ENDPOINT_AUTH = "/partner-auth"
 # TODO(confirmar contra a referência real, ver docstring do módulo).
@@ -51,12 +52,23 @@ class TotalPassError(Exception):
     check-in."""
 
 
-def _autenticar(place_api_key: str) -> str:
+def _autenticar(place_api_key: str, point_id: int) -> str:
     settings = get_settings()
+    request_corpo = (
+        f"POST {settings.totalpass_base_url}{_ENDPOINT_AUTH}\n"
+        f'{{"partner_api_key": "(oculto)", "place_api_key": "{place_api_key}"}}'
+    )
     if not settings.totalpass_partner_api_key:
-        raise TotalPassError(
-            "Integração TotalPass não configurada na plataforma (partner_api_key ausente)"
+        mensagem = "Integração TotalPass não configurada na plataforma (partner_api_key ausente)"
+        registrar_em_sessao_propria(
+            integracao="totalpass",
+            evento="auth",
+            sucesso=False,
+            mensagem=mensagem,
+            point_id=point_id,
+            request_corpo=request_corpo,
         )
+        raise TotalPassError(mensagem)
 
     try:
         resposta = httpx.post(
@@ -68,17 +80,54 @@ def _autenticar(place_api_key: str) -> str:
             timeout=10,
         )
     except httpx.HTTPError as erro:
-        raise TotalPassError(f"Falha ao falar com a TotalPass: {erro}") from erro
-
-    if resposta.status_code != 200:
-        raise TotalPassError(
-            "Não foi possível autenticar com a TotalPass — confira o place_api_key do Point"
+        mensagem = f"Falha ao falar com a TotalPass: {erro}"
+        registrar_em_sessao_propria(
+            integracao="totalpass",
+            evento="auth",
+            sucesso=False,
+            mensagem=mensagem,
+            point_id=point_id,
+            request_corpo=request_corpo,
         )
+        raise TotalPassError(mensagem) from erro
+
+    response_corpo = f"{resposta.status_code}\n{resposta.text}"
+    if resposta.status_code != 200:
+        mensagem = "Não foi possível autenticar com a TotalPass — confira o place_api_key do Point"
+        registrar_em_sessao_propria(
+            integracao="totalpass",
+            evento="auth",
+            sucesso=False,
+            mensagem=mensagem,
+            point_id=point_id,
+            request_corpo=request_corpo,
+            response_corpo=response_corpo,
+        )
+        raise TotalPassError(mensagem)
 
     corpo = resposta.json() if resposta.content else {}
     token = corpo.get("access_token") or corpo.get("token")
     if not token:
-        raise TotalPassError("Resposta inesperada da TotalPass ao autenticar")
+        mensagem = "Resposta inesperada da TotalPass ao autenticar"
+        registrar_em_sessao_propria(
+            integracao="totalpass",
+            evento="auth",
+            sucesso=False,
+            mensagem=mensagem,
+            point_id=point_id,
+            request_corpo=request_corpo,
+            response_corpo=response_corpo,
+        )
+        raise TotalPassError(mensagem)
+    registrar_em_sessao_propria(
+        integracao="totalpass",
+        evento="auth",
+        sucesso=True,
+        mensagem="Autenticado",
+        point_id=point_id,
+        request_corpo=request_corpo,
+        response_corpo=response_corpo,
+    )
     return token
 
 
@@ -87,7 +136,7 @@ def _token_do_point(point_id: int, place_api_key: str) -> str:
     if em_cache and em_cache[1] > datetime.utcnow():
         return em_cache[0]
 
-    token = _autenticar(place_api_key)
+    token = _autenticar(place_api_key, point_id)
     # Margem sobre as 24h reais documentadas — reautentica um pouco antes
     # de expirar de verdade, pra nunca usar um token vencido por segundos.
     _cache_token[point_id] = (token, datetime.utcnow() + timedelta(hours=23))
@@ -100,9 +149,15 @@ def validar_checkin(*, point_id: int, place_api_key: str, codigo: str) -> dict[s
     (nome/documento), pra registrar no Checkin local — .get em tudo de
     propósito (best-effort): um campo a mais ou a menos no formato real da
     resposta não pode derrubar um check-in que já foi validado do lado
-    deles."""
+    deles. Loga toda chamada (pedido do usuário, 2026-09-29: "quero ver
+    tb o request e response") — `_autenticar` acima loga o próprio passo
+    de login, separado do check-in em si aqui."""
     token = _token_do_point(point_id, place_api_key)
     settings = get_settings()
+    request_corpo = (
+        f"POST {settings.totalpass_base_url}{_ENDPOINT_VALIDAR_CHECKIN}\n"
+        f'{{"token": "{codigo}"}}'
+    )
 
     try:
         resposta = httpx.post(
@@ -112,22 +167,55 @@ def validar_checkin(*, point_id: int, place_api_key: str, codigo: str) -> dict[s
             timeout=10,
         )
     except httpx.HTTPError as erro:
-        raise TotalPassError(f"Falha ao falar com a TotalPass: {erro}") from erro
+        mensagem = f"Falha ao falar com a TotalPass: {erro}"
+        registrar_em_sessao_propria(
+            integracao="totalpass",
+            evento="validate",
+            sucesso=False,
+            mensagem=mensagem,
+            point_id=point_id,
+            request_corpo=request_corpo,
+        )
+        raise TotalPassError(mensagem) from erro
+
+    response_corpo = f"{resposta.status_code}\n{resposta.text}"
+
+    def _falhar(mensagem: str) -> None:
+        registrar_em_sessao_propria(
+            integracao="totalpass",
+            evento="validate",
+            sucesso=False,
+            mensagem=mensagem,
+            point_id=point_id,
+            request_corpo=request_corpo,
+            response_corpo=response_corpo,
+        )
+        raise TotalPassError(mensagem)
 
     if resposta.status_code == 401:
         # Token pode ter expirado antes da hora (ou sido revogado do lado
         # deles) — descarta o cache pra reautenticar na próxima tentativa,
         # em vez de continuar falhando com o mesmo token ruim.
         _cache_token.pop(point_id, None)
-        raise TotalPassError("Sessão com a TotalPass expirou — tente novamente")
+        _falhar("Sessão com a TotalPass expirou — tente novamente")
     if resposta.status_code == 422:
-        raise TotalPassError("Código inválido, expirado ou já utilizado")
+        _falhar("Código inválido, expirado ou já utilizado")
     if resposta.status_code >= 400:
-        raise TotalPassError(f"TotalPass recusou o check-in (HTTP {resposta.status_code})")
+        _falhar(f"TotalPass recusou o check-in (HTTP {resposta.status_code})")
 
     corpo = resposta.json() if resposta.content else {}
     beneficiario = corpo.get("beneficiary") or corpo.get("beneficiario") or {}
-    return {
+    resultado = {
         "nome": beneficiario.get("name") or corpo.get("name"),
         "documento": beneficiario.get("document") or corpo.get("document"),
     }
+    registrar_em_sessao_propria(
+        integracao="totalpass",
+        evento="validate",
+        sucesso=True,
+        mensagem="Check-in validado",
+        point_id=point_id,
+        request_corpo=request_corpo,
+        response_corpo=response_corpo,
+    )
+    return resultado

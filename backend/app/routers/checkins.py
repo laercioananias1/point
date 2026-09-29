@@ -57,6 +57,8 @@ def registrar_checkin_totalpass(
         )
 
     try:
+        # A chamada em si (eventos "auth"/"validate") já loga sucesso/erro
+        # sozinha — ver services/totalpass.py.
         beneficiario = validar_checkin(
             point_id=point.id, place_api_key=point.place_api_key, codigo=payload.codigo
         )

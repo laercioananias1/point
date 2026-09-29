@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
+import { AjudaIcone } from "../../components/AjudaIcone";
 import { Icon, Layout } from "../../components/Layout";
 
 /** Tela própria pra cadastrar tipo/formato de turma (pedido do usuário,
@@ -44,7 +45,10 @@ export default function AdminPointCadastrarTipoTurma() {
 
       <form className="form-card" onSubmit={handleSubmit} style={{ maxWidth: "none" }}>
         <label>
-          Nome do tipo
+          <span style={{ display: "inline-flex", alignItems: "center" }}>
+            Nome do tipo
+            <AjudaIcone texto="Só uma etiqueta pra organizar as turmas. Se a turma vai ser privada (só professor/admin matricula) é escolhido na hora de criar a turma, não aqui." />
+          </span>
           <input
             placeholder="Aula individual, dupla, família..."
             value={nome}
@@ -52,10 +56,6 @@ export default function AdminPointCadastrarTipoTurma() {
             required
           />
         </label>
-        <p className="empty-state" style={{ padding: 0 }}>
-          Só uma etiqueta pra organizar as turmas. Se a turma vai ser privada (só professor/admin
-          matricula) é escolhido na hora de criar a turma, não aqui.
-        </p>
 
         {erro && <p className="form-error">{erro}</p>}
 

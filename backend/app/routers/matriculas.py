@@ -536,6 +536,7 @@ def enviar_lembrete_pagamento(
         # com plano; 0 aqui só seria alcançado por um dado inconsistente.
         valor=matricula.valor_mensalidade or 0,
         mes_referencia=mes_referencia.strftime("%m/%Y"),
+        point_id=admin.point_id,
     )
 
 

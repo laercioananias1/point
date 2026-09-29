@@ -21,6 +21,13 @@ class Aluno(TimestampMixin, Base):
     forma_pagamento_preferida: Mapped[FormaPagamento | None] = mapped_column(
         Enum(FormaPagamento), nullable=True
     )
+    # Gympass ID de 13 dígitos (pedido do usuário, 2026-09-29, protocolo
+    # 15968485) — liga os check-ins que chegam da Wellhub (ver
+    # app/models/wellhub_checkin.py) a esse Aluno, pro "acerto do mês"
+    # conseguir comparar check-ins feitos com aulas frequentadas. Nulo até
+    # alguém associar uma vez (PATCH /alunos/{id}/wellhub); único porque um
+    # gympass_id só pode representar uma pessoa.
+    wellhub_gympass_id: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
 
     matriculas: Mapped[list["Matricula"]] = relationship(back_populates="aluno")  # noqa: F821
 

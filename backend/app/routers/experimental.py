@@ -268,6 +268,7 @@ def aprovar_solicitacao(
         modalidade_nome=solicitacao.turma.modalidade.nome,
         point_nome=solicitacao.point.nome,
         data_horario=f"{solicitacao.data.strftime('%d/%m')} às {hora_rotulo}",
+        point_id=solicitacao.point.id,
     )
 
     return solicitacao

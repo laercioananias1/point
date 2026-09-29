@@ -23,6 +23,7 @@ from app.routers import (
     creditos,
     experimental,
     feriados,
+    integracao_logs,
     matriculas,
     modalidades,
     notificacoes,
@@ -35,6 +36,8 @@ from app.routers import (
     tipos_turma,
     turmas,
     vinculos,
+    webhooks,
+    wellhub,
 )
 
 @asynccontextmanager
@@ -67,6 +70,8 @@ app.include_router(vinculos.router)
 app.include_router(modalidades.router)
 app.include_router(categorias.router)
 app.include_router(tipos_turma.router)
+app.include_router(webhooks.router)
+app.include_router(wellhub.router)
 app.include_router(quadras.router)
 app.include_router(turmas.router)
 app.include_router(matriculas.router)
@@ -84,6 +89,7 @@ app.include_router(checkins.router)
 app.include_router(feriados.router)
 app.include_router(notificacoes.router)
 app.include_router(experimental.router)
+app.include_router(integracao_logs.router)
 
 # Fotos de Point (pedido do usuário, 2026-08-30) — arquivo estático servido
 # direto, sem passar por rota autenticada (mesma URL vale pra qualquer

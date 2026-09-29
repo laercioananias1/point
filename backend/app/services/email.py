@@ -2,6 +2,7 @@ import httpx
 
 from app.core.config import get_settings
 from app.models.enums import PagamentoMeio
+from app.services.integracao_logs import registrar_em_sessao_propria
 
 # Wellhub/TotalPass não cobram do aluno pelo Point — o valor do plano não
 # se aplica (pedido do usuário, 2026-09-01: "quando o plano é wellhub ou
@@ -9,7 +10,9 @@ from app.models.enums import PagamentoMeio
 _ROTULO_BENEFICIO = {PagamentoMeio.WELLHUB: "Wellhub", PagamentoMeio.TOTALPASS: "TotalPass"}
 
 
-def _enviar(*, email: str, assunto: str, html: str, link_fallback: str = "") -> None:
+def _enviar(
+    *, email: str, assunto: str, html: str, link_fallback: str = "", point_id: int | None = None
+) -> None:
     """Envio de e-mail via Resend, compartilhado pelos convites de assinatura
     e de vínculo e pelo lembrete de mensalidade (pedido do usuário,
     2026-08-21). Nunca levanta exceção pra cima — se falhar (ou a chave não
@@ -20,7 +23,23 @@ def _enviar(*, email: str, assunto: str, html: str, link_fallback: str = "") -> 
     if not settings.resend_api_key:
         detalhe = f" — link: {link_fallback}" if link_fallback else ""
         print(f"[email] RESEND_API_KEY não configurada — '{assunto}' pra {email}{detalhe}")
+        registrar_em_sessao_propria(
+            integracao="email",
+            evento=assunto,
+            sucesso=False,
+            mensagem="RESEND_API_KEY não configurada",
+            destino=email,
+            point_id=point_id,
+        )
         return
+
+    # Pra log (pedido do usuário, 2026-09-29: "quero ver tb o request e
+    # response") — nunca o header Authorization, só o corpo mandado.
+    request_corpo = (
+        f"POST https://api.resend.com/emails\n"
+        f'{{"from": "{settings.resend_from}", "to": ["{email}"], "subject": "{assunto}", "html": "(ver e-mail — omitido do log)"}}'
+    )
+    response_corpo: str | None = None
 
     try:
         resposta = httpx.post(
@@ -29,9 +48,31 @@ def _enviar(*, email: str, assunto: str, html: str, link_fallback: str = "") -> 
             json={"from": settings.resend_from, "to": [email], "subject": assunto, "html": html},
             timeout=10,
         )
+        response_corpo = f"{resposta.status_code}\n{resposta.text}"
         resposta.raise_for_status()
     except httpx.HTTPError as erro:
         print(f"[email] Falha ao enviar convite pra {email}: {erro}")
+        registrar_em_sessao_propria(
+            integracao="email",
+            evento=assunto,
+            sucesso=False,
+            mensagem=str(erro),
+            destino=email,
+            point_id=point_id,
+            request_corpo=request_corpo,
+            response_corpo=response_corpo,
+        )
+    else:
+        registrar_em_sessao_propria(
+            integracao="email",
+            evento=assunto,
+            sucesso=True,
+            mensagem="Enviado",
+            destino=email,
+            point_id=point_id,
+            request_corpo=request_corpo,
+            response_corpo=response_corpo,
+        )
 
 
 def enviar_convite_email(
@@ -44,6 +85,7 @@ def enviar_convite_email(
     frequencia: int,
     preco: float,
     fonte_pagamento: PagamentoMeio,
+    point_id: int | None = None,
 ) -> None:
     """E-mail de convite de assinatura (aluno) — pedido do usuário, 2026-08-20.
     Wellhub/TotalPass mostra o benefício em vez do valor (pedido do usuário,
@@ -66,11 +108,17 @@ def enviar_convite_email(
     </div>
     """
     _enviar(
-        email=email, assunto=f"Convite — plano mensal no {point_nome}", html=html, link_fallback=link
+        email=email,
+        assunto=f"Convite — plano mensal no {point_nome}",
+        html=html,
+        link_fallback=link,
+        point_id=point_id,
     )
 
 
-def enviar_convite_avulso_email(*, nome: str, email: str, link: str, point_nome: str) -> None:
+def enviar_convite_avulso_email(
+    *, nome: str, email: str, link: str, point_nome: str, point_id: int | None = None
+) -> None:
     """Convite avulso (pedido do usuário, 2026-09-11) — sem plano/preço pra
     mostrar, é só um link pra entrar na plataforma; o aluno escolhe e
     compra as próprias aulas depois de aceitar."""
@@ -89,11 +137,13 @@ def enviar_convite_avulso_email(*, nome: str, email: str, link: str, point_nome:
       <p style="color:#666;font-size:13px;">Se o botão não funcionar, copie este link: {link}</p>
     </div>
     """
-    _enviar(email=email, assunto=f"Convite — {point_nome}", html=html, link_fallback=link)
+    _enviar(
+        email=email, assunto=f"Convite — {point_nome}", html=html, link_fallback=link, point_id=point_id
+    )
 
 
 def enviar_convite_vinculo_email(
-    *, nome: str, email: str, link: str, point_nome: str
+    *, nome: str, email: str, link: str, point_nome: str, point_id: int | None = None
 ) -> None:
     """E-mail de convite de vínculo (professor) — mesmo padrão do convite de
     assinatura do aluno (pedido do usuário, 2026-08-21: "quem manda a
@@ -114,11 +164,17 @@ def enviar_convite_vinculo_email(
     </div>
     """
     _enviar(
-        email=email, assunto=f"Convite — dar aula no {point_nome}", html=html, link_fallback=link
+        email=email,
+        assunto=f"Convite — dar aula no {point_nome}",
+        html=html,
+        link_fallback=link,
+        point_id=point_id,
     )
 
 
-def enviar_convite_admin_email(*, nome: str, email: str, link: str, point_nome: str) -> None:
+def enviar_convite_admin_email(
+    *, nome: str, email: str, link: str, point_nome: str, point_id: int | None = None
+) -> None:
     """E-mail de convite de admin do Point — mesmo padrão dos outros dois
     convites (pedido do usuário, 2026-08-26: "não quero criar senha de
     admin, faça o mesmo padrão de aluno e professor"). Sem acordo nenhum
@@ -136,7 +192,11 @@ def enviar_convite_admin_email(*, nome: str, email: str, link: str, point_nome: 
     </div>
     """
     _enviar(
-        email=email, assunto=f"Convite — administrar o {point_nome}", html=html, link_fallback=link
+        email=email,
+        assunto=f"Convite — administrar o {point_nome}",
+        html=html,
+        link_fallback=link,
+        point_id=point_id,
     )
 
 
@@ -144,7 +204,8 @@ def enviar_redefinicao_senha_email(*, nome: str, email: str, link: str) -> None:
     """E-mail de redefinição de senha (pedido do usuário, 2026-09-01: "a
     troca de senha precisa ser por email" — substitui a tela de trocar
     senha que exigia saber a senha atual). Link de vida curta (1h, ver
-    app/models/redefinicao_senha.py) — quem não pediu pode ignorar."""
+    app/models/redefinicao_senha.py) — quem não pediu pode ignorar. Sem
+    point_id: acontece antes de qualquer login, não tem Point envolvido."""
     html = f"""
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
       <h2>Redefinir sua senha</h2>
@@ -162,7 +223,14 @@ def enviar_redefinicao_senha_email(*, nome: str, email: str, link: str) -> None:
 
 
 def enviar_lembrete_mensalidade_email(
-    *, nome: str, email: str, point_nome: str, modalidade_nome: str, valor: float, mes_referencia: str
+    *,
+    nome: str,
+    email: str,
+    point_nome: str,
+    modalidade_nome: str,
+    valor: float,
+    mes_referencia: str,
+    point_id: int | None = None,
 ) -> None:
     """Lembrete manual de mensalidade em aberto (pedido do usuário,
     2026-08-21) — sem job agendado ainda (seção 7), o admin do Point decide
@@ -179,11 +247,23 @@ def enviar_lembrete_mensalidade_email(
       </p>
     </div>
     """
-    _enviar(email=email, assunto=f"Lembrete — mensalidade de {mes_referencia} em aberto", html=html)
+    _enviar(
+        email=email,
+        assunto=f"Lembrete — mensalidade de {mes_referencia} em aberto",
+        html=html,
+        point_id=point_id,
+    )
 
 
 def enviar_cobranca_email(
-    *, nome: str, email: str, point_nome: str, descricao: str, valor: float, vencimento: str
+    *,
+    nome: str,
+    email: str,
+    point_nome: str,
+    descricao: str,
+    valor: float,
+    vencimento: str,
+    point_id: int | None = None,
 ) -> None:
     """Lembrete de cobrança em aberto (pedido do usuário, 2026-09-20: tela
     de Cobranças) — cobrança pode ser avulsa (uniforme, evento...), então
@@ -200,4 +280,9 @@ def enviar_cobranca_email(
       <p>Qualquer dúvida, fale com o seu Point.</p>
     </div>
     """
-    _enviar(email=email, assunto=f"Cobrança em aberto — {descricao}", html=html)
+    _enviar(
+        email=email,
+        assunto=f"Cobrança em aberto — {descricao}",
+        html=html,
+        point_id=point_id,
+    )

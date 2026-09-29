@@ -18,3 +18,6 @@ class AlunoOut(ORMModel):
     email: str
     forma_pagamento_preferida: FormaPagamento
     foto: str | None = None
+    # Gympass ID associado (pedido do usuário, 2026-09-29) — nulo até
+    # alguém ligar uma vez, ver PATCH /alunos/{id}/wellhub.
+    wellhub_gympass_id: str | None = None

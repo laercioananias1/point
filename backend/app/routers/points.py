@@ -233,6 +233,7 @@ def atualizar_configuracoes_do_meu_point(
     point.dias_fds_funcionamento = payload.dias_fds_funcionamento
     point.horarios_fds_funcionamento = payload.horarios_fds_funcionamento
     point.place_api_key = payload.place_api_key or None
+    point.wellhub_gym_id = payload.wellhub_gym_id or None
     db.commit()
     db.refresh(point)
     return point

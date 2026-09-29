@@ -42,6 +42,9 @@ class PointOut(ORMModel):
     # 2026-08-25) — cada Point pega a dele no portal da TotalPass, aba
     # "Integrações". Nula até o admin configurar.
     place_api_key: str | None
+    # Gym ID da Wellhub desse Point (pedido do usuário, 2026-09-22) — nulo
+    # até o admin configurar.
+    wellhub_gym_id: str | None
     # Perfil público do Point (pedido do usuário, 2026-08-30) — ver
     # app/models/point.py.
     sobre: str | None
@@ -119,6 +122,7 @@ class PointConfiguracoesUpdate(ORMModel):
     # aos outros campos deste schema, o formulário sempre reenvia o valor
     # atual (nulo/vazio se ainda não configurado).
     place_api_key: str | None
+    wellhub_gym_id: str | None
 
 
 class PointResumo(ORMModel):

@@ -121,6 +121,7 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
         { to: "/admin-point/cobrancas", label: "Cobranças", icon: "dollar" },
         { to: "/admin-point/caixa", label: "Caixa", icon: "chart" },
         { to: "/admin-point/relatorios", label: "Relatórios", icon: "list" },
+        { to: "/admin-point/wellhub", label: "Wellhub", icon: "check-circle" },
         { to: "/admin-point/configuracoes/planos", label: "Planos", icon: "ticket" },
       ],
     },
@@ -175,6 +176,10 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
         { to: "/dono-app", label: "Início", icon: "home", end: true },
         { to: "/dono-app/points", label: "Points", icon: "grid" },
       ],
+    },
+    {
+      titulo: "Plataforma",
+      itens: [{ to: "/dono-app/integracoes", label: "Logs de integrações", icon: "link" }],
     },
   ],
 };

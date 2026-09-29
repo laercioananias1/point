@@ -56,9 +56,11 @@ export interface Point {
   horarios_semana_funcionamento: string[];
   dias_fds_funcionamento: string[];
   horarios_fds_funcionamento: string[];
-  // Credencial TotalPass/Wellhub desse Point (pedido do usuário,
-  // 2026-08-25) — nula até o admin configurar em Configurações.
+  // Credencial TotalPass desse Point (pedido do usuário, 2026-08-25) —
+  // nula até o admin configurar em Configurações.
   place_api_key: string | null;
+  // Gym ID da Wellhub desse Point (pedido do usuário, 2026-09-22).
+  wellhub_gym_id: string | null;
   // Perfil do Point (pedido do usuário, 2026-08-30: "Meu Point... Sobre,
   // informações importantes, até 5 fotos") — aparece na Início do aluno.
   sobre: string | null;
@@ -146,6 +148,9 @@ export interface AlunoResumo {
   email: string | null;
   forma_pagamento_preferida: PagamentoMeio;
   foto?: string | null;
+  // Gympass ID associado (pedido do usuário, 2026-09-29) — nulo até
+  // alguém ligar em AgendaAluno.tsx.
+  wellhub_gympass_id?: string | null;
 }
 
 export interface Vinculo {
@@ -298,6 +303,44 @@ export interface LancamentoCaixa {
 export interface ContaCaixa {
   id: number;
   nome: string;
+}
+
+export interface WellhubCheckin {
+  id: number;
+  gympass_id: string;
+  aluno_id: number | null;
+  aluno_nome: string | null;
+  data: string;
+  origem: string;
+}
+
+export interface WellhubReconciliacaoLinha {
+  gympass_id: string | null;
+  aluno_id: number | null;
+  aluno_nome: string | null;
+  checkins_no_mes: number;
+  aulas_no_mes: number;
+}
+
+export interface WellhubReconciliacao {
+  mes: string;
+  linhas: WellhubReconciliacaoLinha[];
+}
+
+export type IntegracaoNome = "whatsapp" | "email" | "wellhub" | "totalpass";
+
+export interface IntegracaoLog {
+  id: number;
+  integracao: IntegracaoNome;
+  evento: string;
+  destino: string | null;
+  point_id: number | null;
+  point_nome: string | null;
+  sucesso: boolean;
+  mensagem: string;
+  request_corpo: string | null;
+  response_corpo: string | null;
+  criado_em: string;
 }
 
 export interface RelatorioMes {

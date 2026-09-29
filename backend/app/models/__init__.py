@@ -12,6 +12,7 @@ from app.models.convite_dia_escolhido import ConviteDiaEscolhido
 from app.models.convite_vinculo import ConviteVinculo
 from app.models.credito_reposicao import CreditoReposicao
 from app.models.feriado import Feriado
+from app.models.integracao_log import IntegracaoLog
 from app.models.matricula import Matricula
 from app.models.matricula_dia_semana import MatriculaDiaSemana
 from app.models.matricula_excecao import MatriculaExcecao
@@ -28,6 +29,7 @@ from app.models.turma_dia_semana import TurmaDiaSemana
 from app.models.turma_excecao import TurmaExcecao
 from app.models.user import User
 from app.models.vinculo import Vinculo
+from app.models.wellhub_checkin import WellhubCheckin
 
 __all__ = [
     "Aluno",
@@ -46,6 +48,7 @@ __all__ = [
     "ConviteVinculo",
     "CreditoReposicao",
     "Feriado",
+    "IntegracaoLog",
     "Matricula",
     "MatriculaDiaSemana",
     "MatriculaExcecao",
@@ -62,4 +65,5 @@ __all__ = [
     "TurmaExcecao",
     "User",
     "Vinculo",
+    "WellhubCheckin",
 ]

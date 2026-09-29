@@ -119,6 +119,7 @@ def criar_convite_vinculo(
         email=convite.email,
         link=link,
         point_nome=convite.point.nome,
+        point_id=convite.point_id,
     )
     enviar_convite_whatsapp(
         celular=convite.celular,
@@ -126,6 +127,7 @@ def criar_convite_vinculo(
         point_nome=convite.point.nome,
         token=convite.token,
         tipo="professor",
+        point_id=convite.point_id,
     )
 
     return _para_out(db, convite)

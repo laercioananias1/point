@@ -170,7 +170,11 @@ def criar_convite(
     link = f"{settings.frontend_url}/convite/{convite.token}"
     if payload.avulso:
         enviar_convite_avulso_email(
-            nome=convite.nome, email=convite.email, link=link, point_nome=convite.point.nome
+            nome=convite.nome,
+            email=convite.email,
+            link=link,
+            point_nome=convite.point.nome,
+            point_id=convite.point_id,
         )
     else:
         enviar_convite_email(
@@ -182,6 +186,7 @@ def criar_convite(
             frequencia=plano.frequencia_semanal,
             preco=float(plano.preco),
             fonte_pagamento=convite.fonte_pagamento,
+            point_id=convite.point_id,
         )
     enviar_convite_whatsapp(
         celular=convite.celular,
@@ -189,6 +194,7 @@ def criar_convite(
         point_nome=convite.point.nome,
         token=convite.token,
         tipo="aluno",
+        point_id=convite.point_id,
     )
 
     return _para_out(db, convite)

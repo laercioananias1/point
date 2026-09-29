@@ -16,6 +16,7 @@ from app.models.enums import Role
 from app.models.matricula import Matricula
 from app.models.user import User
 from app.schemas.aluno import AlunoCreate, AlunoOut
+from app.schemas.wellhub import AlunoWellhubUpdate
 from app.schemas.aluno_categoria import AlunoCategoriaOut, AlunoCategoriaSet
 from app.schemas.assinatura import AssinaturaOut
 from app.schemas.credito import CreditoOut
@@ -114,6 +115,36 @@ def minhas_assinaturas(
     user: Annotated[User, Depends(require_role(Role.ALUNO))],
 ) -> list[Assinatura]:
     return db.query(Assinatura).filter(Assinatura.aluno_id == user.aluno_id).all()
+
+
+@router.patch("/{aluno_id}/wellhub", response_model=AlunoOut)
+def definir_gympass_id_do_aluno(
+    aluno_id: int,
+    payload: AlunoWellhubUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    _admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+) -> Aluno:
+    """Liga (ou desliga, com gympass_id=None) o Gympass ID desse Aluno
+    (pedido do usuário, 2026-09-29, protocolo 15968485) — é o que permite
+    o 'acerto do mês' (GET /wellhub/reconciliacao) comparar check-ins
+    validados com aulas de fato frequentadas. Aluno é entidade global (não
+    é por Point, como a categoria acima), então qualquer admin que já lida
+    com esse aluno pode ligar."""
+    aluno = db.get(Aluno, aluno_id)
+    if aluno is None:
+        raise HTTPException(404, "Aluno não encontrado")
+    if payload.gympass_id:
+        ja_usado = (
+            db.query(Aluno.id)
+            .filter(Aluno.wellhub_gympass_id == payload.gympass_id, Aluno.id != aluno_id)
+            .first()
+        )
+        if ja_usado is not None:
+            raise HTTPException(409, "Esse Gympass ID já está associado a outro aluno")
+    aluno.wellhub_gympass_id = payload.gympass_id
+    db.commit()
+    db.refresh(aluno)
+    return aluno
 
 
 @router.get("/{aluno_id}/categoria", response_model=AlunoCategoriaOut | None)

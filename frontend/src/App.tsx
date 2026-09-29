@@ -15,6 +15,7 @@ import AdminPointConvidarProfessor from "./pages/admin-point/ConvidarProfessor";
 import AdminPointCobrancas from "./pages/admin-point/Cobrancas";
 import AdminPointCaixa from "./pages/admin-point/Caixa";
 import AdminPointRelatorios from "./pages/admin-point/Relatorios";
+import AdminPointWellhub from "./pages/admin-point/Wellhub";
 import AdminPointPerfil from "./pages/admin-point/Perfil";
 import AdminPointMeuPoint from "./pages/admin-point/MeuPoint";
 import AdminPointPrazos from "./pages/admin-point/Prazos";
@@ -50,6 +51,7 @@ import AlunoComprarAvulsa from "./pages/aluno/ComprarAvulsa";
 import AlunoNovoAgendamento from "./pages/aluno/NovoAgendamento";
 import AlunoPerfil from "./pages/aluno/Perfil";
 import DonoAppInicio from "./pages/dono-app/Inicio";
+import DonoAppIntegracoes from "./pages/dono-app/Integracoes";
 import DonoAppPoints from "./pages/dono-app/Points";
 import DonoAppCriarPoint from "./pages/dono-app/CriarPoint";
 import DonoAppPerfil from "./pages/dono-app/Perfil";
@@ -175,6 +177,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointRelatorios />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/wellhub"
+        element={
+          <ProtectedRoute>
+            <AdminPointWellhub />
           </ProtectedRoute>
         }
       />
@@ -509,6 +519,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DonoAppPoints />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dono-app/integracoes"
+        element={
+          <ProtectedRoute>
+            <DonoAppIntegracoes />
           </ProtectedRoute>
         }
       />

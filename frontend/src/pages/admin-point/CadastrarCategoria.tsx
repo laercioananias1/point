@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
+import { AjudaIcone } from "../../components/AjudaIcone";
 import { Icon, Layout } from "../../components/Layout";
 
 const COR_PADRAO = "#3B82F6";
@@ -55,7 +56,10 @@ export default function AdminPointCadastrarCategoria() {
         </label>
 
         <label>
-          Cor de identificação
+          <span style={{ display: "inline-flex", alignItems: "center" }}>
+            Cor de identificação
+            <AjudaIcone texto="Essa cor identifica as turmas dessa categoria na agenda." />
+          </span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input
               type="color"
@@ -73,9 +77,6 @@ export default function AdminPointCadastrarCategoria() {
             />
           </div>
         </label>
-        <p className="empty-state" style={{ padding: 0 }}>
-          Essa cor identifica as turmas dessa categoria na agenda.
-        </p>
 
         {erro && <p className="form-error">{erro}</p>}
 

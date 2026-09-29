@@ -73,8 +73,12 @@ class Point(TimestampMixin, Base):
         JSON, default=lambda: list(HORARIOS_PADRAO)
     )
 
-    # Credencial Wellhub/TotalPass — nula até a Fase 2 (integração de benefícios).
+    # Credencial TotalPass — nula até o admin configurar (Configurações).
     place_api_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Gym ID da Wellhub pra este Point (pedido do usuário, 2026-09-22,
+    # protocolo 15968485 — ver app/services/wellhub.py). Mesmo papel do
+    # place_api_key acima, credencial diferente.
+    wellhub_gym_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Perfil do Point (pedido do usuário, 2026-08-30: "Meu Point... Sobre,
     # informações importantes, até 5 fotos") — sobre/informacoes_importantes

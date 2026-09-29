@@ -127,7 +127,11 @@ def criar_convite_admin(
     settings = get_settings()
     link = f"{settings.frontend_url}/convite-admin/{convite.token}"
     enviar_convite_admin_email(
-        nome=convite.nome, email=convite.email, link=link, point_nome=convite.point.nome
+        nome=convite.nome,
+        email=convite.email,
+        link=link,
+        point_nome=convite.point.nome,
+        point_id=convite.point_id,
     )
     enviar_convite_whatsapp(
         celular=convite.celular,
@@ -135,6 +139,7 @@ def criar_convite_admin(
         point_nome=convite.point.nome,
         token=convite.token,
         tipo="admin",
+        point_id=convite.point_id,
     )
 
     return _para_out(db, convite)

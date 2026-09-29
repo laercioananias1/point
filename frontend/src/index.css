@@ -3432,3 +3432,176 @@ button.app-tab:hover:not(:disabled) {
 .agenda-mes-cancelada {
   color: var(--risk);
 }
+
+/* Wellhub — contagens lado a lado do "acerto do mês" (pedido do usuário,
+   2026-09-29). */
+.wellhub-contagens {
+  display: flex;
+  gap: 20px;
+}
+
+.wellhub-contagem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.wellhub-contagem-numero {
+  font-family: "Archivo", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.wellhub-contagem-rotulo {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+/* Logs de integrações (pedido do usuário, 2026-09-29) — tabela de verdade
+   (colunas Integração/Data/Função/Status), uma linha por registro, senão a
+   lista fica enorme de tão rolável; mensagem e request/response só no
+   popup ao clicar. Cada linha (inclusive o cabeçalho) é o mesmo grid de 4
+   colunas, repetido — mais simples que um grid compartilhado via
+   display:contents, e cada linha continua um <button> comum. */
+.log-tabela {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.log-linha {
+  display: grid;
+  grid-template-columns: 90px 120px 100px 1fr 90px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.log-linha span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-linha:last-child {
+  border-bottom: none;
+}
+
+button.log-linha:hover:not(:disabled) {
+  background: var(--surface-sunk);
+}
+
+.log-linha-cabecalho {
+  background: var(--surface-sunk);
+}
+
+.log-linha-cabecalho span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.log-linha .status-pill {
+  justify-self: start;
+}
+
+@media (max-width: 640px) {
+  .log-linha {
+    grid-template-columns: 70px 90px 1fr 66px;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  /* Sem espaço pra 5 colunas no celular — Point continua no popup. */
+  .log-col-point {
+    display: none;
+  }
+}
+
+.log-modal {
+  max-width: 640px;
+  overflow-x: hidden;
+}
+
+.log-corpo {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  background: var(--surface-sunk);
+  border-radius: 8px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink);
+}
+
+/* Ícone de ajuda inline (pedido do usuário, 2026-09-29) — "?" pequeno ao
+   lado de um título/campo, abre um popover com o texto explicativo em
+   vez de deixar o parágrafo sempre visível poluindo a tela. */
+.ajuda-icone-wrap {
+  position: relative;
+  display: inline-flex;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.ajuda-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 100px;
+  background: var(--accent-soft);
+  border: none;
+  color: var(--accent-strong);
+  font-family: "Archivo", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
+}
+
+.ajuda-icone:hover:not(:disabled) {
+  background: var(--accent-soft);
+  filter: brightness(0.95);
+}
+
+.ajuda-icone-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  max-width: 280px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-pop);
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+}

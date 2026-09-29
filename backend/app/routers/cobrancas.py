@@ -176,6 +176,7 @@ def enviar_lembrete_cobranca(cobranca_id: int, db: DB, admin: Admin) -> None:
         descricao=cobranca.descricao,
         valor=f"{float(cobranca.valor):.2f}".replace(".", ","),
         vencimento=vencimento,
+        point_id=admin.point_id,
     )
     enviar_cobranca_email(
         nome=aluno.nome,
@@ -184,6 +185,7 @@ def enviar_lembrete_cobranca(cobranca_id: int, db: DB, admin: Admin) -> None:
         descricao=cobranca.descricao,
         valor=float(cobranca.valor),
         vencimento=vencimento,
+        point_id=admin.point_id,
     )
 
 

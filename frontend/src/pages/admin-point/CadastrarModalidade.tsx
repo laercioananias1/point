@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
+import { AjudaIcone } from "../../components/AjudaIcone";
 import { Icon, Layout } from "../../components/Layout";
 
 /** Tela própria pra cadastrar modalidade (pedido do usuário, 2026-09-01:
@@ -70,13 +71,11 @@ export default function AdminPointCadastrarModalidade() {
             />
           </label>
         </div>
-        <p className="empty-state" style={{ padding: 0 }}>
-          Preço da aula avulsa dessa modalidade — vale pra qualquer professor que der aula dela aqui.
-          Preço do plano mensal é por frequência semanal,
-          cadastrado em Planos (Ver mais), não aqui.
-        </p>
         <label>
-          Preço da aula avulsa (R$)
+          <span style={{ display: "inline-flex", alignItems: "center" }}>
+            Preço da aula avulsa (R$)
+            <AjudaIcone texto="Vale pra qualquer professor que der aula dessa modalidade aqui. Preço do plano mensal é por frequência semanal, cadastrado em Planos (menu lateral), não aqui." />
+          </span>
           <input
             type="number"
             min="0"

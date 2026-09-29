@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Point } from "../../api/types";
+import { AjudaIcone } from "../../components/AjudaIcone";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA } from "../../lib/dias";
 
@@ -107,6 +108,7 @@ function HorariosForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) =>
         dias_fds_funcionamento: diasFds,
         horarios_fds_funcionamento: horariosFds,
         place_api_key: point.place_api_key ?? null,
+        wellhub_gym_id: point.wellhub_gym_id ?? null,
       });
       onSalvo(atualizado);
       setSucesso(true);
@@ -119,12 +121,10 @@ function HorariosForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) =>
 
   return (
     <form className="form-card" onSubmit={handleSubmit} style={{ marginTop: 0 }}>
-      <p className="empty-state" style={{ padding: 0 }}>
-        O professor só consegue criar turma dentro desses dias e horários. Dias de semana e fim de
-        semana têm horários independentes — dá pra deixar o sábado só de manhã, por exemplo.
-      </p>
-
-      <label>Dias de semana</label>
+      <label>
+        Dias de semana
+        <AjudaIcone texto="O professor só consegue criar turma dentro desses dias e horários. Dias de semana e fim de semana têm horários independentes — dá pra deixar o sábado só de manhã, por exemplo." />
+      </label>
       <div className="toggle-grid">
         {DIAS_UTEIS.map((d) => (
           <button

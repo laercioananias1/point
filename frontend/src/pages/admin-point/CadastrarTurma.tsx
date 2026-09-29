@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Categoria, ExperimentalConfig, Modalidade, Quadra, TipoTurma, Vinculo } from "../../api/types";
+import { AjudaIcone } from "../../components/AjudaIcone";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA } from "../../lib/dias";
 
@@ -303,14 +304,14 @@ function CriarTurmaForm({
           style={{ width: "auto" }}
         />
         Turma privada
+        <AjudaIcone texto='Turma privada não aparece pro aluno comprar avulsa ou reagendar crédito sozinho — só o professor ou o admin do Point matriculam alguém aqui (ex.: aula individual, dupla, família).' />
       </label>
-      <p className="empty-state" style={{ padding: 0 }}>
-        Turma privada não aparece pro aluno comprar avulsa ou reagendar crédito sozinho — só o
-        professor ou o admin do Point matriculam alguém aqui (ex.: aula individual, dupla, família).
-      </p>
 
       <label>
-        Aula experimental
+        <span style={{ display: "inline-flex", alignItems: "center" }}>
+          Aula experimental
+          <AjudaIcone texto='Define se essa turma aparece na página pública de aula experimental (Pessoas → Aula experimental). "Aceita" compartilha a mesma vaga com quem já é aluno; "somente experimental" é dedicada só a visitantes.' />
+        </span>
         <select
           value={aulaExperimental}
           onChange={(e) => setAulaExperimental(e.target.value as ExperimentalConfig)}
@@ -320,11 +321,6 @@ function CriarTurmaForm({
           <option value="somente">Somente experimental — não recebe matrícula normal</option>
         </select>
       </label>
-      <p className="empty-state" style={{ padding: 0 }}>
-        Define se essa turma aparece na página pública de aula experimental (Ver mais → Aula
-        experimental). "Aceita" compartilha a mesma vaga com quem já é aluno; "somente experimental"
-        é dedicada só a visitantes.
-      </p>
 
       {quadras.length === 0 ? (
         <p className="form-error">
@@ -422,7 +418,10 @@ function CriarTurmaForm({
       </label>
 
       <label>
-        Horários (hora cheia)
+        <span style={{ display: "inline-flex", alignItems: "center" }}>
+          Horários (hora cheia)
+          <AjudaIcone texto="Cria uma turma pra cada horário marcado acima, cada uma acontecendo em todos os dias selecionados." />
+        </span>
         {horariosPermitidos.length === 0 ? (
           <p className="empty-state" style={{ padding: "4px 0 0" }}>
             Esse Point ainda não configurou os horários em que funciona.
@@ -444,11 +443,6 @@ function CriarTurmaForm({
           </div>
         )}
       </label>
-
-      <p className="empty-state" style={{ padding: 0 }}>
-        Cria uma turma pra cada horário marcado acima, cada uma acontecendo em todos os dias
-        selecionados.
-      </p>
 
       {erro && <p className="form-error">{erro}</p>}
 

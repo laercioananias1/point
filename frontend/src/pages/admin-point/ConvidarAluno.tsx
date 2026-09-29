@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, PagamentoMeio, PeriodoDia, Plano, TurmaResumo } from "../../api/types";
+import { AjudaIcone } from "../../components/AjudaIcone";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA, rotuloTurma } from "../../lib/dias";
 import { formatarCelular, formatarReais } from "../../lib/formato";
@@ -237,7 +238,10 @@ function ConvidarForm({
       </div>
 
       <label>
-        Celular
+        <span style={{ display: "inline-flex", alignItems: "center" }}>
+          Celular
+          <AjudaIcone texto="O convite é mandado por e-mail e por WhatsApp." />
+        </span>
         <input
           type="tel"
           placeholder="(11) 91234-5678"
@@ -246,9 +250,6 @@ function ConvidarForm({
           required
         />
       </label>
-      <p className="empty-state" style={{ padding: 0 }}>
-        O convite é mandado por e-mail e por WhatsApp.
-      </p>
 
       {avulso ? (
         <p className="empty-state" style={{ padding: 0 }}>

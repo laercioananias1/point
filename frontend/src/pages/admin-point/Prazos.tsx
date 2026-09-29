@@ -85,6 +85,7 @@ function PrazosForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
         dias_fds_funcionamento: point.dias_fds_funcionamento,
         horarios_fds_funcionamento: point.horarios_fds_funcionamento,
         place_api_key: point.place_api_key ?? null,
+        wellhub_gym_id: point.wellhub_gym_id ?? null,
       });
       onSalvo(atualizado);
       setSucesso(true);

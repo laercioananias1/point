@@ -23,12 +23,14 @@ diferente pra cada.
 Referência: developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
 """
 
+import json
 import re
 from typing import Literal
 
 import httpx
 
 from app.core.config import get_settings
+from app.services.integracao_logs import registrar_em_sessao_propria
 
 TipoConvite = Literal["aluno", "professor", "admin"]
 
@@ -45,7 +47,12 @@ def _normalizar_telefone(celular: str) -> str:
 
 
 def _enviar_whatsapp(
-    *, celular: str, template: str, variaveis_corpo: list[str], variavel_botao: str | None = None
+    *,
+    celular: str,
+    template: str,
+    variaveis_corpo: list[str],
+    variavel_botao: str | None = None,
+    point_id: int | None = None,
 ) -> None:
     """Envio de mensagem via template, compartilhado por todos os tipos de
     notificação. Nunca levanta exceção pra cima — se falhar (ou a
@@ -59,6 +66,14 @@ def _enviar_whatsapp(
 
     if not settings.whatsapp_access_token or not settings.whatsapp_phone_number_id:
         print(f"[whatsapp] Credencial não configurada — template '{template}' pra {celular}")
+        registrar_em_sessao_propria(
+            integracao="whatsapp",
+            evento=template,
+            sucesso=False,
+            mensagem="Credencial não configurada",
+            destino=celular,
+            point_id=point_id,
+        )
         return
 
     telefone = _normalizar_telefone(celular)
@@ -78,18 +93,26 @@ def _enviar_whatsapp(
             }
         )
 
+    corpo_envio = {
+        "messaging_product": "whatsapp",
+        "to": telefone,
+        "type": "template",
+        "template": {"name": template, "language": {"code": "pt_BR"}, "components": components},
+    }
+    # Pra log (pedido do usuário, 2026-09-29: "quero ver tb o request e
+    # response") — nunca o header Authorization, só o corpo que foi
+    # mandado de verdade.
+    request_corpo = f"POST {settings.whatsapp_api_base_url}/{settings.whatsapp_phone_number_id}/messages\n{json.dumps(corpo_envio, ensure_ascii=False, indent=2)}"
+    response_corpo: str | None = None
+
     try:
         resposta = httpx.post(
             f"{settings.whatsapp_api_base_url}/{settings.whatsapp_phone_number_id}/messages",
             headers={"Authorization": f"Bearer {settings.whatsapp_access_token}"},
-            json={
-                "messaging_product": "whatsapp",
-                "to": telefone,
-                "type": "template",
-                "template": {"name": template, "language": {"code": "pt_BR"}, "components": components},
-            },
+            json=corpo_envio,
             timeout=10,
         )
+        response_corpo = f"{resposta.status_code}\n{resposta.text}"
         resposta.raise_for_status()
     except httpx.HTTPError as erro:
         # Corpo do erro ajuda muito a diagnosticar (ex.: template não
@@ -98,10 +121,37 @@ def _enviar_whatsapp(
         if isinstance(erro, httpx.HTTPStatusError):
             detalhe = f" — {erro.response.text}"
         print(f"[whatsapp] Falha ao enviar pra {celular}: {erro}{detalhe}")
+        registrar_em_sessao_propria(
+            integracao="whatsapp",
+            evento=template,
+            sucesso=False,
+            mensagem=f"{erro}{detalhe}",
+            destino=celular,
+            point_id=point_id,
+            request_corpo=request_corpo,
+            response_corpo=response_corpo,
+        )
+    else:
+        registrar_em_sessao_propria(
+            integracao="whatsapp",
+            evento=template,
+            sucesso=True,
+            mensagem="Enviado",
+            destino=celular,
+            point_id=point_id,
+            request_corpo=request_corpo,
+            response_corpo=response_corpo,
+        )
 
 
 def enviar_convite_whatsapp(
-    *, celular: str | None, nome: str, point_nome: str, token: str, tipo: TipoConvite
+    *,
+    celular: str | None,
+    nome: str,
+    point_nome: str,
+    token: str,
+    tipo: TipoConvite,
+    point_id: int | None = None,
 ) -> None:
     """Convite de aluno/professor/admin (pedido do usuário, 2026-09-11) —
     um template por tipo (ver docstring do módulo), o botão de cada um já
@@ -123,11 +173,18 @@ def enviar_convite_whatsapp(
         template=template,
         variaveis_corpo=[nome, point_nome],
         variavel_botao=token,
+        point_id=point_id,
     )
 
 
 def enviar_cancelamento_aula_whatsapp(
-    *, celular: str, nome: str, turma_nome: str, data: str, motivo: str
+    *,
+    celular: str,
+    nome: str,
+    turma_nome: str,
+    data: str,
+    motivo: str,
+    point_id: int | None = None,
 ) -> None:
     """Avisa o aluno por WhatsApp quando o professor/admin cancela a aula
     dele por força maior (pedido do usuário, 2026-09-11: "notificacao para
@@ -142,11 +199,18 @@ def enviar_cancelamento_aula_whatsapp(
         celular=celular,
         template=template,
         variaveis_corpo=[nome, turma_nome, data, motivo],
+        point_id=point_id,
     )
 
 
 def enviar_confirmacao_experimental_whatsapp(
-    *, celular: str, nome: str, modalidade_nome: str, point_nome: str, data_horario: str
+    *,
+    celular: str,
+    nome: str,
+    modalidade_nome: str,
+    point_nome: str,
+    data_horario: str,
+    point_id: int | None = None,
 ) -> None:
     """Avisa por WhatsApp quem pediu aula experimental pela página pública
     que o professor/admin aprovou (pedido do usuário, 2026-09-14: "faca um
@@ -159,11 +223,19 @@ def enviar_confirmacao_experimental_whatsapp(
         celular=celular,
         template=template,
         variaveis_corpo=[nome, modalidade_nome, point_nome, data_horario],
+        point_id=point_id,
     )
 
 
 def enviar_cobranca_whatsapp(
-    *, celular: str, nome: str, point_nome: str, descricao: str, valor: str, vencimento: str
+    *,
+    celular: str,
+    nome: str,
+    point_nome: str,
+    descricao: str,
+    valor: str,
+    vencimento: str,
+    point_id: int | None = None,
 ) -> None:
     """Lembrete de cobrança em aberto (pedido do usuário, 2026-09-20: tela
     de Cobranças) — disparado à mão pelo admin, no botão de WhatsApp da
@@ -174,4 +246,5 @@ def enviar_cobranca_whatsapp(
         celular=celular,
         template=template,
         variaveis_corpo=[nome, point_nome, descricao, valor, vencimento],
+        point_id=point_id,
     )

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
+import { AjudaIcone } from "../../components/AjudaIcone";
 import { Layout } from "../../components/Layout";
 import { FotoPerfil } from "../../components/FotoPerfil";
 import { TemaToggle } from "../../components/TemaToggle";
@@ -66,10 +67,10 @@ function VirarProfessorSection({ onVirou }: { onVirou: () => Promise<void> }) {
 
   return (
     <section className="section">
-      <h2>Também dar aulas nesse Point</h2>
-      <p className="empty-state" style={{ padding: 0 }}>
-        Ativa na hora, sem convite — usa seu próprio nome, celular e e-mail.
-      </p>
+      <h2 style={{ display: "inline-flex", alignItems: "center" }}>
+        Também dar aulas nesse Point
+        <AjudaIcone texto="Ativa na hora, sem convite — usa seu próprio nome, celular e e-mail." />
+      </h2>
       {erro && <p className="form-error">{erro}</p>}
       <button type="button" className="secondary" disabled={enviando} onClick={virarProfessor}>
         {enviando ? "Ativando..." : "Virar professor deste Point"}
