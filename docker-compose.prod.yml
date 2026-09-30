@@ -5,36 +5,12 @@
 #
 # Uso:
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# Banco: o MySQL não é mais um serviço daqui — é o container
+# `mysql-compartilhado` (pasta TaskHero/mysql-compartilhado), que atende o
+# OPoint e o ads-ops no mesmo servidor. A API entra na rede externa
+# "banco" pra alcançá-lo.
 services:
-  db:
-    image: mysql:8.0
-    # Flags de memória (pedido do usuário, 2026-08-30 — servidor de 1.9GB
-    # dividido com outra stack, que também roda o MySQL dela; dois MySQL
-    # padrão sozinhos já passam de 700MB) — reduz o footprint padrão do
-    # MySQL 8, feito pra servidor dedicado bem maior. Ajuste esses números
-    # pra cima se algum dia esse Point tiver um servidor só dele, ou se o
-    # volume de dados/conexões crescer e começar a sentir o aperto.
-    command: >
-      --innodb-buffer-pool-size=64M
-      --innodb-log-buffer-size=8M
-      --performance-schema=OFF
-      --max-connections=30
-      --table-open-cache=64
-    environment:
-      MYSQL_DATABASE: point
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-    volumes:
-      - db_data:/var/lib/mysql
-    restart: always
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    # Sem "ports" de propósito — só a rede interna do compose acessa o
-    # banco. Em dev (docker-compose.yml) fica exposto em 3307 pra debug
-    # local; em produção não tem motivo pra abrir isso pra fora.
-
   api:
     build: ./backend
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
@@ -48,10 +24,10 @@ services:
       # backend/app/core/config.py — senha com caractere especial tipo "#"
       # quebra o parsing de uma URL inteira interpolada por string; foi
       # exatamente o que aconteceu no primeiro deploy).
-      DB_HOST: db
+      DB_HOST: mysql-compartilhado
       DB_PORT: "3306"
-      DB_USER: root
-      DB_PASSWORD: ${DB_ROOT_PASSWORD}
+      DB_USER: point_app
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: point
       JWT_SECRET: ${JWT_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
@@ -62,14 +38,17 @@ services:
       TOTALPASS_BASE_URL: ${TOTALPASS_BASE_URL:-https://booking-api.staging.totalpass.com}
       WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
       WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WELLHUB_AUTH_TOKEN: ${WELLHUB_AUTH_TOKEN:-}
+      WELLHUB_WEBHOOK_SECRET: ${WELLHUB_WEBHOOK_SECRET:-}
+      WELLHUB_BASE_URL: ${WELLHUB_BASE_URL:-https://apitesting.partners.gympass.com/access/v1}
     restart: always
     ports:
       # 127.0.0.1 só — o nginx/Traefik do host é quem fala com a internet
       # (ver DEPLOY.md pro server block/labels).
       - "127.0.0.1:8001:8000"
-    depends_on:
-      db:
-        condition: service_healthy
+    networks:
+      - default
+      - banco
 
   web:
     build:
@@ -95,6 +74,9 @@ services:
     ports:
       - "127.0.0.1:8003:80"
 
+networks:
+  banco:
+    external: true
+
 volumes:
-  db_data:
   uploads_data:

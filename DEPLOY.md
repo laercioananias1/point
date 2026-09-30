@@ -49,10 +49,12 @@ cp .env.production.example .env.production
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
-Isso sobe quatro serviços, todos só em `127.0.0.1` (não acessíveis direto da
+Antes, o MySQL compartilhado precisa estar no ar (ver o README de
+`TaskHero/mysql-compartilhado`) — a API se conecta nele pela rede `banco`.
+
+Isso sobe três serviços, todos só em `127.0.0.1` (não acessíveis direto da
 internet — o nginx do host é quem expõe):
 
-- `db` (MySQL) — sem porta publicada, só a rede interna do compose acessa
 - `api` (FastAPI) — `127.0.0.1:8001`
 - `web` (painel, build estático servido por nginx dentro do container) —
   `127.0.0.1:8002`
@@ -293,15 +295,16 @@ sempre, mesmo sem mudança de schema — não faz nada se já estiver em dia)
 
 ## Persistência
 
-- **Banco**: volume nomeado `db_data` — sobrevive a `up -d --build`, some só
-  com `docker compose down -v` (evite usar `-v` em produção).
+- **Banco**: não fica mais neste compose — é o container
+  `mysql-compartilhado` (pasta `TaskHero/mysql-compartilhado`, com o
+  próprio README), que atende o OPoint e o ads-ops. O banco `point` é
+  acessado pelo usuário `point_app`, pela rede Docker externa `banco`.
 - **Fotos/banners/logo enviados** (`app/services/uploads.py`): volume nomeado
   `uploads_data` — mesma regra, sobrevive a rebuild da imagem da API.
 
 ## Ainda não incluído aqui
 
-- Backup automático do banco (por enquanto, `docker compose exec db
-  mysqldump ...` manual, ou configure o backup que já usam pros outros
-  serviços do TaskHero nesse VPS).
+- Backup automático do banco (por enquanto, manual:
+  `docker exec mysql-compartilhado sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction point' > backup.sql`).
 - CI/CD (deploy ainda é manual, por pedido do usuário — "no servidor eu subo
   manualmente").
