@@ -16,7 +16,7 @@ from app.core.database import get_db
 from app.models.point import Point
 from app.routers.wellhub import registrar_checkin
 from app.services.integracao_logs import registrar as registrar_log
-from app.services.wellhub import WellhubError, validar_checkin
+from app.services.wellhub import WellhubError, WellhubJaValidado, validar_checkin
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
@@ -49,7 +49,7 @@ async def webhook_wellhub(
     """Check-in automático via Wellhub (pedido do usuário, 2026-09-22/29,
     protocolo 15968485) — "o usuário faz check-in pelo app, a Wellhub avisa
     a gente por webhook, a gente chama /validate". Vira uma linha em
-    WellhubCheckin (log solto por dia, sem turma — ver
+    WellhubCheckin (log solto, sem turma — ver
     app/services/wellhub.py), não um Checkin de aula: o webhook não diz em
     qual aula o aluno vai, só que o benefício está ativo hoje.
 
@@ -121,6 +121,8 @@ async def webhook_wellhub(
         # A chamada em si (evento "validate") já loga sucesso/erro sozinha
         # — ver services/wellhub.py.
         beneficiario = validar_checkin(gym_id=gym_id, gympass_id=gympass_id, point_id=point.id)
+    except WellhubJaValidado:
+        return {"status": "ja_validado"}
     except WellhubError as erro:
         print(f"[wellhub] falha ao validar check-in do Point {point.id}: {erro}")
         return {"status": "erro_ao_validar"}
@@ -132,5 +134,7 @@ async def webhook_wellhub(
         nome=beneficiario.get("nome") or nome_evento,
         origem="webhook",
         data=data_checkin,
+        email=usuario.get("email") or None,
+        telefone=usuario.get("phone_number") or None,
     )
     return {"status": "registrado"}

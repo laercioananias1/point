@@ -121,7 +121,7 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
         { to: "/admin-point/cobrancas", label: "Cobranças", icon: "dollar" },
         { to: "/admin-point/caixa", label: "Caixa", icon: "chart" },
         { to: "/admin-point/relatorios", label: "Relatórios", icon: "list" },
-        { to: "/admin-point/wellhub", label: "Wellhub", icon: "check-circle" },
+        { to: "/admin-point/wellhub", label: "Checkins", icon: "check-circle" },
         { to: "/admin-point/configuracoes/planos", label: "Planos", icon: "ticket" },
       ],
     },

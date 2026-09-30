@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Date, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -13,16 +13,20 @@ class WellhubCheckin(TimestampMixin, Base):
     complicado... ele fica com um saldo de checkin". Sem turma_id de
     propósito (ver app/services/wellhub.py) — a Wellhub só sabe dizer
     "essa pessoa validou o dia dela", nunca "em qual aula". Uma linha por
-    Point+gympass_id+dia (a própria Wellhub só permite 1 check-in por dia
-    por usuário — o unique abaixo também torna webhook reentregue
-    idempotente: reprocessar o mesmo dia não duplica)."""
+    check-in validado com sucesso — pode haver mais de uma no mesmo dia
+    (pedido do usuário, 2026-09-30); quem barra duplicidade é a própria
+    Wellhub, que recusa validar o mesmo check-in duas vezes."""
 
     __tablename__ = "wellhub_checkins"
-    __table_args__ = (UniqueConstraint("point_id", "gympass_id", "data"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     point_id: Mapped[int] = mapped_column(ForeignKey("points.id"), index=True)
-    gympass_id: Mapped[str] = mapped_column(String(20), index=True)
+    # "wellhub" ou "totalpass" (pedido do usuário, 2026-09-30: "trata tudo
+    # como a mesma coisa") — a tabela ficou com o nome da primeira.
+    plataforma: Mapped[str] = mapped_column(String(20), default="wellhub", server_default="wellhub")
+    # Identificador da pessoa na plataforma: Gympass ID na Wellhub,
+    # documento do beneficiário na TotalPass.
+    gympass_id: Mapped[str] = mapped_column(String(32), index=True)
     # Preenchido se esse gympass_id já foi associado a um Aluno cadastrado
     # aqui (Aluno.wellhub_gympass_id) — nulo até alguém fazer essa ligação
     # uma vez; o "acerto do mês" (GET /wellhub/reconciliacao) só consegue
@@ -33,6 +37,9 @@ class WellhubCheckin(TimestampMixin, Base):
     # não é fonte de verdade de cadastro (mesmo espírito de
     # Checkin.beneficiario_nome pra TotalPass).
     nome_wellhub: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    # Só vêm no evento do webhook — check-in manual fica sem.
+    email_wellhub: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telefone_wellhub: Mapped[str | None] = mapped_column(String(30), nullable=True)
     # "webhook" (automático) ou "manual" (professor/admin digitou o
     # gympass_id na recepção) — só auditoria.
     origem: Mapped[str] = mapped_column(String(10))

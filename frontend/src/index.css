@@ -45,6 +45,10 @@
   --warn-soft: #f6e8d0;
   --risk: #c13b2e;
   --risk-soft: #f6dfda;
+  /* Séries do gráfico de saldo de check-ins — fixas, não seguem o
+     --accent (que muda por Point). Par validado pra daltonismo. */
+  --serie-checkin: #0e9594;
+  --serie-aula: #4a3aa7;
 
   --shadow-card: 0 1px 2px rgba(18, 36, 46, 0.04), 0 6px 16px -8px rgba(18, 36, 46, 0.12);
   --shadow-pop: 0 12px 32px -12px rgba(10, 42, 61, 0.35);
@@ -97,6 +101,8 @@
     --warn-soft: #3a2c10;
     --risk: #f0776a;
     --risk-soft: #3a1712;
+    --serie-checkin: #17a8a0;
+    --serie-aula: #9085e9;
 
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px -8px rgba(0, 0, 0, 0.45);
     --shadow-pop: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
@@ -140,6 +146,8 @@
   --warn-soft: #3a2c10;
   --risk: #f0776a;
   --risk-soft: #3a1712;
+  --serie-checkin: #17a8a0;
+  --serie-aula: #9085e9;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px -8px rgba(0, 0, 0, 0.45);
   --shadow-pop: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
@@ -3486,6 +3494,175 @@ button.app-tab:hover:not(:disabled) {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-muted);
+}
+
+/* Plataforma + origem lado a lado no card de check-in (pedido do usuário,
+   2026-09-30: "coloca também qual a plataforma"). */
+.checkin-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.checkin-periodos {
+  margin-bottom: 12px;
+}
+
+
+/* Saldo de check-ins (pedido do usuário, 2026-09-30) — barras
+   horizontais check-ins x aulas por aluno, mesma escala pra todo mundo. */
+.saldo-alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: var(--risk-soft);
+  color: var(--ink);
+  border-left: 4px solid var(--risk);
+  line-height: 1.45;
+}
+
+.saldo-alerta svg {
+  color: var(--risk);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.stats-grid.saldo-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.saldo-sem-vinculo {
+  margin-top: 20px;
+}
+
+.saldo-sem-vinculo h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.saldo-legenda {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.saldo-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.saldo-legenda-cor {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.saldo-cor-checkin {
+  background: var(--serie-checkin);
+}
+
+.saldo-cor-aula {
+  background: var(--serie-aula);
+}
+
+.saldo-grafico {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.saldo-linha {
+  display: grid;
+  grid-template-columns: minmax(110px, 180px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+}
+
+.saldo-linha + .saldo-linha {
+  border-top: 1px solid var(--line);
+}
+
+.saldo-nome {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.saldo-nome .item-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saldo-barras {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.saldo-barra-trilho {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.saldo-barra {
+  height: 10px;
+  border-radius: 0 4px 4px 0;
+}
+
+.saldo-barra-valor {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.saldo-barra-rotulo {
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.saldo-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .stats-grid.saldo-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .saldo-linha {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .saldo-barras {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+.status-pill.status-neutral {
+  background: var(--surface-sunk);
+  color: var(--ink);
 }
 
 /* Logs de integrações (pedido do usuário, 2026-09-29) — tabela de verdade

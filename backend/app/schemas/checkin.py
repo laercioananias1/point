@@ -4,13 +4,6 @@ from app.models.enums import CheckinOrigem, CheckinStatus
 from app.schemas.common import ORMModel
 
 
-class TotalPassCheckinCreate(ORMModel):
-    turma_id: int
-    # Código/token do dia que o aluno TotalPass mostra na recepção (pedido
-    # do usuário, 2026-08-25) — digitado na hora pelo professor ou admin.
-    codigo: str
-
-
 class PresencaMarcar(ORMModel):
     """Presença de um aluno matriculado numa data específica (pedido do
     usuário, 2026-08-26: "um check pra marcar presença de cada um") —

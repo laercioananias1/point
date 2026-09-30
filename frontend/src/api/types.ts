@@ -305,16 +305,28 @@ export interface ContaCaixa {
   nome: string;
 }
 
+export type PlataformaCheckin = "wellhub" | "totalpass";
+
+// Check-in de qualquer plataforma (pedido do usuário, 2026-09-30: "trata
+// tudo como a mesma coisa") — gympass_id é o identificador da pessoa na
+// plataforma (documento, na TotalPass).
 export interface WellhubCheckin {
   id: number;
+  plataforma: PlataformaCheckin;
   gympass_id: string;
   aluno_id: number | null;
   aluno_nome: string | null;
+  email_wellhub: string | null;
+  telefone_wellhub: string | null;
   data: string;
   origem: string;
+  created_at: string;
 }
 
 export interface WellhubReconciliacaoLinha {
+  plataforma: PlataformaCheckin;
+  // check-ins - aulas; negativo = precisa fazer mais check-in.
+  saldo: number;
   gympass_id: string | null;
   aluno_id: number | null;
   aluno_nome: string | null;

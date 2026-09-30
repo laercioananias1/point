@@ -68,7 +68,9 @@ def buscar_alunos(
     query = db.query(Aluno)
     if busca:
         termo = f"%{busca}%"
-        query = query.filter(or_(Aluno.nome.ilike(termo), Aluno.contato.ilike(termo)))
+        query = query.filter(
+            or_(Aluno.nome.ilike(termo), Aluno.contato.ilike(termo), Aluno.email.ilike(termo))
+        )
     return query.order_by(Aluno.nome).limit(20).all()
 
 

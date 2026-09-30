@@ -155,6 +155,12 @@ export default function AdminPointInicio() {
                 </span>
                 <span className="quick-action-label">Ocupação de quadra</span>
               </Link>
+              <Link to="/admin-point/wellhub" className="quick-action">
+                <span className="quick-action-icon">
+                  <Icon name="check-circle" />
+                </span>
+                <span className="quick-action-label">Checkins</span>
+              </Link>
             </div>
           </section>
 

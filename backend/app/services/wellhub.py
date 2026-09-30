@@ -21,18 +21,17 @@ negócio vem estruturado, ex. `{"errors": [{"key":
 "checkin.validation.notfound", "message": "Check-In not found in
 database"}]}` com HTTP 404 — é o caso comum (gympass_id sem check-in
 pendente feito no app antes), não "Gym ID errado" como a doc pública
-sozinha sugeria. Ainda não visto: o corpo de uma validação COM SUCESSO
-(precisa de um check-in de verdade simulado do lado da Wellhub pra
-testar) — o parsing abaixo continua best-effort até confirmar.
+sozinha sugeria. Validação com sucesso confirmada no sandbox em
+2026-09-30 (formato no parsing do fim de validar_checkin).
 
 Desenho de negócio (pedido do usuário, 2026-09-29: "vincular sempre um
 checkin com uma aula vai ficar complicado... ele fica com um saldo de
-checkin para usar nas aulas") — a Wellhub só permite 1 check-in por dia
-POR USUÁRIO, sem nenhuma noção de "turma"/horário de aula; um aluno pode
-fazer check-in todo dia e só frequentar 2 aulas de beach tennis na semana.
-Por isso um check-in validado NÃO vira um Checkin(turma_id=...) — vira uma
-linha em WellhubCheckin (app/models/wellhub_checkin.py), um log solto por
-Point+dia. "Aulas feitas" continua sendo a presença normal que já existe
+checkin para usar nas aulas") — a Wellhub não tem noção de
+"turma"/horário de aula; um aluno pode fazer check-in todo dia e só
+frequentar 2 aulas de beach tennis na semana. Por isso um check-in
+validado NÃO vira um Checkin(turma_id=...) — vira uma linha em
+WellhubCheckin (app/models/wellhub_checkin.py), uma por validação com
+sucesso. "Aulas feitas" continua sendo a presença normal que já existe
 pra qualquer aluno matriculado (fonte_pagamento=wellhub); o "acerto do
 mês" (ver GET /wellhub/reconciliacao) só compara as duas contagens, sem
 travar nada — é informativo, não uma trava de saldo."""
@@ -49,6 +48,11 @@ class WellhubError(Exception):
     """Erro de negócio (gympass_id inválido, Point sem credencial, etc.) —
     a mensagem já vem pronta pra mostrar pro professor/admin que fez o
     check-in."""
+
+
+class WellhubJaValidado(WellhubError):
+    """A Wellhub recusou porque esse check-in já foi validado — não é pra
+    registrar de novo."""
 
 
 def validar_checkin(
@@ -132,19 +136,19 @@ def validar_checkin(
         chave = erros[0].get("key") if erros else None
         mensagem = erros[0].get("message") if erros else None
         if chave == "checkin.already.validated":
-            # Reentrega do webhook ou validação já feita por outro caminho:
-            # o check-in existe e é válido, só não dá pra validar duas vezes.
+            # Reentrega do webhook ou check-in já validado antes: não conta
+            # de novo.
             registrar_em_sessao_propria(
                 integracao="wellhub",
                 evento="validate",
-                sucesso=True,
-                mensagem="Check-in já estava validado na Wellhub",
+                sucesso=False,
+                mensagem="Check-in já tinha sido validado — não contado de novo",
                 destino=gympass_id,
                 point_id=point_id,
                 request_corpo=request_corpo,
                 response_corpo=response_corpo,
             )
-            return {"nome": None, "documento": gympass_id}
+            raise WellhubJaValidado("Esse check-in já foi validado na Wellhub")
         if chave == "checkin.validation.notfound":
             _falhar(
                 "Esse aluno ainda não fez check-in pelo app da Wellhub hoje (ou já expirou) —"

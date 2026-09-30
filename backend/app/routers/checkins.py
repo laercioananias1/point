@@ -17,10 +17,8 @@ from app.schemas.checkin import (
     CheckinOut,
     PresencaExperimentalMarcar,
     PresencaMarcar,
-    TotalPassCheckinCreate,
 )
 from app.services.aulas import matricula_tem_aula_em
-from app.services.totalpass import TotalPassError, validar_checkin
 
 router = APIRouter(prefix="/checkins", tags=["checkins"])
 
@@ -29,54 +27,6 @@ def _pode_gerenciar_turma(user: User, turma: Turma) -> bool:
     return (user.tem_role(Role.PROFESSOR) and turma.vinculo.professor_id == user.professor_id) or (
         user.tem_role(Role.ADMIN_POINT) and turma.vinculo.point_id == user.point_id
     )
-
-
-@router.post("/totalpass", response_model=CheckinOut, status_code=201)
-def registrar_checkin_totalpass(
-    payload: TotalPassCheckinCreate,
-    db: Annotated[Session, Depends(get_db)],
-    user: Annotated[User, Depends(require_role(Role.PROFESSOR, Role.ADMIN_POINT))],
-) -> Checkin:
-    """Check-in "livre" de benefício TotalPass (pedido do usuário,
-    2026-08-25) — o aluno TotalPass mostra o código do dia na recepção, o
-    professor da turma ou o admin do Point digita aqui na hora. Sem
-    matrícula nem reserva prévia (decisão do usuário: "check-in livre, sem
-    reserva") — só registra que essa pessoa entrou, pra auditoria/controle
-    de acesso; não conta como vaga ocupada na turma nem gera cobrança (o
-    aluno TotalPass já paga a TotalPass, não o Point diretamente)."""
-    turma = db.get(Turma, payload.turma_id)
-    if turma is None:
-        raise HTTPException(404, "Turma não encontrada")
-    if not _pode_gerenciar_turma(user, turma):
-        raise HTTPException(403, "Só o professor da turma ou o admin do Point podem validar check-in")
-
-    point = turma.vinculo.point
-    if not point.place_api_key:
-        raise HTTPException(
-            422, "Esse Point ainda não tem a credencial TotalPass configurada (Configurações)"
-        )
-
-    try:
-        # A chamada em si (eventos "auth"/"validate") já loga sucesso/erro
-        # sozinha — ver services/totalpass.py.
-        beneficiario = validar_checkin(
-            point_id=point.id, place_api_key=point.place_api_key, codigo=payload.codigo
-        )
-    except TotalPassError as erro:
-        raise HTTPException(422, str(erro)) from erro
-
-    checkin = Checkin(
-        turma_id=turma.id,
-        data_hora=datetime.now(),
-        origem=CheckinOrigem.TOTALPASS,
-        status=CheckinStatus.CONFIRMADO,
-        beneficiario_nome=beneficiario.get("nome"),
-        beneficiario_documento=beneficiario.get("documento"),
-    )
-    db.add(checkin)
-    db.commit()
-    db.refresh(checkin)
-    return checkin
 
 
 @router.get("/turma/{turma_id}", response_model=list[CheckinOut])

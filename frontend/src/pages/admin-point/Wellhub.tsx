@@ -1,8 +1,45 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { WellhubCheckin, WellhubReconciliacao } from "../../api/types";
+import type { PlataformaCheckin, WellhubCheckin } from "../../api/types";
+import { inicioDaSemana, somarDias } from "../../components/Calendar";
 import { Icon, Layout } from "../../components/Layout";
+import { SaldoDoMes } from "../../components/SaldoDoMes";
+import { rotuloPagamentoMeio } from "../../lib/formato";
+
+type Periodo = "hoje" | "semana" | "mes";
+
+const PERIODOS: { valor: Periodo; rotulo: string }[] = [
+  { valor: "hoje", rotulo: "Hoje" },
+  { valor: "semana", rotulo: "Semana" },
+  { valor: "mes", rotulo: "Mês" },
+];
+
+function intervalo(periodo: Periodo, ref: Date): [Date, Date] {
+  if (periodo === "hoje") return [ref, ref];
+  if (periodo === "semana") {
+    const inicio = inicioDaSemana(ref);
+    return [inicio, somarDias(inicio, 6)];
+  }
+  return [new Date(ref.getFullYear(), ref.getMonth(), 1), new Date(ref.getFullYear(), ref.getMonth() + 1, 0)];
+}
+
+function navegar(periodo: Periodo, ref: Date, delta: number): Date {
+  if (periodo === "hoje") return somarDias(ref, delta);
+  if (periodo === "semana") return somarDias(ref, delta * 7);
+  return new Date(ref.getFullYear(), ref.getMonth() + delta, 1);
+}
+
+function mesmoDia(a: Date, b: Date): boolean {
+  return isoLocal(a) === isoLocal(b);
+}
+
+/** O backend grava created_at em UTC sem marcar o fuso — sem o "Z" o
+ * navegador leria como hora local e mostraria 3h adiantado. */
+function horaLocal(iso: string): string {
+  const utc = /[zZ]|[+-]\d{2}:\d{2}$/.test(iso) ? iso : `${iso}Z`;
+  return new Date(utc).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
 
 /** "2026-09-05" — sem passar por UTC (toISOString mudaria o dia à noite). */
 function isoLocal(d: Date): string {
@@ -19,52 +56,73 @@ function mensagemDeErro(e: unknown, padrao: string): string {
   return e instanceof ApiError ? e.message : padrao;
 }
 
-/** Wellhub (pedido do usuário, 2026-09-22/29, protocolo 15968485) — os
- * check-ins que a Wellhub validou nesse Point (automático via webhook ou
- * digitado na hora) e o "acerto do mês": check-ins feitos x aulas de fato
- * frequentadas por aluno. Sem trava nenhuma — é só pra acompanhar (ver
- * app/services/wellhub.py no backend pro porquê de não amarrar check-in
- * com aula). */
+/** Check-ins validados pela Wellhub/TotalPass nesse Point (automático
+ * via webhook ou digitado na hora), com o saldo check-ins x aulas do mês
+ * em cima (components/SaldoDoMes.tsx). Sem trava nenhuma — ver app/services/wellhub.py no
+ * backend pro porquê de não amarrar check-in com aula. */
 export default function AdminPointWellhub() {
   const navigate = useNavigate();
 
-  const [mes, setMes] = useState(() => {
-    const hoje = new Date();
-    return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  });
+  // Filtro hoje/semana/mês (pedido do usuário, 2026-09-30).
+  const [periodo, setPeriodo] = useState<Periodo>("mes");
+  const [referencia, setReferencia] = useState(() => new Date());
   const [checkins, setCheckins] = useState<WellhubCheckin[]>([]);
-  const [reconciliacao, setReconciliacao] = useState<WellhubReconciliacao | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [formularioAberto, setFormularioAberto] = useState(false);
+  // Incrementa quando entra check-in novo, pro saldo do mês recarregar junto.
+  const [versaoSaldo, setVersaoSaldo] = useState(0);
 
   const carregar = useCallback(async () => {
     setErro(null);
-    const mesParam = isoLocal(mes).slice(0, 7);
+    const [inicio, fim] = intervalo(periodo, referencia);
     try {
-      const [checkinsRes, reconciliacaoRes] = await Promise.all([
-        api.get<WellhubCheckin[]>(`/wellhub/checkins?mes=${mesParam}`),
-        api.get<WellhubReconciliacao>(`/wellhub/reconciliacao?mes=${mesParam}`),
-      ]);
-      setCheckins(checkinsRes);
-      setReconciliacao(reconciliacaoRes);
+      setCheckins(
+        await api.get<WellhubCheckin[]>(`/wellhub/checkins?inicio=${isoLocal(inicio)}&fim=${isoLocal(fim)}`),
+      );
     } catch {
-      setErro("Não foi possível carregar os check-ins da Wellhub. Tente novamente.");
+      setErro("Não foi possível carregar os check-ins. Tente novamente.");
     } finally {
       setLoading(false);
     }
-  }, [mes]);
+  }, [periodo, referencia]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
 
-  function mudarMes(delta: number) {
+  function mudarPeriodo(novo: Periodo) {
     setLoading(true);
-    setMes((atual) => new Date(atual.getFullYear(), atual.getMonth() + delta, 1));
+    setPeriodo(novo);
+    setReferencia(new Date());
   }
 
-  const rotuloMes = mes.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  function mover(delta: number) {
+    setLoading(true);
+    setReferencia((atual) => navegar(periodo, atual, delta));
+  }
+
+  const hoje = new Date();
+  const [inicioPeriodo, fimPeriodo] = intervalo(periodo, referencia);
+  const noPeriodoAtual = isoLocal(hoje) >= isoLocal(inicioPeriodo) && isoLocal(hoje) <= isoLocal(fimPeriodo);
+  const rotuloPeriodo =
+    periodo === "hoje"
+      ? mesmoDia(referencia, hoje)
+        ? "Hoje"
+        : referencia.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
+      : periodo === "semana"
+        ? `${diaMes(isoLocal(inicioPeriodo))} – ${diaMes(isoLocal(fimPeriodo))}`
+        : referencia.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const tituloLista =
+    periodo === "hoje"
+      ? mesmoDia(referencia, hoje)
+        ? "Check-ins de hoje"
+        : "Check-ins do dia"
+      : periodo === "semana"
+        ? noPeriodoAtual
+          ? "Check-ins da semana"
+          : "Check-ins da semana escolhida"
+        : "Check-ins do mês";
 
   return (
     <Layout>
@@ -77,34 +135,53 @@ export default function AdminPointWellhub() {
         >
           <Icon name="chevron-left" />
         </button>
-        <h1>Wellhub</h1>
+        <h1>Checkins</h1>
       </div>
 
       <p className="cobranca-subtitulo">
-        Check-ins validados pela Wellhub nesse Point. A Wellhub não sabe em qual aula o aluno vai —
-        só que o benefício está ativo no dia. "Aulas feitas" vem da presença normal que já é
-        marcada na agenda.
+        Check-ins validados pela Wellhub e pela TotalPass nesse Point. As plataformas não sabem em
+        qual aula o aluno vai — só que o benefício está ativo no dia.
       </p>
+
+      <div className="toggle-grid checkin-periodos" role="group" aria-label="Período">
+        {PERIODOS.map((p) => (
+          <button
+            key={p.valor}
+            type="button"
+            className={periodo === p.valor ? "toggle-chip active" : "toggle-chip"}
+            onClick={() => mudarPeriodo(p.valor)}
+          >
+            {p.rotulo}
+          </button>
+        ))}
+      </div>
 
       <div className="caixa-mes-nav">
         <button
           type="button"
           className="secondary cobranca-btn-icone"
-          onClick={() => mudarMes(-1)}
-          aria-label="Mês anterior"
+          onClick={() => mover(-1)}
+          aria-label="Período anterior"
         >
           <Icon name="chevron-left" size={16} />
         </button>
-        <span className="caixa-mes-rotulo">{rotuloMes}</span>
+        <span className="caixa-mes-rotulo">{rotuloPeriodo}</span>
         <button
           type="button"
           className="secondary cobranca-btn-icone"
-          onClick={() => mudarMes(1)}
-          aria-label="Próximo mês"
+          onClick={() => mover(1)}
+          aria-label="Próximo período"
         >
           <Icon name="chevron-right" size={16} />
         </button>
       </div>
+
+      <SaldoDoMes
+        mes={new Date(referencia.getFullYear(), referencia.getMonth(), 1)}
+        versao={versaoSaldo}
+        totalCheckinsPeriodo={checkins.length}
+        onVinculado={carregar}
+      />
 
       {erro && <p className="form-error">{erro}</p>}
       {loading && <p className="empty-state">Carregando...</p>}
@@ -112,41 +189,11 @@ export default function AdminPointWellhub() {
       {!loading && (
         <>
           <section className="section">
-            <h2>Acerto do mês</h2>
-            {!reconciliacao || reconciliacao.linhas.length === 0 ? (
-              <p className="empty-state">Ninguém com check-in ou aula Wellhub nesse mês.</p>
-            ) : (
-              <div className="card-list">
-                {reconciliacao.linhas.map((linha, i) => (
-                  <div className="item-card" key={linha.aluno_id ?? linha.gympass_id ?? i}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">
-                        {linha.aluno_nome ?? "Aluno não vinculado"}
-                      </span>
-                      <span className="item-card-subtitle">
-                        {linha.gympass_id ?? "sem Gympass ID nos check-ins"}
-                      </span>
-                    </div>
-                    <div className="wellhub-contagens">
-                      <div className="wellhub-contagem">
-                        <span className="wellhub-contagem-numero">{linha.checkins_no_mes}</span>
-                        <span className="wellhub-contagem-rotulo">check-ins</span>
-                      </div>
-                      <div className="wellhub-contagem">
-                        <span className="wellhub-contagem-numero">{linha.aulas_no_mes}</span>
-                        <span className="wellhub-contagem-rotulo">aulas</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="section">
-            <h2>Check-ins do mês ({checkins.length})</h2>
+            <h2>
+              {tituloLista} ({checkins.length})
+            </h2>
             {checkins.length === 0 ? (
-              <p className="empty-state">Nenhum check-in nesse mês.</p>
+              <p className="empty-state">Nenhum check-in nesse período.</p>
             ) : (
               <div className="card-list">
                 {checkins.map((c) => (
@@ -154,12 +201,20 @@ export default function AdminPointWellhub() {
                     <div className="item-card-info">
                       <span className="item-card-title">{c.aluno_nome ?? c.gympass_id}</span>
                       <span className="item-card-subtitle">
-                        {diaMes(c.data)} · {c.gympass_id}
+                        {diaMes(c.data)} às {horaLocal(c.created_at)} · {c.gympass_id}
+                      </span>
+                      {(c.email_wellhub || c.telefone_wellhub) && (
+                        <span className="item-card-subtitle">
+                          {[c.email_wellhub, c.telefone_wellhub].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="checkin-pills">
+                      <span className="status-pill status-neutral">{rotuloPagamentoMeio(c.plataforma)}</span>
+                      <span className={`status-pill ${c.origem === "webhook" ? "status-good" : "status-info"}`}>
+                        {c.origem === "webhook" ? "Automático" : "Manual"}
                       </span>
                     </div>
-                    <span className={`status-pill ${c.origem === "webhook" ? "status-good" : "status-info"}`}>
-                      {c.origem === "webhook" ? "Automático" : "Manual"}
-                    </span>
                   </div>
                 ))}
               </div>
@@ -179,6 +234,7 @@ export default function AdminPointWellhub() {
           onSalvo={() => {
             setFormularioAberto(false);
             carregar();
+            setVersaoSaldo((v) => v + 1);
           }}
         />
       )}
@@ -187,6 +243,7 @@ export default function AdminPointWellhub() {
 }
 
 function CheckinManualModal({ onFechar, onSalvo }: { onFechar: () => void; onSalvo: () => void }) {
+  const [plataforma, setPlataforma] = useState<PlataformaCheckin>("wellhub");
   const [gympassId, setGympassId] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -204,7 +261,7 @@ function CheckinManualModal({ onFechar, onSalvo }: { onFechar: () => void; onSal
     setErro(null);
     setEnviando(true);
     try {
-      await api.post("/wellhub/checkins", { gympass_id: gympassId.trim() });
+      await api.post("/wellhub/checkins", { plataforma, gympass_id: gympassId.trim() });
       onSalvo();
     } catch (e) {
       setErro(mensagemDeErro(e, "Não foi possível validar esse check-in."));
@@ -228,21 +285,35 @@ function CheckinManualModal({ onFechar, onSalvo }: { onFechar: () => void; onSal
           </button>
         </div>
 
+        <label>Plataforma</label>
+        <div className="toggle-grid">
+          {(["wellhub", "totalpass"] as const).map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={plataforma === p ? "toggle-chip active" : "toggle-chip"}
+              onClick={() => setPlataforma(p)}
+            >
+              {rotuloPagamentoMeio(p)}
+            </button>
+          ))}
+        </div>
+
         <label>
-          Gympass ID
+          {plataforma === "wellhub" ? "Gympass ID" : "Código do dia"}
           <input
             value={gympassId}
             onChange={(e) => setGympassId(e.target.value)}
-            placeholder="13 dígitos, do app do aluno"
-            maxLength={20}
+            placeholder={plataforma === "wellhub" ? "13 dígitos, do app do aluno" : "código que aparece no app TotalPass"}
+            maxLength={32}
             required
             autoFocus
           />
         </label>
 
         <p className="cobranca-dica">
-          Use quando o aluno mostrar o Gympass ID na recepção — o mesmo que o webhook automático
-          registraria sozinho, se já estiver cadastrado no portal da Wellhub.
+          Use quando o aluno mostrar o código na recepção. Na Wellhub, o webhook automático já
+          registra sozinho quando está cadastrado no portal deles.
         </p>
 
         {erro && <p className="form-error">{erro}</p>}
