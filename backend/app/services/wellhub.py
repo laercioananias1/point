@@ -131,6 +131,20 @@ def validar_checkin(
         erros = corpo_erro.get("errors") or []
         chave = erros[0].get("key") if erros else None
         mensagem = erros[0].get("message") if erros else None
+        if chave == "checkin.already.validated":
+            # Reentrega do webhook ou validação já feita por outro caminho:
+            # o check-in existe e é válido, só não dá pra validar duas vezes.
+            registrar_em_sessao_propria(
+                integracao="wellhub",
+                evento="validate",
+                sucesso=True,
+                mensagem="Check-in já estava validado na Wellhub",
+                destino=gympass_id,
+                point_id=point_id,
+                request_corpo=request_corpo,
+                response_corpo=response_corpo,
+            )
+            return {"nome": None, "documento": gympass_id}
         if chave == "checkin.validation.notfound":
             _falhar(
                 "Esse aluno ainda não fez check-in pelo app da Wellhub hoje (ou já expirou) —"
@@ -140,11 +154,14 @@ def validar_checkin(
             mensagem or corpo_erro.get("Message") or f"Wellhub recusou o check-in (HTTP {resposta.status_code})"
         )
 
+    # Formato real (sandbox, 2026-09-30): {"metadata": {...}, "results":
+    # {"user": {"gympass_id"}, "gym": {...}, "validated_at"}} — sem nome;
+    # o nome vem do evento do webhook.
     corpo = resposta.json() if resposta.content else {}
-    usuario = corpo.get("user") or corpo.get("usuario") or {}
+    usuario = (corpo.get("results") or {}).get("user") or {}
     resultado = {
-        "nome": usuario.get("name") or corpo.get("name"),
-        "documento": usuario.get("gympass_id") or corpo.get("gympass_id"),
+        "nome": usuario.get("name"),
+        "documento": usuario.get("gympass_id") or gympass_id,
     }
     registrar_em_sessao_propria(
         integracao="wellhub",

@@ -5,6 +5,7 @@ a assinatura HMAC de cada request, não Depends(require_role(...)).
 
 import hashlib
 import hmac
+from datetime import date, datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -20,11 +21,23 @@ from app.services.wellhub import WellhubError, validar_checkin
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
+# Brasil sem horário de verão desde 2019 — offset fixo evita depender do
+# tzdata no container (que roda em UTC).
+_FUSO_BRASILIA = timezone(timedelta(hours=-3))
+
+
 def _assinatura_valida(corpo: bytes, assinatura: str | None, segredo: str) -> bool:
     if not assinatura or not segredo:
         return False
     calculada = hmac.new(segredo.encode(), corpo, hashlib.sha1).hexdigest()
-    return hmac.compare_digest(calculada, assinatura)
+    return hmac.compare_digest(calculada.lower(), assinatura.strip().lower())
+
+
+def _data_do_evento(timestamp_ms: object) -> date | None:
+    try:
+        return datetime.fromtimestamp(int(timestamp_ms) / 1000, tz=_FUSO_BRASILIA).date()
+    except (TypeError, ValueError, OverflowError):
+        return None
 
 
 @router.post("/wellhub", status_code=200)
@@ -44,13 +57,11 @@ async def webhook_wellhub(
     fazer com o evento) — devolver erro faria a Wellhub reentregar o mesmo
     evento sem chance de dar certo.
 
-    IMPORTANTE — não confirmado byte a byte: os nomes exatos dos campos do
-    corpo do EVENTO DE WEBHOOK (`gympass_id`/`gym_id` abaixo são os nomes
-    documentados publicamente pro corpo do /validate; o corpo do webhook em
-    si pode vir com nomes diferentes). A coleção Postman oficial que o time
-    de parceiros mandou é a referência byte a byte; confirme e ajuste os
-    `.get(...)` abaixo assim que inspecionar um evento real de sandbox
-    (mesmo espírito do TODO em app/services/totalpass.py)."""
+    Formato confirmado pela simulação da coleção Postman da Wellhub
+    (2026-09-30): {"event_type": "checkin", "event_data": {"user":
+    {"unique_token", "first_name", "last_name", ...}, "gym": {"id", ...},
+    "timestamp": <epoch ms>}}. `unique_token` é o Gympass ID de 13
+    dígitos."""
     settings = get_settings()
     corpo_bruto = await request.body()
 
@@ -65,8 +76,23 @@ async def webhook_wellhub(
         raise HTTPException(401, "Assinatura inválida")
 
     corpo = await request.json()
-    gym_id = str(corpo.get("gym_id") or corpo.get("gymId") or "")
-    gympass_id = corpo.get("gympass_id") or corpo.get("user", {}).get("gympass_id")
+    if corpo.get("event_type") != "checkin":
+        registrar_log(
+            db,
+            integracao="wellhub",
+            evento="webhook_ignorado",
+            sucesso=True,
+            mensagem=f"Evento {corpo.get('event_type')!r} não tratado",
+            response_corpo=corpo_bruto.decode(errors="replace"),
+        )
+        return {"status": "ignorado"}
+
+    evento = corpo.get("event_data") or {}
+    usuario = evento.get("user") or {}
+    gym_id = str((evento.get("gym") or {}).get("id") or "")
+    gympass_id = str(usuario.get("unique_token") or "")
+    nome_evento = " ".join(p for p in (usuario.get("first_name"), usuario.get("last_name")) if p) or None
+    data_checkin = _data_do_evento(evento.get("timestamp"))
     if not gym_id or not gympass_id:
         print(f"[wellhub] webhook com corpo inesperado: {corpo}")
         registrar_log(
@@ -103,7 +129,8 @@ async def webhook_wellhub(
         db,
         point_id=point.id,
         gympass_id=gympass_id,
-        nome=beneficiario.get("nome"),
+        nome=beneficiario.get("nome") or nome_evento,
         origem="webhook",
+        data=data_checkin,
     )
     return {"status": "registrado"}

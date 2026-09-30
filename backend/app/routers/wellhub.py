@@ -30,11 +30,19 @@ Admin = Annotated[User, Depends(require_role(Role.ADMIN_POINT))]
 DB = Annotated[Session, Depends(get_db)]
 
 
-def registrar_checkin(db: Session, *, point_id: int, gympass_id: str, nome: str | None, origem: str) -> WellhubCheckin:
+def registrar_checkin(
+    db: Session,
+    *,
+    point_id: int,
+    gympass_id: str,
+    nome: str | None,
+    origem: str,
+    data: date | None = None,
+) -> WellhubCheckin:
     """Grava (ou devolve, se já existia) o check-in do dia — idempotente
     pelo par point_id+gympass_id+data, mesma trava que a própria Wellhub já
     aplica do lado dela (1 check-in por dia por usuário)."""
-    hoje = date.today()
+    hoje = data or date.today()
     existente = (
         db.query(WellhubCheckin)
         .filter(
