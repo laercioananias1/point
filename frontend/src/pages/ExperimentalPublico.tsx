@@ -3,13 +3,19 @@ import { useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { PointBrand } from "../components/PointBrand";
 import { CategoriaBadge } from "../components/CategoriaBadge";
-import type { PointResumo, TurmaExperimentalAgenda } from "../api/types";
+import { Icon } from "../components/Layout";
+import { diaSemanaDeData, inicioDaSemana, somarDias, toISODate } from "../components/Calendar";
+import { DIAS_SEMANA } from "../lib/dias";
+import type { Categoria, PointResumo, Quadra, TurmaExperimentalAgenda } from "../api/types";
 import { aplicarCorDestaque } from "../lib/cor";
 import { formatarCelular } from "../lib/formato";
 
 // Janela da página pública (pedido do usuário, 2026-09-14: "mostre
 // somente 15 dias pra frente") — menor que o padrão do backend (21), que
-// continua servindo outros usos da mesma agenda.
+// continua servindo outros usos da mesma agenda. A grade de semana
+// (pedido do usuário, 2026-09-29: "faca o calendario de aula experimental
+// nesse padrao", seguindo o mesmo layout por quadra/dia/hora da tela de
+// Ocupação de quadra) navega só dentro dessa janela já carregada.
 const DIAS_JANELA = 15;
 
 // Abreviação sem ponto (pedido do usuário, 2026-09-14: "os dias da semana
@@ -25,6 +31,16 @@ function rotuloDataCurta(iso: string): string {
 
 function rotuloHorarioTurma(horario: string): string {
   return horario.endsWith(":00") ? `${Number(horario.slice(0, 2))}h` : horario;
+}
+
+/** "#rrggbb" -> "r, g, b" (mesmo helper de GraficoOcupacao.tsx), pra pintar
+ * a célula com a cor da categoria variando a opacidade em rgba(). */
+function hexParaRgb(hex: string): string {
+  const limpo = hex.replace("#", "");
+  const r = parseInt(limpo.slice(0, 2), 16);
+  const g = parseInt(limpo.slice(2, 4), 16);
+  const b = parseInt(limpo.slice(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
 }
 
 type Selecionado = { turmaId: number; data: string; rotulo: string } | null;
@@ -114,57 +130,13 @@ export default function ExperimentalPublico() {
                 Nenhum horário de aula experimental disponível agora — volte mais tarde.
               </p>
             ) : (
-              turmas.map((turma) => (
-                <div className="auth-card" key={turma.id}>
-                  <span className="item-card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {turma.modalidade.nome}
-                    <CategoriaBadge nome={turma.categoria.nome} cor={turma.categoria.cor} />
-                  </span>
-                  <p
-                    style={{
-                      fontFamily: "Archivo, sans-serif",
-                      fontWeight: 800,
-                      fontSize: 24,
-                      color: "var(--accent)",
-                      margin: "6px 0 2px",
-                    }}
-                  >
-                    Aula às {rotuloHorarioTurma(turma.horario)}
-                  </p>
-                  <p className="auth-subtitle" style={{ marginBottom: 10 }}>
-                    {turma.quadra.nome} · com {turma.professor_nome}
-                  </p>
-                  <div className="toggle-grid">
-                    {turma.proximas_datas.length === 0 ? (
-                      <span className="empty-state" style={{ padding: 0 }}>
-                        Sem datas abertas nas próximas semanas.
-                      </span>
-                    ) : (
-                      turma.proximas_datas.map((d) => (
-                        <button
-                          key={d.data}
-                          type="button"
-                          disabled={!d.disponivel}
-                          className={
-                            selecionado?.turmaId === turma.id && selecionado.data === d.data
-                              ? "toggle-chip active"
-                              : "toggle-chip"
-                          }
-                          onClick={() =>
-                            setSelecionado({
-                              turmaId: turma.id,
-                              data: d.data,
-                              rotulo: `${turma.modalidade.nome} · ${rotuloDataCurta(d.data)} · ${turma.horario}`,
-                            })
-                          }
-                        >
-                          {rotuloDataCurta(d.data)} {d.disponivel ? "" : "· sem vaga"}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))
+              <div className="auth-card">
+                <AgendaExperimentalGrade
+                  turmas={turmas}
+                  selecionado={selecionado}
+                  onSelecionar={(turmaId, data, rotulo) => setSelecionado({ turmaId, data, rotulo })}
+                />
+              </div>
             )}
 
             {selecionado && (
@@ -172,6 +144,192 @@ export default function ExperimentalPublico() {
             )}
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** Grade por quadra/dia/hora, mesmo padrão visual da tela "Ocupação de
+ * quadra" (pedido do usuário, 2026-09-29: "faca o calendario de aula
+ * experimental nesse padrao") — mas sem número real de ocupação: o
+ * visitante sem login continua só vendo ✓ vaga / ✕ lotado (mesma regra já
+ * usada no modo "disponibilidade" do GraficoOcupacao), só o layout muda de
+ * lista de chips por turma pra grade única por quadra. Navega em semanas,
+ * mas só dentro da janela de dias já carregada (DIAS_JANELA) — pedir uma
+ * janela maior ao backend não faz sentido pra uma agenda pública. */
+function AgendaExperimentalGrade({
+  turmas,
+  selecionado,
+  onSelecionar,
+}: {
+  turmas: TurmaExperimentalAgenda[];
+  selecionado: Selecionado;
+  onSelecionar: (turmaId: number, data: string, rotulo: string) => void;
+}) {
+  const [referencia, setReferencia] = useState(new Date());
+  const hoje = new Date();
+  const inicioSemana = inicioDaSemana(referencia);
+  const diasDaSemana = Array.from({ length: 7 }, (_, i) => somarDias(inicioSemana, i));
+  const hojeIso = toISODate(hoje);
+
+  const inicioSemanaAtual = inicioDaSemana(hoje);
+  const maxData = somarDias(hoje, DIAS_JANELA);
+  const podeVoltar = inicioSemana > inicioSemanaAtual;
+  const podeAvancar = somarDias(inicioSemana, 7) <= maxData;
+
+  function tituloSemana(): string {
+    const fim = diasDaSemana[6];
+    const dia = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit" });
+    const mes = (d: Date) => d.toLocaleDateString("pt-BR", { month: "short" });
+    return inicioSemana.getMonth() === fim.getMonth()
+      ? `${dia(inicioSemana)}–${dia(fim)} de ${mes(fim)}`
+      : `${dia(inicioSemana)} de ${mes(inicioSemana)} – ${dia(fim)} de ${mes(fim)}`;
+  }
+
+  const quadras = Array.from(new Map(turmas.map((t) => [t.quadra.id, t.quadra])).values());
+  const categorias: Categoria[] = Array.from(
+    new Map(turmas.map((t) => [t.categoria.id, t.categoria])).values(),
+  ).sort((a, b) => a.nome.localeCompare(b.nome));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="calendar-nav">
+        <button className="secondary" type="button" disabled={!podeVoltar} onClick={() => setReferencia((r) => somarDias(r, -7))}>
+          ‹
+        </button>
+        <button className="secondary" type="button" onClick={() => setReferencia(new Date())}>
+          Hoje
+        </button>
+        <button className="secondary" type="button" disabled={!podeAvancar} onClick={() => setReferencia((r) => somarDias(r, 7))}>
+          ›
+        </button>
+        <span className="calendar-title">{tituloSemana()}</span>
+      </div>
+
+      {categorias.length > 0 && (
+        <div className="ocupacao-legenda-categorias">
+          {categorias.map((c) => (
+            <CategoriaBadge key={c.id} nome={c.nome} cor={c.cor} />
+          ))}
+        </div>
+      )}
+
+      {quadras.map((quadra: Quadra) => {
+        const turmasDaQuadra = turmas.filter((t) => t.quadra.id === quadra.id);
+        const horasEmUso = Array.from(
+          new Set(turmasDaQuadra.map((t) => Number(t.horario.split(":")[0]))),
+        ).sort((a, b) => a - b);
+
+        const celulas = [
+          <div className="ocupacao-cell ocupacao-corner" key="corner" />,
+          ...diasDaSemana.map((data) => {
+            const iso = toISODate(data);
+            return (
+              <div
+                className={iso === hojeIso ? "ocupacao-cell ocupacao-header hoje" : "ocupacao-cell ocupacao-header"}
+                key={`cabecalho-${iso}`}
+              >
+                {DIAS_SEMANA[(data.getDay() + 6) % 7].label} {data.getDate()}
+              </div>
+            );
+          }),
+          ...horasEmUso.flatMap((hora) => [
+            <div className="ocupacao-cell ocupacao-hour-label" key={`hora-${hora}`}>
+              {hora}h
+            </div>,
+            ...diasDaSemana.map((data) => {
+              const iso = toISODate(data);
+              const dia = diaSemanaDeData(data);
+              const candidatas = turmasDaQuadra
+                .filter((t) => Number(t.horario.split(":")[0]) === hora && t.dias_semana.includes(dia))
+                .flatMap((t) => {
+                  const disp = t.proximas_datas.find((d) => d.data === iso);
+                  return disp ? [{ turma: t, disponivel: disp.disponivel }] : [];
+                });
+
+              if (candidatas.length === 0) {
+                return <div className="ocupacao-cell ocupacao-slot ocupacao-slot-vazio" key={`${iso}-${hora}`} />;
+              }
+
+              const disponivel = candidatas.find((c) => c.disponivel);
+              const escolha = disponivel ?? candidatas[0];
+              const corBase = hexParaRgb(escolha.turma.categoria.cor);
+              const lotado = !disponivel;
+              const dataFormatada = new Date(iso + "T00:00").toLocaleDateString("pt-BR");
+              const ativa = selecionado?.turmaId === escolha.turma.id && selecionado.data === iso;
+
+              return (
+                <div
+                  className={
+                    disponivel
+                      ? "ocupacao-cell ocupacao-slot ocupacao-slot-ocupado ocupacao-slot-clicavel"
+                      : "ocupacao-cell ocupacao-slot ocupacao-slot-ocupado"
+                  }
+                  key={`${iso}-${hora}`}
+                  role={disponivel ? "button" : undefined}
+                  tabIndex={disponivel ? 0 : undefined}
+                  style={{
+                    background: lotado ? "var(--risk-soft)" : `rgba(${corBase}, 0.35)`,
+                    borderLeft: `3px solid ${lotado ? "var(--risk)" : `rgb(${corBase})`}`,
+                    color: lotado ? "var(--risk)" : "var(--good)",
+                    outline: ativa ? "2px solid var(--accent)" : undefined,
+                  }}
+                  title={`${quadra.nome} · ${dataFormatada} ${rotuloHorarioTurma(escolha.turma.horario)} — ${escolha.turma.modalidade.nome} (${escolha.turma.categoria.nome}) — ${lotado ? "sem vaga" : "vaga disponível"}`}
+                  onClick={
+                    disponivel
+                      ? () =>
+                          onSelecionar(
+                            escolha.turma.id,
+                            iso,
+                            `${escolha.turma.modalidade.nome} · ${rotuloDataCurta(iso)} · ${escolha.turma.horario}`,
+                          )
+                      : undefined
+                  }
+                  onKeyDown={
+                    disponivel
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            onSelecionar(
+                              escolha.turma.id,
+                              iso,
+                              `${escolha.turma.modalidade.nome} · ${rotuloDataCurta(iso)} · ${escolha.turma.horario}`,
+                            );
+                          }
+                        }
+                      : undefined
+                  }
+                >
+                  <Icon name={lotado ? "x-circle" : "check-circle"} size={14} />
+                </div>
+              );
+            }),
+          ]),
+        ];
+
+        return (
+          <div key={quadra.id}>
+            <div className="ocupacao-quadra-header">
+              <h3>{quadra.nome}</h3>
+            </div>
+            <div className="ocupacao-wrap">
+              <div
+                className="ocupacao-grid"
+                style={{ gridTemplateColumns: `36px repeat(7, minmax(34px, 1fr))` }}
+              >
+                {celulas}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="ocupacao-legenda">
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--good)" }}>
+          <Icon name="check-circle" size={14} /> Tem vaga — clique pra pedir
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--risk)" }}>
+          <Icon name="x-circle" size={14} /> Sem vaga
+        </span>
       </div>
     </div>
   );

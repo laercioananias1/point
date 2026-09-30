@@ -1972,12 +1972,35 @@ button.danger:hover:not(:disabled) {
   background: var(--surface);
   box-shadow: var(--shadow-card);
   padding: 8px;
+  /* Scrollbar fina e discreta em vez da barra cinza padrão do sistema
+     (pedido do usuário, 2026-09-29: "nao gostei dessa barra de rolagem")
+     — só aparece de verdade em telas bem estreitas, já que o min-width da
+     grade abaixo foi reduzido pra caber sem rolar na maioria dos celulares. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.ocupacao-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+
+.ocupacao-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ocupacao-wrap::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 100px;
+}
+
+.ocupacao-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
 }
 
 .ocupacao-grid {
   display: grid;
   gap: 6px;
-  min-width: 480px;
+  min-width: 320px;
 }
 
 .ocupacao-cell {
