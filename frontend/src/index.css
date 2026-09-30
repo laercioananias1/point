@@ -1,9 +1,12 @@
 :root {
-  /* Sand & surface */
-  --bg: #f7f1e2;
+  /* Aqua & surface (pedido do usuário, 2026-09-30: "nao gosto dessa cor
+     de fundo... sugere uma cor mais alegre, nova, q da mais suavidade" —
+     era um bege areia; trocado por um aqua bem suave, puxando pro mesmo
+     teal do --accent, em vez de competir com ele). */
+  --bg: #eef8f7;
   --surface: #ffffff;
-  --surface-sunk: #efe6d2;
-  --line: #e4d9c2;
+  --surface-sunk: #dff1ef;
+  --line: #cde6e3;
 
   /* Ink */
   --ink: #12242e;
@@ -20,7 +23,7 @@
      lateral clara também") — claro no tema claro, o azul-marinho de sempre
      no escuro (redefinidos nos blocos dark abaixo). */
   --side-bg: #ffffff;
-  --side-line: #e4d9c2;
+  --side-line: #cde6e3;
   --side-text: #12242e;
   --side-muted: #5b6b72;
   --side-hover: rgba(14, 58, 83, 0.07);
