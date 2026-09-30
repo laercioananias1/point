@@ -18,6 +18,7 @@ import AdminPointRelatorios from "./pages/admin-point/Relatorios";
 import AdminPointWellhub from "./pages/admin-point/Wellhub";
 import AdminPointPerfil from "./pages/admin-point/Perfil";
 import AdminPointMeuPoint from "./pages/admin-point/MeuPoint";
+import AdminPointIntegracoes from "./pages/admin-point/Integracoes";
 import AdminPointPrazos from "./pages/admin-point/Prazos";
 import AdminPointHorariosFuncionamento from "./pages/admin-point/HorariosFuncionamento";
 import AdminPointModalidades from "./pages/admin-point/Modalidades";
@@ -247,6 +248,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminPointPrazos />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin-point/configuracoes/integracoes"
+        element={
+          <ProtectedRoute>
+            <AdminPointIntegracoes />
           </ProtectedRoute>
         }
       />

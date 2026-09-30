@@ -132,6 +132,7 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
         { to: "/admin-point/configuracoes/horarios", label: "Horários", icon: "calendar" },
         { to: "/admin-point/configuracoes/prazos", label: "Prazos", icon: "clock" },
         { to: "/admin-point/configuracoes/feriados", label: "Feriados", icon: "flag" },
+        { to: "/admin-point/configuracoes/integracoes", label: "Integrações", icon: "link" },
         { to: "/admin-point/ajuda", label: "Ajuda", icon: "help" },
       ],
     },
