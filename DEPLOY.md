@@ -100,105 +100,36 @@ No painel onde `opoint.com.br` foi registrado, crie:
 Espere propagar antes de pedir os certificados (seção 4.4) — `dig
 app.opoint.com.br` (e os outros dois) deve devolver o IP do servidor.
 
-### 4.2 Conectar o container do nginx à rede do Point
+### 4.2 e 4.3 Nginx: configs versionadas em `deploy/nginx/`
 
 O nginx que atende 80/443 roda dentro de `adsops-frontend-1` (projeto
-não relacionado). Pra ele conseguir falar com `point-api-1`/`point-web-1`/
-`point-landing-1` pelo nome do container (em vez de depender de
-`127.0.0.1:PORTA`, que dentro de um container sibling não bate no host),
-conecte-o à rede do compose do Point (se ainda não estiver conectado):
+ads-ops). As configs do OPoint ficam neste repo, em `deploy/nginx/`
+(`opoint-app.conf` e `opoint-site.conf`), e o `docker-compose.prod.yml` do
+ads-ops:
+
+- monta essa pasta em `/etc/nginx/sites-extra` (o `nginx.conf` dele faz
+  `include /etc/nginx/sites-extra/*.conf`) — por isso o OPoint precisa
+  estar clonado em `../point` ao lado do ads-ops (`~/taskhero/point`);
+- liga o container à rede `point_default`, pra alcançar
+  `point-web-1`/`point-api-1`/`point-landing-1` pelo nome.
+
+Antes isso era feito à mão (`docker network connect` + arquivos criados
+dentro do container), e se perdia sempre que o container era recriado.
+
+As configs resolvem o IP dos containers a cada requisição (`resolver
+127.0.0.11` + variável no `proxy_pass`): um deploy que recrie os containers
+do OPoint com IP novo não dá mais 502. Também liberam upload de até 6 MB
+(a API aceita fotos de até 5 MB).
+
+Depois de mudar algo em `deploy/nginx/`:
 
 ```bash
-docker network connect point_default adsops-frontend-1
-```
-
-### 4.3 Adicionar os server blocks
-
-A config desse nginx fica em `/etc/nginx/conf.d/*.conf` **dentro** do
-container (não é bind mount do host — só os volumes do certbot são). Crie
-os arquivos direto no container rodando — um pro site, outro pro app:
-
-```bash
-docker exec -i adsops-frontend-1 sh -c 'cat > /etc/nginx/conf.d/opoint-site.conf' << 'EOF'
-server {
-    listen 80;
-    server_name opoint.com.br www.opoint.com.br;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    server_name opoint.com.br www.opoint.com.br;
-
-    ssl_certificate /etc/letsencrypt/live/opoint.com.br/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/opoint.com.br/privkey.pem;
-
-    location / {
-        proxy_pass http://point-landing-1:80/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-EOF
-
-docker exec -i adsops-frontend-1 sh -c 'cat > /etc/nginx/conf.d/opoint-app.conf' << 'EOF'
-server {
-    listen 80;
-    server_name app.opoint.com.br;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    server_name app.opoint.com.br;
-
-    ssl_certificate /etc/letsencrypt/live/app.opoint.com.br/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/app.opoint.com.br/privkey.pem;
-
-    location /api/ {
-        proxy_pass http://point-api-1:8000/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location / {
-        proxy_pass http://point-web-1:80/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-EOF
-```
-
-Se já existia um `opoint.conf` (do domínio único de antes), remova-o —
-os dois blocos acima substituem ele:
-
-```bash
-docker exec adsops-frontend-1 rm -f /etc/nginx/conf.d/opoint.conf
+cd ~/taskhero/point && git pull
+docker exec adsops-frontend-1 nginx -t && docker exec adsops-frontend-1 nginx -s reload
 ```
 
 Os blocos 443 só funcionam depois que o certificado existir (próximo
-passo) — `nginx -t`/`reload` vai reclamar até lá, é esperado.
+passo) — num servidor novo, `nginx -t` reclama até lá.
 
 ### 4.4 Emitir os certificados (Let's Encrypt / certbot)
 
