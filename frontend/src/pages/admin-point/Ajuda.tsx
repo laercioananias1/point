@@ -1,27 +1,25 @@
-import { useNavigate } from "react-router-dom";
 import { AjudaCallout, AjudaGlossario, AjudaPergunta } from "../../components/Ajuda";
-import { Icon, Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
+import { Layout } from "../../components/Layout";
 
 /** Ajuda do admin (pedido do usuário, 2026-09-01) — formato de perguntas
  * frequentes, cada uma fechada por padrão. Aberta pelo botão de Ajuda no
  * cabeçalho (Layout.tsx), então "Voltar" volta pra tela em que a pessoa
  * estava, não pra um destino fixo. */
 export default function AdminPointAjuda() {
-  const navigate = useNavigate();
-
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate(-1)}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Ajuda</h1>
-      </div>
+      <CabecalhoPagina titulo="Ajuda" contexto="Perguntas frequentes" />
+      <nav className="ajuda-indice" aria-label="Seções da ajuda">
+        <a href="#ajuda-glossario-rapido" className="ajuda-indice-item">Glossário rápido</a>
+        <a href="#ajuda-configurar-o-point" className="ajuda-indice-item">Configurar o Point</a>
+        <a href="#ajuda-professores" className="ajuda-indice-item">Professores</a>
+        <a href="#ajuda-alunos" className="ajuda-indice-item">Alunos</a>
+        <a href="#ajuda-agenda-geral-turmas" className="ajuda-indice-item">Agenda geral (turmas)</a>
+        <a href="#ajuda-agenda-de-um-aluno" className="ajuda-indice-item">Agenda de um aluno</a>
+        <a href="#ajuda-caixa" className="ajuda-indice-item">Caixa</a>
+        <a href="#ajuda-sua-conta" className="ajuda-indice-item">Sua conta</a>
+      </nav>
 
       <AjudaCallout>
         <b>A lógica por trás de quase tudo:</b> você monta o convite inteiro — dados da pessoa,
@@ -31,8 +29,8 @@ export default function AdminPointAjuda() {
         convite de aluno <b>avulso</b>, que não tem assinatura nenhuma pra ativar (ver abaixo).
       </AjudaCallout>
 
-      <section className="section">
-        <h2>Glossário rápido</h2>
+      <section className="ajuda-secao" id="ajuda-glossario-rapido">
+        <h2 className="chk-secao-titulo">Glossário rápido</h2>
         <AjudaGlossario
           itens={[
             { termo: "Point", def: "a arena/unidade cadastrada no sistema." },
@@ -47,8 +45,8 @@ export default function AdminPointAjuda() {
         />
       </section>
 
-      <section className="section">
-        <h2>Configurar o Point</h2>
+      <section className="ajuda-secao" id="ajuda-configurar-o-point">
+        <h2 className="chk-secao-titulo">Configurar o Point</h2>
         <div className="card-list">
           <AjudaPergunta
             icon="grid"
@@ -116,8 +114,8 @@ export default function AdminPointAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Professores</h2>
+      <section className="ajuda-secao" id="ajuda-professores">
+        <h2 className="chk-secao-titulo">Professores</h2>
         <div className="card-list">
           <AjudaPergunta icon="user-plus" pergunta="Como convidar um professor?">
             <ol>
@@ -136,8 +134,8 @@ export default function AdminPointAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Alunos</h2>
+      <section className="ajuda-secao" id="ajuda-alunos">
+        <h2 className="chk-secao-titulo">Alunos</h2>
         <div className="card-list">
           <AjudaPergunta
             icon="user-plus"
@@ -181,8 +179,8 @@ export default function AdminPointAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Agenda geral (turmas)</h2>
+      <section className="ajuda-secao" id="ajuda-agenda-geral-turmas">
+        <h2 className="chk-secao-titulo">Agenda geral (turmas)</h2>
         <div className="card-list">
           <AjudaPergunta
             icon="x"
@@ -212,8 +210,8 @@ export default function AdminPointAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Agenda de um aluno</h2>
+      <section className="ajuda-secao" id="ajuda-agenda-de-um-aluno">
+        <h2 className="chk-secao-titulo">Agenda de um aluno</h2>
         <div className="card-list">
           <AjudaPergunta icon="x" pergunta="Como cancelar 1 aula específica de um aluno?">
             <ul>
@@ -256,8 +254,8 @@ export default function AdminPointAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Caixa</h2>
+      <section className="ajuda-secao" id="ajuda-caixa">
+        <h2 className="chk-secao-titulo">Caixa</h2>
         <div className="card-list">
           <AjudaPergunta icon="chart" pergunta="Como lançar uma entrada ou saída no caixa?">
             <ul>
@@ -273,8 +271,8 @@ export default function AdminPointAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Sua conta</h2>
+      <section className="ajuda-secao" id="ajuda-sua-conta">
+        <h2 className="chk-secao-titulo">Sua conta</h2>
         <div className="card-list">
           <AjudaPergunta icon="check-circle" pergunta="Esqueci minha senha, e agora?">
             <p>

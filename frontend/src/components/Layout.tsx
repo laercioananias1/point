@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api, urlArquivo } from "../api/client";
 import type { PointLogo } from "../api/types";
@@ -218,6 +218,9 @@ export type IconName =
   | "message"
   | "check"
   | "dollar";
+
+// Última posição de rolagem do menu lateral, compartilhada entre as telas.
+let rolagemMenuLateral = 0;
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, ReactNode> = {
@@ -539,6 +542,19 @@ export function Layout({ children }: { children: ReactNode }) {
     navigate("/dono-app");
   }
 
+  // Rolagem do menu lateral (pedido do usuário, 2026-10-01: "quando eu
+  // clico um mais embaixo a barra de rolagem sobe sozinha") — cada tela
+  // monta o próprio Layout, então o menu é recriado a cada navegação e
+  // voltava pro topo. A posição fica guardada fora do componente e é
+  // restaurada antes da pintura (sem pulo visível).
+  const navLateralRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (navLateralRef.current) navLateralRef.current.scrollTop = rolagemMenuLateral;
+  }, []);
+  function guardarRolagemMenu() {
+    if (navLateralRef.current) rolagemMenuLateral = navLateralRef.current.scrollTop;
+  }
+
   return (
     <div className={grupos.length > 0 ? "app-shell app-shell-lateral" : "app-shell"}>
       {grupos.length > 0 && (
@@ -563,7 +579,7 @@ export function Layout({ children }: { children: ReactNode }) {
               </span>
             </span>
           </div>
-          <nav className="app-sidebar-nav">
+          <nav className="app-sidebar-nav" ref={navLateralRef} onScroll={guardarRolagemMenu}>
             {grupos.map((grupo, i) => (
               <div className="app-sidebar-grupo" key={i}>
                 {grupo.titulo && <span className="app-sidebar-titulo">{grupo.titulo}</span>}
@@ -615,7 +631,7 @@ export function Layout({ children }: { children: ReactNode }) {
                   usuário, 2026-09-14: "dar destaque para o logo de cada
                   point") — sem Point resolvido (dono do app), continua
                   mostrando a marca genérica do sistema. */}
-              {pointLogo?.nome ?? "OPoint"}
+              <span className="app-brand-nome">{pointLogo?.nome ?? "OPoint"}</span>
             </span>
             {links.length > 0 && (
               <nav className="app-nav">

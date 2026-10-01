@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Point } from "../../api/types";
-import { AjudaIcone } from "../../components/AjudaIcone";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Icon, Layout } from "../../components/Layout";
 
 /** Credenciais de benefício por Point (pedido do usuário, 2026-09-29:
  * "onde tá ficando o id_gym de cada point?" — não tinha tela nenhuma, só
  * dava pra configurar direto no banco). Gym ID (Wellhub) e place_api_key
- * (TotalPass) estavam na mesma situação — nenhum dos dois tinha campo,
- * então juntei os dois aqui numa tela só. */
+ * (TotalPass) juntos numa tela só. Layout do kit (pedido do usuário,
+ * 2026-10-01): um card por plataforma com o status. */
 export default function AdminPointIntegracoes() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [point, setPoint] = useState<Point | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,27 +35,17 @@ export default function AdminPointIntegracoes() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Integrações</h1>
-      </div>
+      <CabecalhoPagina titulo="Integrações" contexto="Configurações" />
+      <p className="pagina-intro">
+        Ligue o Point às plataformas de benefício. Com os dados preenchidos, os check-ins de Wellhub e TotalPass
+        entram sozinhos e aparecem em <Link to="/admin-point/wellhub">Checkins</Link>.
+      </p>
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
-      {!loading && !erro && point && (
-        <section className="section">
-          <IntegracoesForm point={point} onSalvo={(p) => setPoint(p)} />
-        </section>
-      )}
+      {!loading && !erro && point && <IntegracoesForm point={point} onSalvo={(p) => setPoint(p)} />}
     </Layout>
   );
 }
@@ -64,6 +53,7 @@ export default function AdminPointIntegracoes() {
 function IntegracoesForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => void }) {
   const [wellhubGymId, setWellhubGymId] = useState(point.wellhub_gym_id ?? "");
   const [placeApiKey, setPlaceApiKey] = useState(point.place_api_key ?? "");
+  const [mostrarChave, setMostrarChave] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
@@ -76,8 +66,7 @@ function IntegracoesForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point)
     try {
       const atualizado = await api.patch<Point>("/points/me/configuracoes", {
         // Editados noutras telas, não aqui — só reenvia o que o Point já
-        // tinha (mesmo esquema de passthrough que Prazos/Horários usam
-        // pra esses dois campos).
+        // tinha (mesmo esquema de passthrough que Prazos/Horários usam).
         prazo_cancelamento_horas: point.prazo_cancelamento_horas,
         prazo_credito_dias: point.prazo_credito_dias,
         dia_vencimento_mensalidade: point.dia_vencimento_mensalidade,
@@ -97,38 +86,70 @@ function IntegracoesForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point)
     }
   }
 
-  return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ marginTop: 0 }}>
-      <label>
-        <span style={{ display: "inline-flex", alignItems: "center" }}>
-          Gym ID (Wellhub)
-          <AjudaIcone texto="Identifica sua unidade pra Wellhub — eles entregam esse número quando ativam a integração pro seu Point." />
-        </span>
-        <input
-          value={wellhubGymId}
-          onChange={(e) => setWellhubGymId(e.target.value)}
-          placeholder="Ex: 718"
-        />
-      </label>
+  const wellhubOk = Boolean(point.wellhub_gym_id);
+  const totalpassOk = Boolean(point.place_api_key);
 
-      <label>
-        <span style={{ display: "inline-flex", alignItems: "center" }}>
-          Place API Key (TotalPass)
-          <AjudaIcone texto="Cada Point pega a sua no portal da TotalPass, aba Integrações." />
-        </span>
-        <input
-          value={placeApiKey}
-          onChange={(e) => setPlaceApiKey(e.target.value)}
-          placeholder="Cole aqui a chave do portal da TotalPass"
-        />
-      </label>
+  return (
+    <form className="config" onSubmit={handleSubmit}>
+      <div className="config-grade">
+        <section className="alunos-card config-card">
+          <div className="inicio-exp-topo">
+            <span className="integ-marca wellhub">W</span>
+            <span className={wellhubOk ? "status-pill status-good" : "status-pill status-neutral"}>
+              {wellhubOk ? "Configurado" : "Não configurado"}
+            </span>
+          </div>
+          <h2 className="chk-secao-titulo">Wellhub</h2>
+          <p className="alunos-sub">
+            O Gym ID identifica sua unidade na Wellhub — eles entregam esse número quando ativam a integração pro
+            seu Point.
+          </p>
+          <label className="config-campo">
+            Gym ID
+            <input value={wellhubGymId} onChange={(e) => setWellhubGymId(e.target.value)} placeholder="Ex: 718" />
+          </label>
+        </section>
+
+        <section className="alunos-card config-card">
+          <div className="inicio-exp-topo">
+            <span className="integ-marca totalpass">T</span>
+            <span className={totalpassOk ? "status-pill status-good" : "status-pill status-neutral"}>
+              {totalpassOk ? "Configurado" : "Não configurado"}
+            </span>
+          </div>
+          <h2 className="chk-secao-titulo">TotalPass</h2>
+          <p className="alunos-sub">Cada Point pega a sua chave no portal da TotalPass, na aba Integrações.</p>
+          <label className="config-campo">
+            Place API Key
+            <span className="config-chave">
+              <input
+                type={mostrarChave ? "text" : "password"}
+                value={placeApiKey}
+                onChange={(e) => setPlaceApiKey(e.target.value)}
+                placeholder="Cole aqui a chave do portal da TotalPass"
+                autoComplete="off"
+              />
+              {placeApiKey && (
+                <button type="button" className="alunos-acao" onClick={() => setMostrarChave((v) => !v)}>
+                  {mostrarChave ? "ocultar" : "mostrar"}
+                </button>
+              )}
+            </span>
+          </label>
+        </section>
+      </div>
 
       {erro && <p className="form-error">{erro}</p>}
-      {sucesso && <p className="form-success">Salvo!</p>}
-
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Salvando..." : "Salvar"}
-      </button>
+      <div className="config-salvar">
+        {sucesso && (
+          <span className="meupoint-salvo">
+            <Icon name="check" size={14} /> Salvo
+          </span>
+        )}
+        <button type="submit" disabled={enviando}>
+          {enviando ? "Salvando..." : "Salvar integrações"}
+        </button>
+      </div>
     </form>
   );
 }

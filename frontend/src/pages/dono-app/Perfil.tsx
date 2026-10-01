@@ -1,33 +1,21 @@
-import { useAuth } from "../../auth/AuthContext";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Layout } from "../../components/Layout";
-import { FotoPerfil } from "../../components/FotoPerfil";
+import { PerfilTopo } from "../../components/PerfilTopo";
 import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
 /** Perfil do dono do app (pedido do usuário, 2026-08-26: "seguindo o mesmo
- * padrão" — virou aba própria). */
+ * padrão" — virou aba própria). Layout do kit (pedido do usuário,
+ * 2026-10-01). */
 export default function DonoAppPerfil() {
-  const { user } = useAuth();
-
   return (
     <Layout>
-      <h1>Perfil</h1>
-
-      <section className="section">
-        <h2>Minha conta</h2>
-        <div className="item-card" style={{ alignItems: "flex-start" }}>
-          <div className="item-card-info">
-            <span className="item-card-title">{user?.nome}</span>
-            <span className="item-card-subtitle">Dono do app</span>
-          </div>
-        </div>
-      </section>
-
-      <FotoPerfil />
-
-      <TemaToggle />
-
-      <TrocarArea papelAtual="super_admin" />
+      <CabecalhoPagina titulo="Perfil" contexto="Minha conta" />
+      <PerfilTopo papel="Dono do app" />
+      <div className="perfil-grade">
+        <TemaToggle />
+        <TrocarArea papelAtual="super_admin" />
+      </div>
     </Layout>
   );
 }

@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Point } from "../../api/types";
-import { AjudaIcone } from "../../components/AjudaIcone";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Icon, Layout } from "../../components/Layout";
 import { DIAS_SEMANA } from "../../lib/dias";
 
@@ -16,12 +15,39 @@ const HORAS_FUNCIONAMENTO = Array.from({ length: 19 }, (_, i) => `${String(i + 5
 const DIAS_UTEIS = DIAS_SEMANA.slice(0, 5);
 const DIAS_FDS = DIAS_SEMANA.slice(5, 7);
 
+const PERIODOS: { rotulo: string; horas: string[] }[] = [
+  { rotulo: "Manhã", horas: HORAS_FUNCIONAMENTO.filter((h) => Number(h.slice(0, 2)) < 12) },
+  { rotulo: "Tarde", horas: HORAS_FUNCIONAMENTO.filter((h) => Number(h.slice(0, 2)) >= 12 && Number(h.slice(0, 2)) < 18) },
+  { rotulo: "Noite", horas: HORAS_FUNCIONAMENTO.filter((h) => Number(h.slice(0, 2)) >= 18) },
+];
+
+/** "8h–12h, 18h–21h" — agrupa as horas marcadas em faixas contínuas (cada
+ * hora marcada é o início de uma aula de 1h). */
+function resumoHoras(horarios: string[]): string {
+  const horas = horarios.map((h) => Number(h.slice(0, 2))).sort((a, b) => a - b);
+  if (horas.length === 0) return "nenhum horário";
+  const faixas: [number, number][] = [];
+  for (const h of horas) {
+    const ultima = faixas[faixas.length - 1];
+    if (ultima && h === ultima[1]) ultima[1] = h + 1;
+    else faixas.push([h, h + 1]);
+  }
+  return faixas.map(([a, b]) => `${a}h–${b}h`).join(", ");
+}
+
+function resumoDias(dias: string[], opcoes: { value: string; label: string }[]): string {
+  const marcados = opcoes.filter((d) => dias.includes(d.value));
+  if (marcados.length === 0) return "fechado";
+  if (marcados.length === opcoes.length && opcoes.length > 2) return `${opcoes[0].label} a ${opcoes[opcoes.length - 1].label}`;
+  return marcados.map((d) => d.label).join(", ");
+}
+
 /** Tela própria pra horário de funcionamento (pedido do usuário,
  * 2026-08-30: "configurações do Point separa em 2: prazos e horários de
- * funcionamento") — a outra metade do que antes era
- * ConfiguracoesPoint.tsx. */
+ * funcionamento"). Layout do kit (pedido do usuário, 2026-10-01): dias de
+ * semana e fim de semana em cards lado a lado, horas por período com
+ * atalho de marcar o período inteiro e um resumo em texto. */
 export default function AdminPointHorariosFuncionamento() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [point, setPoint] = useState<Point | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,28 +71,95 @@ export default function AdminPointHorariosFuncionamento() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Horários de funcionamento</h1>
-      </div>
+      <CabecalhoPagina titulo="Horários de funcionamento" contexto="Configurações" />
+      <p className="pagina-intro">
+        O professor só consegue criar turma dentro desses dias e horários. Cada hora marcada é o início de uma
+        aula — dias de semana e fim de semana são independentes.
+      </p>
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
-      {!loading && !erro && point && (
-        <section className="section">
-          <HorariosForm point={point} onSalvo={(p) => setPoint(p)} />
-        </section>
-      )}
+      {!loading && !erro && point && <HorariosForm point={point} onSalvo={(p) => setPoint(p)} />}
     </Layout>
+  );
+}
+
+function BlocoHorarios({
+  titulo,
+  opcoesDias,
+  dias,
+  setDias,
+  horarios,
+  setHorarios,
+}: {
+  titulo: string;
+  opcoesDias: { value: string; label: string }[];
+  dias: string[];
+  setDias: (l: string[]) => void;
+  horarios: string[];
+  setHorarios: (l: string[]) => void;
+}) {
+  function alternar(lista: string[], set: (l: string[]) => void, item: string) {
+    set(lista.includes(item) ? lista.filter((i) => i !== item) : [...lista, item]);
+  }
+
+  function alternarPeriodo(horas: string[]) {
+    const todas = horas.every((h) => horarios.includes(h));
+    setHorarios(todas ? horarios.filter((h) => !horas.includes(h)) : Array.from(new Set([...horarios, ...horas])));
+  }
+
+  return (
+    <section className="alunos-card config-card horarios-bloco">
+      <div className="inicio-exp-topo">
+        <h2 className="chk-secao-titulo">{titulo}</h2>
+        <span className="horarios-resumo">
+          {resumoDias(dias, opcoesDias)} · {resumoHoras(horarios)}
+        </span>
+      </div>
+
+      <div className="horarios-dias">
+        {opcoesDias.map((d) => (
+          <button
+            key={d.value}
+            type="button"
+            aria-pressed={dias.includes(d.value)}
+            className={dias.includes(d.value) ? "horarios-dia ativo" : "horarios-dia"}
+            onClick={() => alternar(dias, setDias, d.value)}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+
+      {PERIODOS.map((p) => {
+        const todas = p.horas.every((h) => horarios.includes(h));
+        return (
+          <div key={p.rotulo} className="horarios-periodo">
+            <div className="horarios-periodo-topo">
+              <span className="prof-aulas-titulo">{p.rotulo}</span>
+              <button type="button" className="alunos-acao" onClick={() => alternarPeriodo(p.horas)}>
+                {todas ? "desmarcar" : "marcar tudo"}
+              </button>
+            </div>
+            <div className="horarios-horas">
+              {p.horas.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  aria-pressed={horarios.includes(h)}
+                  className={horarios.includes(h) ? "horarios-hora ativo" : "horarios-hora"}
+                  onClick={() => alternar(horarios, setHorarios, h)}
+                >
+                  {Number(h.slice(0, 2))}h
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </section>
   );
 }
 
@@ -78,10 +171,6 @@ function HorariosForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) =>
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
-
-  function alternar(lista: string[], set: (l: string[]) => void, item: string) {
-    set(lista.includes(item) ? lista.filter((i) => i !== item) : [...lista, item]);
-  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -120,68 +209,37 @@ function HorariosForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) =>
   }
 
   return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ marginTop: 0 }}>
-      <label>
-        Dias de semana
-        <AjudaIcone texto="O professor só consegue criar turma dentro desses dias e horários. Dias de semana e fim de semana têm horários independentes — dá pra deixar o sábado só de manhã, por exemplo." />
-      </label>
-      <div className="toggle-grid">
-        {DIAS_UTEIS.map((d) => (
-          <button
-            key={d.value}
-            type="button"
-            className={diasSemana.includes(d.value) ? "toggle-chip active" : "toggle-chip"}
-            onClick={() => alternar(diasSemana, setDiasSemana, d.value)}
-          >
-            {d.label}
-          </button>
-        ))}
-      </div>
-      <div className="toggle-grid">
-        {HORAS_FUNCIONAMENTO.map((h) => (
-          <button
-            key={h}
-            type="button"
-            className={horariosSemana.includes(h) ? "toggle-chip active" : "toggle-chip"}
-            onClick={() => alternar(horariosSemana, setHorariosSemana, h)}
-          >
-            {Number(h.slice(0, 2))}h
-          </button>
-        ))}
-      </div>
-
-      <label>Fim de semana</label>
-      <div className="toggle-grid">
-        {DIAS_FDS.map((d) => (
-          <button
-            key={d.value}
-            type="button"
-            className={diasFds.includes(d.value) ? "toggle-chip active" : "toggle-chip"}
-            onClick={() => alternar(diasFds, setDiasFds, d.value)}
-          >
-            {d.label}
-          </button>
-        ))}
-      </div>
-      <div className="toggle-grid">
-        {HORAS_FUNCIONAMENTO.map((h) => (
-          <button
-            key={h}
-            type="button"
-            className={horariosFds.includes(h) ? "toggle-chip active" : "toggle-chip"}
-            onClick={() => alternar(horariosFds, setHorariosFds, h)}
-          >
-            {Number(h.slice(0, 2))}h
-          </button>
-        ))}
+    <form className="config" onSubmit={handleSubmit}>
+      <div className="config-grade">
+        <BlocoHorarios
+          titulo="Dias de semana"
+          opcoesDias={DIAS_UTEIS}
+          dias={diasSemana}
+          setDias={setDiasSemana}
+          horarios={horariosSemana}
+          setHorarios={setHorariosSemana}
+        />
+        <BlocoHorarios
+          titulo="Fim de semana"
+          opcoesDias={DIAS_FDS}
+          dias={diasFds}
+          setDias={setDiasFds}
+          horarios={horariosFds}
+          setHorarios={setHorariosFds}
+        />
       </div>
 
       {erro && <p className="form-error">{erro}</p>}
-      {sucesso && <p className="form-success">Horários salvos.</p>}
-
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Salvando..." : "Salvar horários"}
-      </button>
+      <div className="config-salvar">
+        {sucesso && (
+          <span className="meupoint-salvo">
+            <Icon name="check" size={14} /> Horários salvos
+          </span>
+        )}
+        <button type="submit" disabled={enviando}>
+          {enviando ? "Salvando..." : "Salvar horários"}
+        </button>
+      </div>
     </form>
   );
 }

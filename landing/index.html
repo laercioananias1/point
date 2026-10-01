@@ -3,562 +3,1046 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>OPoint — gestão para arenas esportivas</title>
-<meta name="description" content="OPoint organiza quadras, turmas, matrículas e pagamento do seu Point — Pix, Wellhub e TotalPass, agenda com ocupação em tempo real, tudo num só painel." />
+<title>OPoint · Sua arena no ponto</title>
+<meta name="description" content="Agenda das quadras, chamada pelo professor, cobrança no WhatsApp e conferência dos check-ins do Wellhub. O OPoint mostra quem está devendo check-in antes do mês fechar." />
+<meta name="theme-color" content="#0B2A3C" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- Site refeito conforme design/telas/Main.dc.html (pedido do usuário,
+     2026-10-01). Visual fixo claro, como o protótipo. -->
 <style>
-  /* ---- Tokens (mesma identidade do app OPoint) ---- */
   :root {
-    --bg: #eef8f7;
-    --surface: #ffffff;
-    --surface-sunk: #dff1ef;
-    --line: #cde6e3;
-    --ink: #12242e;
-    --ink-muted: #5b6b72;
-    --navy: #0e3a53;
-    --navy-ink: #0a2a3d;
-    --navy-line: #23516b;
-    --navy-text: #eaf1f4;
-    --navy-text-muted: #9fb9c4;
-    --accent: #0e9594;
-    --accent-strong: #077372;
-    --accent-soft: #dcefec;
-    --coral: #f2542d;
-    --gold: #c97f12;
-    --gold-soft: #f6e8d0;
-    --shadow-card: 0 1px 2px rgba(18, 36, 46, 0.06), 0 10px 24px -10px rgba(18, 36, 46, 0.16);
-    --shadow-pop: 0 18px 40px -16px rgba(10, 42, 61, 0.4);
+    --navy: #0B2A3C;
+    --navy-2: #123F59;
+    --creme: #F6F1E7;
+    --areia: #E9DFCB;
+    --areia-linha: #E2D8C4;
+    --areia-borda: #C9BFA9;
+    --branco: #FFFFFF;
+    --texto: #2C4A5A;
+    --texto-suave: #4F6B7A;
+    --texto-navy: #C9D6DD;
+    --limao: #D4F04A;
+    --risco-bg: #F3D9CC;
+    --risco-fg: #7A2E10;
+    --info-bg: #E2ECF0;
+    --verde: #2E8B57;
+    --titulo: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
     color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0a1a22;
-      --surface: #13293a;
-      --surface-sunk: #0e2029;
-      --line: #234253;
-      --ink: #eaf1f4;
-      --ink-muted: #9fb9c4;
-      --navy: #081c29;
-      --navy-ink: #051119;
-      --navy-line: #1c3a4d;
-      --navy-text: #eaf1f4;
-      --navy-text-muted: #9fb9c4;
-      --accent: #17a8a0;
-      --accent-strong: #5eead4;
-      --accent-soft: #123c3b;
-      --coral: #ff6b45;
-      --gold: #f0a93a;
-      --gold-soft: #3a2c10;
-      --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 24px -10px rgba(0, 0, 0, 0.5);
-      --shadow-pop: 0 18px 40px -16px rgba(0, 0, 0, 0.6);
-      color-scheme: dark;
-    }
-  }
-
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; }
   body {
     margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: "Work Sans", system-ui, -apple-system, sans-serif;
+    background: var(--creme);
+    color: var(--navy);
+    font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     font-size: 16px;
-    line-height: 1.55;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 { font-family: "Archivo", sans-serif; text-wrap: balance; margin: 0; }
-  a { color: inherit; }
-  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+  a { color: var(--navy); }
+  a:hover { color: var(--navy-2); }
+  h1, h2, h3 { margin: 0; font-family: var(--titulo); text-wrap: balance; }
+  p { margin: 0; }
+  section[id] { scroll-margin-top: 16px; }
 
-  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  .secao { padding: 112px 24px; }
+  .navy { background: var(--navy); color: var(--creme); }
 
-  /* ---- Nav ---- */
-  .nav { background: var(--navy); color: var(--navy-text); border-bottom: 1px solid var(--navy-line); }
-  .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 28px; }
-  .brand { display: flex; align-items: center; gap: 9px; font-family: "Archivo", sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.01em; }
-  .nav-links { display: flex; align-items: center; gap: 28px; font-size: 14px; font-weight: 600; }
-  .nav-links a { text-decoration: none; color: var(--navy-text-muted); transition: color 150ms ease; }
-  .nav-links a:hover { color: var(--navy-text); }
-  .nav-actions { display: flex; align-items: center; gap: 14px; }
+  .selo {
+    align-self: flex-start;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--navy);
+    color: var(--limao);
+  }
+  .selo.limao { background: var(--limao); color: var(--navy); }
+  .rotulo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+  .h2 {
+    font-weight: 800;
+    font-size: clamp(34px, 4.5vw, 56px);
+    line-height: 1.02;
+    letter-spacing: -1.5px;
+  }
+  .cabeca { display: flex; flex-direction: column; gap: 16px; max-width: 740px; }
+  .marca {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-family: var(--titulo);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    text-decoration: none;
+  }
+  .marca svg { display: block; }
+
   .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    border-radius: 9px; font-family: "Work Sans", sans-serif; font-weight: 700; font-size: 14.5px;
-    padding: 11px 20px; text-decoration: none; border: 1px solid transparent; cursor: pointer;
-    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 17px;
+    text-decoration: none;
+    border-radius: 999px;
+    padding: 16px 28px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform .15s ease;
   }
-  .btn:active { transform: translateY(1px); }
-  .btn-primary { background: var(--coral); color: #fff; box-shadow: 0 8px 20px -8px rgba(242, 84, 45, 0.55); }
-  .btn-primary:hover { box-shadow: 0 10px 24px -8px rgba(242, 84, 45, 0.7); }
-  .btn-ghost-on-navy { background: transparent; color: var(--navy-text); border-color: var(--navy-line); }
-  .btn-ghost-on-navy:hover { border-color: var(--navy-text-muted); }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-limao { background: var(--limao); color: var(--navy); }
+  .btn-limao:hover { color: var(--navy); }
+  .btn-navy { background: var(--navy); color: var(--creme); }
+  .btn-navy:hover { color: var(--creme); }
+  .btn-contorno { border-color: var(--navy); background: none; color: var(--navy); padding: 14px 26px; }
+  .btn:disabled { background: var(--areia-borda); color: #5C5547; cursor: not-allowed; transform: none; }
+
+  .check { flex: 0 0 auto; }
+  .lista-check { display: flex; flex-direction: column; gap: 12px; }
+  .lista-check span { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
+  .lista-check svg { margin-top: 2px; }
+
+  /* ---- Topo ---- */
+  .topo {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .topo .marca { font-size: 30px; color: var(--navy); }
+  .topo nav { display: flex; align-items: center; gap: 28px; font-size: 15px; font-weight: 500; }
+  .topo nav a { text-decoration: none; }
+  .topo .entrar { font-weight: 700; }
+  .topo .btn { font-size: 15px; padding: 12px 20px; }
 
   /* ---- Hero ---- */
-  .hero { background: var(--navy); color: var(--navy-text); padding: 64px 0 96px; position: relative; overflow: hidden; }
-  .hero::before {
-    content: ""; position: absolute; inset: -30% -10% auto auto; width: 560px; height: 560px;
-    background: radial-gradient(circle, rgba(14, 149, 148, 0.35), transparent 65%); pointer-events: none;
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 56px;
   }
-  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; position: relative; }
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong);
-    background: rgba(14, 149, 148, 0.16); border: 1px solid rgba(14, 149, 148, 0.35);
-    padding: 6px 12px; border-radius: 100px; margin-bottom: 18px;
-  }
-  .hero h1 { font-size: 46px; line-height: 1.06; font-weight: 800; letter-spacing: -0.01em; }
-  .hero h1 .line-muted { display: block; color: var(--navy-text-muted); }
-  .hero h1 .line-accent { display: block; color: #6fd6d1; }
-  .hero p.lede { font-size: 17.5px; color: var(--navy-text-muted); max-width: 46ch; margin: 20px 0 32px; }
-  .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
-  .hero-ctas .fine-print { font-size: 12.5px; color: var(--navy-text-muted); display: inline-flex; align-items: center; gap: 6px; }
-  .hero-sports {
-    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--navy-text-muted); margin-bottom: 30px;
-  }
-  .hero-proof { display: flex; gap: 12px; flex-wrap: wrap; }
-  .proof-item {
-    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
-    background: rgba(255, 255, 255, 0.06); border: 1px solid var(--navy-line); border-radius: 12px;
-  }
-  .proof-item .num { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 26px; color: #fff; line-height: 1; flex-shrink: 0; }
-  .proof-item .lbl { font-size: 12.5px; color: var(--navy-text-muted); line-height: 1.3; max-width: 15ch; }
+  .hero-texto { flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 28px; }
+  .hero h1 { font-weight: 800; font-size: clamp(48px, 7vw, 84px); line-height: 0.98; letter-spacing: -2px; }
+  .hero-lead { font-size: 19px; line-height: 1.55; max-width: 520px; color: var(--texto); }
+  .hero-acoes { display: flex; gap: 14px; flex-wrap: wrap; }
+  .hero-garantias { display: flex; gap: 22px; flex-wrap: wrap; font-size: 14px; color: var(--texto); }
+  .hero-garantias span { display: flex; align-items: center; gap: 8px; }
 
-  /* ---- Hero mock: grade de ocupação ---- */
-  .mock-card { background: var(--surface); color: var(--ink); border-radius: 16px; box-shadow: var(--shadow-pop); padding: 20px 20px 18px; position: relative; }
-  .mock-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-  .mock-head h3 { font-size: 15px; }
-  .mock-mode-pill {
-    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-    color: var(--accent-strong); background: var(--accent-soft); padding: 4px 10px; border-radius: 100px;
+  .hero-celular { flex: 1 1 380px; min-width: 0; display: flex; justify-content: center; position: relative; }
+  .hero-bola {
+    position: absolute;
+    width: min(420px, 92vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--limao);
+    top: 40px;
   }
-  .mock-grid { display: grid; grid-template-columns: 40px repeat(5, 1fr); gap: 5px; }
-  .mock-cell { border-radius: 7px; min-height: 30px; display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; }
-  .mock-head-cell { background: transparent; color: var(--ink-muted); font-family: "Work Sans", sans-serif; font-weight: 700; font-size: 10.5px; }
-  .mock-hour { background: transparent; color: var(--ink-muted); font-size: 10.5px; justify-content: flex-start; }
-  .mock-empty { border: 1px dashed var(--line); }
-  .mock-legend { display: flex; gap: 14px; margin-top: 14px; font-size: 11.5px; color: var(--ink-muted); flex-wrap: wrap; }
-  .mock-legend span { display: inline-flex; align-items: center; gap: 5px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .mock-float {
-    position: absolute; right: 16px; top: 100%; margin-top: -8px; background: var(--navy);
-    color: var(--navy-text); border-radius: 12px; padding: 12px 16px; box-shadow: var(--shadow-pop);
-    font-size: 12.5px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--navy-line);
+  .celular {
+    position: relative;
+    width: min(300px, 100%);
+    background: var(--navy);
+    border-radius: 44px;
+    padding: 12px;
+    box-shadow: 0 30px 60px rgba(11, 42, 60, 0.25);
+  }
+  .celular-tela {
+    background: var(--creme);
+    border-radius: 34px;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 560px;
+  }
+  .cel-topo { display: flex; justify-content: space-between; align-items: center; }
+  .cel-data { font-size: 12px; color: var(--texto-suave); }
+  .cel-titulo { font-family: var(--titulo); font-weight: 800; font-size: 22px; }
+  .cel-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--navy); color: var(--limao);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .cel-filtros { display: flex; gap: 6px; }
+  .cel-filtros span { font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--areia-borda); }
+  .cel-filtros span.ativo { background: var(--navy); color: var(--creme); border-color: var(--navy); }
+  .cel-aula { background: var(--branco); border-radius: 18px; padding: 12px; display: flex; gap: 10px; align-items: center; }
+  .cel-hora { width: 46px; text-align: center; flex: 0 0 auto; }
+  .cel-hora b { display: block; font-family: var(--titulo); font-weight: 800; font-size: 18px; }
+  .cel-hora small { font-size: 11px; color: var(--texto-suave); }
+  .cel-info { flex: 1; min-width: 0; }
+  .cel-info b { display: block; font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; }
+  .cel-info small { font-size: 12px; color: var(--texto-suave); }
+  .cel-aula .pilula { flex: 0 0 auto; font-size: 11px; padding: 4px 8px; }
+  .pilula { font-size: 12px; font-weight: 700; padding: 5px 9px; border-radius: 999px; white-space: nowrap; }
+  .pilula.vaga { background: var(--limao); color: var(--navy); }
+  .pilula.lotada { background: var(--navy); color: var(--creme); }
+  .cel-checkins {
+    margin-top: auto;
+    background: var(--navy);
+    color: var(--creme);
+    border-radius: 18px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cel-checkins-linha { display: flex; justify-content: space-between; font-size: 12px; }
+  .cel-checkins-linha strong { color: var(--limao); }
+  .barra { height: 6px; border-radius: 999px; background: var(--navy-2); overflow: hidden; }
+  .barra i { display: block; height: 6px; width: 92%; border-radius: 999px; background: var(--limao); }
+  .cel-checkins small { font-size: 11px; color: var(--texto-navy); }
+
+  /* ---- Faixa ---- */
+  .faixa { padding: 28px 24px; }
+  .faixa .wrap {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px 20px;
+    font-family: var(--titulo);
+    font-weight: 700;
+    font-size: 22px;
+  }
+  .faixa .ponto { color: var(--limao); }
+  .em-breve {
+    font-size: 13px;
+    font-family: "DM Sans", sans-serif;
+    background: var(--limao);
+    color: var(--navy);
+    padding: 4px 10px;
+    border-radius: 999px;
+    vertical-align: middle;
   }
 
-  /* ---- Sections ---- */
-  section { padding: 88px 0; }
-  .section-head { max-width: 640px; margin-bottom: 48px; }
-  .eyebrow-line {
-    display: flex; align-items: center; gap: 10px; font-size: 12.5px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-strong); margin-bottom: 16px;
+  /* ---- Recursos ---- */
+  .recursos { display: flex; flex-direction: column; gap: 56px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+  .cards-2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+  .recurso {
+    background: var(--branco);
+    border-radius: 24px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
   }
-  .eyebrow-line::before { content: ""; width: 28px; height: 2px; background: var(--accent); flex-shrink: 0; }
-  .section-head h2 { font-size: 32px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 14px; }
-  .section-head p { color: var(--ink-muted); font-size: 16.5px; max-width: 56ch; }
-
-  /* ---- O problema ---- */
-  .problem { background: var(--surface-sunk); }
-  .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
-  .problem-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-card); }
-  .problem-card .file-icon { color: var(--ink-muted); margin-bottom: 12px; }
-  .problem-card h4 { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--ink); }
-  .problem-card p { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
-
-  /* ---- Recursos: grid numerado ---- */
-  .numbered-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    border-top: 1px solid var(--line); border-left: 1px solid var(--line); border-radius: 14px; overflow: hidden;
-  }
-  .numbered-item {
-    padding: 28px 26px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
-    display: flex; flex-direction: column; gap: 10px; background: var(--surface);
-  }
-  .numbered-item .num-row { display: flex; align-items: center; justify-content: space-between; }
-  .numbered-item .icon { color: var(--accent-strong); }
-  .numbered-item .num { font-size: 12px; color: var(--ink-muted); font-weight: 600; }
-  .numbered-item h3 { font-size: 16px; font-weight: 700; }
-  .numbered-item p { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
-  .numbered-item .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
-  .tag { font-size: 11.5px; font-weight: 600; padding: 4px 9px; border-radius: 100px; background: var(--surface-sunk); color: var(--ink-muted); border: 1px solid var(--line); }
-
-  /* ---- Como funciona ---- */
-  .how { background: var(--navy); color: var(--navy-text); }
-  .how .eyebrow-line { color: #6fd6d1; }
-  .how .eyebrow-line::before { background: var(--accent); }
-  .how .section-head h2 { color: #fff; }
-  .how .section-head p { color: var(--navy-text-muted); }
-  .how-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; }
-  .steps { display: flex; flex-direction: column; gap: 26px; }
-  .step { display: flex; gap: 16px; }
-  .step-num {
-    font-family: "Archivo", sans-serif; font-weight: 800; font-size: 13px; color: var(--navy);
-    background: #6fd6d1; width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  .recurso-icone {
+    width: 52px; height: 52px; border-radius: 16px;
+    background: var(--areia);
     display: flex; align-items: center; justify-content: center;
   }
-  .step h3 { font-size: 15.5px; margin-bottom: 4px; color: #fff; }
-  .step p { color: var(--navy-text-muted); font-size: 14px; margin: 0; }
+  .recurso-icone.limao { background: var(--limao); }
+  .recurso h3 { font-weight: 700; font-size: 24px; }
+  .recurso p { line-height: 1.55; color: var(--texto); }
 
-  /* Mockup de mensagem de WhatsApp do convite */
-  .wa-mock { background: var(--surface); color: var(--ink); border-radius: 16px; box-shadow: var(--shadow-pop); padding: 16px; }
-  .wa-mock-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--ink-muted); margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-  .wa-mock-head .wa-dot { width: 8px; height: 8px; border-radius: 50%; background: #25d366; display: inline-block; }
-  .wa-bubble { background: var(--accent-soft); border-radius: 12px 12px 12px 4px; padding: 12px 14px; font-size: 13.5px; line-height: 1.5; }
-  .wa-btn { display: block; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(14, 149, 148, 0.25); color: var(--accent-strong); font-weight: 700; font-size: 13px; }
-
-  .who-row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .who-pill { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 100px; padding: 10px 18px 10px 14px; font-weight: 600; font-size: 14.5px; box-shadow: var(--shadow-card); }
-  .who-pill .dot { width: 9px; height: 9px; }
-
-  .cta-band { background: var(--navy); color: var(--navy-text); }
-  .cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
-  .cta-inner h2 { font-size: 28px; color: #fff; max-width: 30ch; }
-  .cta-inner p { color: var(--navy-text-muted); margin-top: 8px; max-width: 40ch; }
-
-  footer { background: var(--navy-ink); color: var(--navy-text-muted); padding: 48px 0 32px; font-size: 13.5px; }
-  .foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 36px; }
-  .foot-brand { display: flex; align-items: center; gap: 8px; color: var(--navy-text); font-family: "Archivo", sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 10px; }
-  .foot-col h4 { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--navy-text); margin-bottom: 12px; font-family: "Work Sans", sans-serif; font-weight: 700; }
-  .foot-col a { display: block; text-decoration: none; color: var(--navy-text-muted); margin-bottom: 8px; }
-  .foot-col a:hover { color: var(--navy-text); }
-  .foot-col span { display: block; color: var(--navy-text-muted); margin-bottom: 8px; }
-  .foot-bottom { border-top: 1px solid var(--navy-line); padding-top: 20px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .foot-note { max-width: 60ch; }
-
-  @media (max-width: 880px) {
-    .nav-links { display: none; }
-    .hero-grid { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 34px; }
-    .problem-grid { grid-template-columns: 1fr 1fr; }
-    .numbered-grid { grid-template-columns: 1fr 1fr; }
-    .how-grid { grid-template-columns: 1fr; }
-    .foot-grid { grid-template-columns: 1fr 1fr; }
-    .mock-float { display: none; }
+  /* ---- Check-ins ---- */
+  .duas-colunas { display: flex; flex-wrap: wrap; gap: 56px; align-items: center; }
+  .coluna-texto { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+  .lead { font-size: 18px; line-height: 1.55; color: var(--texto); }
+  .navy .lead { color: var(--texto-navy); }
+  .passos { display: flex; flex-direction: column; gap: 16px; }
+  .passo { display: flex; gap: 14px; align-items: flex-start; }
+  .passo-n {
+    flex: 0 0 36px; height: 36px; border-radius: 50%;
+    background: var(--navy-2); color: var(--limao);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--titulo); font-weight: 800;
   }
-  @media (max-width: 560px) {
-    .problem-grid { grid-template-columns: 1fr; }
-    .numbered-grid { grid-template-columns: 1fr; }
-    .foot-grid { grid-template-columns: 1fr; }
-    .cta-inner { flex-direction: column; align-items: flex-start; }
-    .wrap { padding: 0 20px; }
+  .passo b { display: block; font-size: 17px; }
+  .passo span { font-size: 15px; line-height: 1.5; color: var(--texto-navy); }
+
+  .conferencia {
+    flex: 1 1 460px;
+    min-width: 0;
+    background: var(--creme);
+    color: var(--navy);
+    border-radius: 28px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .conf-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .conf-sub { font-size: 13px; color: var(--texto-suave); }
+  .conf-titulo { font-family: var(--titulo); font-weight: 800; font-size: 24px; }
+  .ao-vivo {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700;
+    background: var(--branco); padding: 6px 10px; border-radius: 999px;
+  }
+  .ao-vivo i { width: 8px; height: 8px; border-radius: 50%; background: var(--verde); }
+  .conf-grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 0.7fr)) minmax(0, 1.2fr);
+    gap: 8px;
+    align-items: center;
+  }
+  .conf-cabeca {
+    font-size: 11px; font-weight: 700; color: var(--texto-suave);
+    text-transform: uppercase; letter-spacing: 1px; padding: 0 12px;
+  }
+  .conf-linha { background: var(--branco); border-radius: 14px; padding: 12px; font-size: 14px; }
+  .conf-linha small { display: block; font-size: 12px; color: var(--texto-suave); }
+  .conf-linha .pilula { justify-self: start; }
+  .pilula.dia { background: var(--limao); color: var(--navy); }
+  .pilula.falta { background: var(--risco-bg); color: var(--risco-fg); }
+  .pilula.adiantado { background: var(--info-bg); color: var(--navy); }
+  .nota {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--branco); border-radius: 14px; padding: 12px 14px;
+    font-size: 13px; line-height: 1.45;
+  }
+
+  /* ---- Aula experimental ---- */
+  .experimental { background: var(--areia); }
+  .experimental .lista-check { font-size: 16px; }
+  .exp-card {
+    flex: 1 1 460px;
+    min-width: 0;
+    background: var(--branco);
+    border-radius: 28px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .exp-titulo { font-family: var(--titulo); font-weight: 800; font-size: 26px; }
+  .exp-etapa { display: flex; flex-direction: column; gap: 22px; }
+  .exp-grupo { display: flex; flex-direction: column; gap: 10px; }
+  .exp-grupo > b { font-size: 14px; }
+  .exp-dias { display: flex; gap: 8px; flex-wrap: wrap; }
+  .exp-dia {
+    font-family: inherit;
+    flex: 1 1 56px;
+    min-height: 64px;
+    border-radius: 16px;
+    border: 2px solid var(--navy);
+    background: var(--branco);
+    color: var(--navy);
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  .exp-dia small { font-size: 12px; font-weight: 500; }
+  .exp-dia b { font-family: var(--titulo); font-weight: 800; font-size: 22px; }
+  .exp-dia.ativo { background: var(--navy); color: var(--creme); }
+  .exp-horas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .exp-hora {
+    font-family: inherit;
+    min-height: 48px;
+    border-radius: 14px;
+    border: 2px solid #D8CDB6;
+    background: var(--branco);
+    color: var(--navy);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .exp-hora.ativo { background: var(--limao); border-color: var(--navy); }
+  .exp-hora:disabled { background: #EDE6D8; border-color: #EDE6D8; color: #8A8272; text-decoration: line-through; cursor: not-allowed; }
+  .exp-dica { font-size: 12px; color: var(--texto-suave); }
+  .exp-resumo {
+    background: var(--creme);
+    border-radius: 18px;
+    padding: 16px;
+    display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    font-size: 15px;
+  }
+  .link-btn {
+    font-family: inherit; font-size: 14px; font-weight: 700;
+    background: none; border: none; color: var(--navy);
+    text-decoration: underline; cursor: pointer; min-height: 44px;
+  }
+  .campo { display: flex; flex-direction: column; gap: 6px; }
+  .campo label { font-size: 14px; font-weight: 700; }
+  .campo input {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    border: 2px solid var(--navy);
+    background: var(--branco);
+    color: var(--navy);
+    width: 100%;
+  }
+  .campo input:focus { outline: 3px solid var(--limao); outline-offset: 1px; }
+  .exp-card .btn { width: 100%; padding: 18px; }
+  .exp-feito { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; padding: 12px 0; }
+  .exp-feito-icone {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--limao);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .exp-feito h3 { font-weight: 800; font-size: 30px; }
+  .exp-feito p { line-height: 1.5; color: var(--texto); }
+  .exp-feito .nota { background: var(--creme); text-align: left; font-size: 14px; }
+  .exp-feito .btn { width: auto; padding: 14px 24px; font-size: 15px; }
+
+  /* ---- Como funciona ---- */
+  .jogadas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; }
+  .jogada { display: flex; flex-direction: column; gap: 14px; border-top: 3px solid var(--navy); padding-top: 24px; }
+  .jogada > span { font-family: var(--titulo); font-weight: 800; font-size: 64px; line-height: 1; }
+  .jogada h3 { font-weight: 700; font-size: 24px; }
+  .jogada p { line-height: 1.55; color: var(--texto); }
+
+  /* ---- Para quem ---- */
+  .visoes { background: var(--branco); }
+  .visao {
+    border-radius: 28px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: var(--creme);
+  }
+  .visao h3 { font-weight: 800; font-size: 28px; line-height: 1.1; }
+  .visao .lista-check { gap: 10px; font-size: 15px; }
+  .visao .tag {
+    align-self: flex-start;
+    font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--navy); color: var(--creme);
+  }
+  .visao.escura { background: var(--navy); color: var(--creme); }
+  .visao.escura .tag { background: var(--limao); color: var(--navy); }
+  .visao.limao { background: var(--limao); }
+  .visao.limao .tag { color: var(--limao); }
+  .multi {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    background: var(--creme); border-radius: 20px; padding: 18px 22px;
+  }
+  .multi span { flex: 1 1 300px; line-height: 1.5; }
+
+  /* ---- Planos ---- */
+  .plano {
+    background: var(--branco);
+    border: 2px solid var(--areia-linha);
+    border-radius: 28px;
+    padding: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .plano h3 { font-weight: 700; font-size: 24px; }
+  .plano-preco { font-family: var(--titulo); font-weight: 800; font-size: 40px; line-height: 1.05; }
+  .plano-preco small { font-family: "DM Sans", sans-serif; font-size: 16px; font-weight: 500; }
+  .plano p { line-height: 1.55; color: var(--texto); }
+  .plano .btn { margin-top: auto; }
+  .plano.escuro { background: var(--navy); color: var(--creme); border-color: var(--navy); }
+  .plano.escuro p { color: var(--texto-navy); }
+  .plano-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .plano-topo .pilula { background: var(--limao); color: var(--navy); padding: 6px 12px; }
+
+  /* ---- Dúvidas ---- */
+  .duvidas { max-width: 900px; margin: 0 auto; padding: 112px 24px 0; display: flex; flex-direction: column; gap: 32px; }
+  .faq { display: flex; flex-direction: column; gap: 10px; }
+  .faq-item { background: var(--branco); border-radius: 20px; overflow: hidden; }
+  .faq-item button {
+    width: 100%;
+    font-family: inherit;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--navy);
+    padding: 20px 22px;
+    min-height: 64px;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .faq-sinal {
+    flex: 0 0 32px; height: 32px; border-radius: 50%;
+    background: var(--creme);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; line-height: 1;
+  }
+  .faq-item.aberto .faq-sinal { background: var(--limao); }
+  .faq-item p { padding: 0 22px 22px; line-height: 1.6; color: var(--texto); }
+
+  /* ---- Começar ---- */
+  .comecar { max-width: 1200px; margin: 0 auto; padding: 112px 24px; }
+  .comecar-caixa {
+    background: var(--limao);
+    border-radius: 36px;
+    padding: 64px 40px;
+    display: flex; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: space-between;
+  }
+  .comecar-texto { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .comecar-texto h2 { font-weight: 800; font-size: clamp(40px, 4.5vw, 60px); line-height: 1; letter-spacing: -1.5px; }
+  .comecar-texto p { font-size: 18px; line-height: 1.5; max-width: 460px; }
+  .comecar-texto .contato { font-size: 15px; display: flex; flex-direction: column; gap: 4px; }
+  .comecar form { flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+  .comecar .campo input { background: var(--creme); }
+  .comecar form .btn { margin-top: 8px; padding: 18px; }
+
+  /* ---- Rodapé ---- */
+  .rodape { background: var(--navy); color: var(--texto-navy); padding: 48px 24px; }
+  .rodape .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: center; }
+  .rodape .marca { font-size: 26px; color: var(--creme); }
+  .rodape-slogan { font-family: var(--titulo); font-weight: 700; font-size: 16px; color: var(--limao); }
+  .rodape-links { display: flex; gap: 24px; flex-wrap: wrap; font-size: 14px; }
+  .rodape-links a { color: var(--texto-navy); text-decoration: none; }
+  .rodape-links a:hover { color: var(--limao); }
+  .rodape small { font-size: 14px; }
+
+  @media (max-width: 900px) {
+    .topo nav .so-desktop { display: none; }
+    .topo nav { gap: 16px; }
+  }
+  @media (max-width: 640px) {
+    .secao { padding: 80px 16px; }
+    .topo { padding: 18px 16px; }
+    .topo .marca { font-size: 26px; }
+    .topo .marca svg { width: 30px; height: 30px; }
+    .hero { padding: 24px 16px 72px; gap: 48px; }
+    .hero-acoes .btn { flex: 1 1 100%; }
+    .faixa .wrap { font-size: 18px; justify-content: center; }
+    .recurso, .visao, .plano, .exp-card { padding: 24px; }
+    .conferencia { padding: 18px; }
+    .conf-linha { font-size: 13px; padding: 10px; }
+    .conf-cabeca { padding: 0 10px; font-size: 10px; letter-spacing: 0.5px; }
+    .conf-grade { grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 0.6fr)) minmax(0, 1.2fr); gap: 6px; }
+    .conf-linha .pilula { white-space: normal; }
+    .duvidas { padding: 80px 16px 0; }
+    .comecar { padding: 80px 16px; }
+    .comecar-caixa { padding: 40px 22px; border-radius: 28px; }
+    .rodape { padding: 40px 16px; }
   }
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="wrap nav-row">
-    <div class="brand">
-      <svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true">
-        <circle cx="23" cy="24" r="14" fill="none" stroke="#EAF1F4" stroke-width="7.5"/>
-        <circle cx="38" cy="39" r="7" fill="#F2542D"/>
-      </svg>
-      OPoint
-    </div>
-    <div class="nav-links">
-      <a href="#problema">O problema</a>
-      <a href="#recursos">Recursos</a>
-      <a href="#como-funciona">Como funciona</a>
-      <a href="#quem-usa">Pra quem é</a>
-      <a href="#contato">Contato</a>
-    </div>
-    <div class="nav-actions">
-      <a class="btn btn-primary" href="https://app.opoint.com.br">Entrar</a>
-    </div>
-  </div>
-</nav>
-
-<header class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <span class="eyebrow">Gestão de arenas esportivas</span>
-      <h1>
-        <span class="line-muted">Chega de planilha e grupo de WhatsApp.</span>
-        <span class="line-accent">Sua arena, no controle.</span>
-      </h1>
-      <p class="lede">
-        O OPoint organiza modalidades, quadras, turmas e matrículas do seu Point — e ainda mostra em tempo
-        real quanta vaga sobrou em cada horário, colorida por nível de aluno.
-      </p>
-      <div class="hero-ctas">
-        <a class="btn btn-primary" href="https://app.opoint.com.br">Entrar</a>
-        <a class="btn btn-ghost-on-navy" href="#recursos">Ver recursos</a>
-      </div>
-      <div class="hero-sports">Beach tennis · Futevôlei · Tênis · Padel · Funcional</div>
-      <div class="hero-proof">
-        <div class="proof-item"><span class="num mono">3</span><span class="lbl">papéis num só app — admin, professor, aluno</span></div>
-        <div class="proof-item"><span class="num mono">3</span><span class="lbl">formas de pagamento — Pix, Wellhub, TotalPass</span></div>
-        <div class="proof-item"><span class="num mono">1</span><span class="lbl">agenda por Point, sem duplicar em planilha</span></div>
-      </div>
-    </div>
-
-    <div class="mock-card">
-      <div class="mock-head">
-        <h3>Quadra de Areia 1</h3>
-        <span class="mock-mode-pill">Disponibilidade</span>
-      </div>
-      <div class="mock-grid">
-        <div class="mock-cell mock-head-cell"></div>
-        <div class="mock-cell mock-head-cell">SEG</div>
-        <div class="mock-cell mock-head-cell">TER</div>
-        <div class="mock-cell mock-head-cell">QUA</div>
-        <div class="mock-cell mock-head-cell">QUI</div>
-        <div class="mock-cell mock-head-cell">SEX</div>
-
-        <div class="mock-cell mock-hour">17h</div>
-        <div class="mock-cell" style="background:#f6dfda;color:#c13b2e">✕</div>
-        <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.35);color:#1f9d5d">✓</div>
-        <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:#f6dfda;color:#c13b2e">✕</div>
-
-        <div class="mock-cell mock-hour">18h</div>
-        <div class="mock-cell" style="background:rgba(201,127,18,.35);color:#1f9d5d">✓</div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.35);color:#1f9d5d">✓</div>
-        <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(201,127,18,.35);color:#1f9d5d">✓</div>
-        <div class="mock-cell" style="background:#f6dfda;color:#c13b2e">✕</div>
-
-        <div class="mock-cell mock-hour">19h</div>
-        <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(242,84,45,.35);color:#1f9d5d">✓</div>
-        <div class="mock-cell" style="background:rgba(201,127,18,.35);color:#1f9d5d">✓</div>
-        <div class="mock-cell mock-empty"></div>
-        <div class="mock-cell" style="background:rgba(14,149,148,.35);color:#1f9d5d">✓</div>
-      </div>
-      <div class="mock-legend">
-        <span><i class="dot" style="background:#0e9594"></i>Iniciante</span>
-        <span><i class="dot" style="background:#c97f12"></i>Intermediário</span>
-        <span><i class="dot" style="background:#f2542d"></i>Avançado (particular)</span>
-      </div>
-      <div class="mock-float">
-        <span style="font-size:18px">✓</span>
-        <span>Aluno vê <strong>vaga disponível</strong>, sem ver sua ocupação real</span>
-      </div>
-    </div>
-  </div>
+<header class="topo">
+  <a href="#topo" class="marca" aria-label="OPoint">
+    <svg width="36" height="36" viewBox="0 0 48 48" aria-hidden="true"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#0B2A3C" stroke-width="7"/><circle cx="34" cy="34" r="10" fill="#D4F04A" stroke="#F6F1E7" stroke-width="3.5"/><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#0B2A3C" stroke-width="2.2" stroke-linecap="round"/></svg><span>Point</span>
+  </a>
+  <nav aria-label="Seções">
+    <a class="so-desktop" href="#recursos">Recursos</a>
+    <a class="so-desktop" href="#checkins">Check-ins</a>
+    <a class="so-desktop" href="#visoes">Para quem</a>
+    <a class="so-desktop" href="#planos">Planos</a>
+    <a class="so-desktop" href="#duvidas">Dúvidas</a>
+    <a class="entrar" href="https://app.opoint.com.br">Entrar</a>
+    <a class="btn btn-navy" href="#comecar">Começar grátis</a>
+  </nav>
 </header>
 
-<section class="problem" id="problema">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow-line">O problema</span>
-      <h2>Cada turma vive numa aba de planilha diferente.</h2>
-      <p>Planilha pra matrícula, grupo de WhatsApp pra avisar aula, caderno pra crédito de reposição —
-        nenhum dos três fala com o outro. Quem sofre é sempre na hora de cobrar ou remarcar.</p>
+<main>
+<section id="topo" class="hero">
+  <div class="hero-texto">
+    <span class="selo">Beach tennis · Vôlei · Futevôlei</span>
+    <h1>Sua arena<br>no ponto.</h1>
+    <p class="hero-lead">Agenda das quadras, chamada pelo professor, cobrança no WhatsApp e, principalmente, a conferência dos check-ins do Wellhub: o OPoint mostra quem está devendo check-in antes do mês fechar. TotalPass chegando em breve.</p>
+    <div class="hero-acoes">
+      <a class="btn btn-limao" href="#comecar">Quero testar o OPoint</a>
+      <a class="btn btn-contorno" href="#como-funciona">Ver como funciona</a>
     </div>
-
-    <div class="problem-grid">
-      <div class="problem-card">
-        <div class="file-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l3 3v15a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6"/><path d="M9 12h6M9 16h6M9 8h3" stroke="currentColor" stroke-width="1.6"/></svg>
-        </div>
-        <h4>matriculas_setembro_v2.xlsx</h4>
-        <p>Aluno de nível avançado matriculado na turma errada, categoria trocada, célula quebrada na
-          linha 42.</p>
-      </div>
-      <div class="problem-card">
-        <div class="file-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H9l-5 4V5z" stroke="currentColor" stroke-width="1.6"/></svg>
-        </div>
-        <h4>WhatsApp — Grupo Beach Tennis Terça</h4>
-        <p>"Professor, ainda tem vaga pra hoje às 18h?" — mandada às 23h de ontem, sem resposta.</p>
-      </div>
-      <div class="problem-card">
-        <div class="file-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h7M8 13h7M8 17h4" stroke="currentColor" stroke-width="1.6"/></svg>
-        </div>
-        <h4>Caderno de reposição</h4>
-        <p>Crédito da aula cancelada semana passada, anotado numa página que ninguém mais encontra.</p>
-      </div>
+    <div class="hero-garantias">
+      <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sem cartão para começar</span>
+      <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Feito para professores e arenas</span>
+      <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Um login para várias arenas</span>
     </div>
   </div>
-</section>
 
-<section id="recursos">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow-line">Recursos</span>
-      <h2>Feito do jeito que uma arena de verdade funciona</h2>
-      <p>Cada tela resolve um problema que quem toca uma quadra esportiva já teve — não é um CRM genérico
-        forçado a caber no seu negócio.</p>
-    </div>
-
-    <div class="numbered-grid">
-      <div class="numbered-item">
-        <div class="num-row">
-          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></span>
-          <span class="num mono">01</span>
-        </div>
-        <h3>Categoria por cor</h3>
-        <p>Nível do aluno (iniciante, intermediário, avançado) com cor própria, usada em toda a agenda.</p>
-      </div>
-
-      <div class="numbered-item">
-        <div class="num-row">
-          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="10" r="2.3" stroke="currentColor" stroke-width="2"/><path d="M3.5 20c0-3 2.4-5 5.5-5s5.5 2 5.5 5" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="num mono">02</span>
-        </div>
-        <h3>Tipo de turma</h3>
-        <p>Padrão, dupla, família ou aula individual — com a opção de deixar a turma privada.</p>
-      </div>
-
-      <div class="numbered-item">
-        <div class="num-row">
-          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="num mono">03</span>
-        </div>
-        <h3>Agenda com dois modos</h3>
-        <p>Ocupação real pra você, "tem vaga ou não" pro aluno — sem expor quem está matriculado.</p>
-      </div>
-
-      <div class="numbered-item">
-        <div class="num-row">
-          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v6H4zM4 14h10v6H4z" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="num mono">04</span>
-        </div>
-        <h3>Convite com plano ou avulso</h3>
-        <p>Aluno com assinatura pronta, ou só um acesso pra ele comprar as próprias aulas quando quiser.</p>
-      </div>
-
-      <div class="numbered-item">
-        <div class="num-row">
-          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 10h18M6 15h4M3 6h18v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="num mono">05</span>
-        </div>
-        <h3>Pagamento sem planilha</h3>
-        <p>Pix, Wellhub ou TotalPass — cobrança e crédito de reposição controlados sozinhos.</p>
-      </div>
-
-      <div class="numbered-item">
-        <div class="num-row">
-          <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H9l-5 4V5z" stroke="currentColor" stroke-width="2"/></svg></span>
-          <span class="num mono">06</span>
-        </div>
-        <h3>Convite por e-mail e WhatsApp</h3>
-        <p>Professor e aluno recebem tudo pronto, num toque de distância — sem formulário de dez campos.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="how" id="como-funciona">
-  <div class="wrap how-grid">
-    <div>
-      <span class="eyebrow-line">Como funciona</span>
-      <div class="section-head" style="margin-bottom: 32px;">
-        <h2>Do cadastro à primeira turma rodando.</h2>
-        <p>Leva uma tarde pra configurar o Point inteiro — não semanas de implantação.</p>
-      </div>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num mono">1</div>
+  <div class="hero-celular" aria-hidden="true">
+    <div class="hero-bola"></div>
+    <div class="celular">
+      <div class="celular-tela">
+        <div class="cel-topo">
           <div>
-            <h3>Cadastre o Point</h3>
-            <p>Quadras, modalidades, categorias de nível e horário de funcionamento.</p>
+            <div class="cel-data">Quinta, 1 de outubro</div>
+            <div class="cel-titulo">Aulas de hoje</div>
           </div>
+          <span class="cel-avatar">LA</span>
         </div>
-        <div class="step">
-          <div class="step-num mono">2</div>
-          <div>
-            <h3>Convide professor e aluno</h3>
-            <p>Recebem por e-mail e WhatsApp, criam a senha e já entram direto na própria agenda.</p>
-          </div>
+        <div class="cel-filtros">
+          <span class="ativo">Todas</span><span>Beach tennis</span><span>Vôlei</span>
         </div>
-        <div class="step">
-          <div class="step-num mono">3</div>
-          <div>
-            <h3>Turmas rodam sozinhas</h3>
-            <p>Recorrência semanal, exceção por feriado, reposição de crédito — sem replanejar todo mês.</p>
-          </div>
+        <div class="cel-aula">
+          <div class="cel-hora"><b>07:00</b><small>60 min</small></div>
+          <div class="cel-info"><b>Beach tennis · Iniciante</b><small>Quadra 1 · Prof. Ana</small></div>
+          <span class="pilula vaga">2 vagas</span>
         </div>
-        <div class="step">
-          <div class="step-num mono">4</div>
-          <div>
-            <h3>Você acompanha, não digita</h3>
-            <p>Ocupação, cobranças e caixa num painel só, atualizado sozinho.</p>
-          </div>
+        <div class="cel-aula">
+          <div class="cel-hora"><b>08:00</b><small>60 min</small></div>
+          <div class="cel-info"><b>Vôlei de praia</b><small>Quadra 2 · Prof. Rafa</small></div>
+          <span class="pilula lotada">Lotada</span>
+        </div>
+        <div class="cel-aula">
+          <div class="cel-hora"><b>18:30</b><small>90 min</small></div>
+          <div class="cel-info"><b>Futevôlei · Intermediário</b><small>Quadra 3 · Prof. Léo</small></div>
+          <span class="pilula vaga">4 vagas</span>
+        </div>
+        <div class="cel-aula">
+          <div class="cel-hora"><b>20:00</b><small>60 min</small></div>
+          <div class="cel-info"><b>Beach tennis · Avançado</b><small>Quadra 1 · Prof. Ana</small></div>
+          <span class="pilula lotada">Lotada</span>
+        </div>
+        <div class="cel-checkins">
+          <div class="cel-checkins-linha"><span>Check-ins Wellhub · outubro</span><strong>38 de 41</strong></div>
+          <div class="barra"><i></i></div>
+          <small>3 alunos com check-in pendente · lembrete enviado</small>
         </div>
       </div>
     </div>
+  </div>
+</section>
 
-    <div class="wa-mock">
-      <div class="wa-mock-head"><span class="wa-dot"></span> WhatsApp — Point Beach Tennis</div>
-      <div class="wa-bubble">
-        Olá Maria! O Point Beach Tennis liberou seu acesso na plataforma OPoint.
-        <span class="wa-btn">↗ Confirmar acesso</span>
+<section class="faixa navy" aria-label="O que o OPoint faz">
+  <div class="wrap">
+    <span>Agenda</span><span class="ponto">●</span>
+    <span>Chamada</span><span class="ponto">●</span>
+    <span>Check-ins conciliados</span><span class="ponto">●</span>
+    <span>TotalPass <span class="em-breve">em breve</span></span><span class="ponto">●</span>
+    <span>Cobrança</span><span class="ponto">●</span>
+    <span>Multi-arena</span>
+  </div>
+</section>
+
+<section id="recursos" class="secao">
+  <div class="wrap recursos">
+    <div class="cabeca">
+      <span class="rotulo">Recursos</span>
+      <h2 class="h2">Menos planilha e grupo de WhatsApp. Mais tempo na quadra.</h2>
+    </div>
+    <div class="cards">
+      <article class="recurso">
+        <span class="recurso-icone limao"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></span>
+        <h3>Agenda por quadra</h3>
+        <p>Aulas, locações avulsas e manutenção numa grade só, dia a dia, com vagas e lotação de cada turma.</p>
+      </article>
+      <article class="recurso">
+        <span class="recurso-icone"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17 11l2 2 4-4"/></svg></span>
+        <h3>Chamada pelo professor</h3>
+        <p>O professor confirma a presença no celular durante a aula. É ela que conta as aulas do mês de cada aluno.</p>
+      </article>
+      <article class="recurso">
+        <span class="recurso-icone limao"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg></span>
+        <h3>Check-ins conferidos</h3>
+        <p>Os check-ins do Wellhub chegam sozinhos e o OPoint compara com as aulas. Ninguém fecha o mês devendo check-in.</p>
+      </article>
+      <article class="recurso">
+        <span class="recurso-icone"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg></span>
+        <h3>Cobrança no WhatsApp</h3>
+        <p>Régua automática antes e depois do vencimento, com link de pagamento Pix e baixa em um toque.</p>
+      </article>
+      <article class="recurso">
+        <span class="recurso-icone"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5"/></svg></span>
+        <h3>Caixa do dia</h3>
+        <p>Entradas e saídas por forma de pagamento e fechamento com conferência do dinheiro da gaveta.</p>
+      </article>
+      <article class="recurso">
+        <span class="recurso-icone"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg></span>
+        <h3>Convites e várias arenas</h3>
+        <p>Alunos e professores entram por convite com e-mail e senha, e usam o mesmo login em todas as arenas.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="checkins" class="secao navy">
+  <div class="wrap duas-colunas">
+    <div class="coluna-texto">
+      <span class="selo limao">Wellhub e TotalPass</span>
+      <h2 class="h2">No fim do mês, aulas e check-ins precisam bater. O OPoint confere por você.</h2>
+      <p class="lead">Aluno de benefício que esquece o check-in é aula que a arena não recebe. O OPoint compara a presença confirmada pelo professor com os check-ins que chegam do app do benefício e avisa quem está devendo, ainda dentro do mês.</p>
+      <div class="passos">
+        <div class="passo"><span class="passo-n">1</span><div><b>O professor faz a chamada</b><span>Cada presença confirmada vira uma aula no mês do aluno.</span></div></div>
+        <div class="passo"><span class="passo-n">2</span><div><b>O aluno faz check-in no app do benefício</b><span>Em qualquer dia. O check-in chega sozinho no OPoint e entra na conta.</span></div></div>
+        <div class="passo"><span class="passo-n">3</span><div><b>O OPoint confere o saldo</b><span>Aulas de um lado, check-ins do outro. Faltou check-in? Aluno e professor são avisados antes do mês fechar.</span></div></div>
+      </div>
+    </div>
+
+    <div class="conferencia">
+      <div class="conf-topo">
+        <div>
+          <div class="conf-sub">Arena Sol · outubro</div>
+          <div class="conf-titulo">Conferência de check-ins</div>
+        </div>
+        <span class="ao-vivo"><i></i>Recebendo check-ins</span>
+      </div>
+      <div class="conf-grade conf-cabeca"><span>Aluno</span><span>Aulas</span><span>Check-ins</span><span>Saldo</span></div>
+      <div class="conf-grade conf-linha"><div><b>Camila Duarte</b><small>Wellhub</small></div><strong>6</strong><strong>6</strong><span class="pilula dia">Em dia</span></div>
+      <div class="conf-grade conf-linha"><div><b>Rodrigo Pires</b><small>Wellhub</small></div><strong>6</strong><strong>4</strong><span class="pilula falta">Faltam 2</span></div>
+      <div class="conf-grade conf-linha"><div><b>Fernanda Lopes</b><small>Wellhub</small></div><strong>8</strong><strong>10</strong><span class="pilula adiantado">+2 adiantados</span></div>
+      <div class="conf-grade conf-linha"><div><b>Diego Castro</b><small>TotalPass · em breve</small></div><strong>5</strong><strong>5</strong><span class="pilula dia">Em dia</span></div>
+      <div class="conf-grade conf-linha"><div><b>Bruno Teixeira</b><small>Wellhub</small></div><strong>4</strong><strong>3</strong><span class="pilula falta">Falta 1</span></div>
+      <div class="nota">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 20px"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
+        <span>Quem está com saldo negativo recebe um lembrete no WhatsApp, e o professor vê o aviso na hora da chamada.</span>
       </div>
     </div>
   </div>
 </section>
 
-<section id="quem-usa">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow-line">Pra quem é</span>
-      <h2>Qualquer arena que vende hora de quadra e aula</h2>
-      <p>Se a sua agenda hoje vive no grupo de WhatsApp, o OPoint foi pensado pra você.</p>
+<section id="experimental" class="secao experimental">
+  <div class="wrap duas-colunas">
+    <div class="coluna-texto">
+      <span class="selo">Aula experimental</span>
+      <h2 class="h2">O aluno novo marca a primeira aula sozinho.</h2>
+      <p class="lead">Ele escolhe o dia e o horário com vaga, informa nome e WhatsApp e envia o pedido. O professor recebe a solicitação e confirma a aula com um toque.</p>
+      <div class="lista-check">
+        <span><svg class="check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Só aparecem horários com vaga de verdade</span>
+        <span><svg class="check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Professor aprova e o aluno é avisado no WhatsApp</span>
+        <span><svg class="check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Link para colocar no Instagram e no Google</span>
+      </div>
     </div>
-    <div class="who-row">
-      <span class="who-pill"><i class="dot" style="background:#0e9594"></i>Beach tennis</span>
-      <span class="who-pill"><i class="dot" style="background:#c97f12"></i>Futevôlei</span>
-      <span class="who-pill"><i class="dot" style="background:#f2542d"></i>Tênis</span>
-      <span class="who-pill"><i class="dot" style="background:#0e9594"></i>Padel</span>
-      <span class="who-pill"><i class="dot" style="background:#c97f12"></i>Futebol society</span>
-      <span class="who-pill"><i class="dot" style="background:#f2542d"></i>Funcional / cross</span>
-    </div>
-  </div>
-</section>
 
-<section class="cta-band">
-  <div class="wrap cta-inner">
-    <div>
-      <h2>Bora tirar a agenda do WhatsApp?</h2>
-      <p>Entre no seu painel e veja as turmas e quadras do seu Point organizadas de verdade.</p>
-    </div>
-    <a class="btn btn-primary" href="https://app.opoint.com.br">Entrar</a>
-  </div>
-</section>
-
-<footer id="contato">
-  <div class="wrap">
-    <div class="foot-grid">
+    <!-- Demonstração interativa: nada é enviado daqui. -->
+    <div class="exp-card" id="exp">
       <div>
-        <div class="foot-brand">
-          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-            <circle cx="23" cy="24" r="14" fill="none" stroke="#EAF1F4" stroke-width="7.5"/>
-            <circle cx="38" cy="39" r="7" fill="#F2542D"/>
-          </svg>
-          OPoint
+        <div class="conf-sub">Beach tennis · Iniciante · demonstração</div>
+        <div class="exp-titulo">Agende sua aula experimental</div>
+      </div>
+
+      <div class="exp-etapa" data-etapa="escolha">
+        <div class="exp-grupo">
+          <b>1. Escolha o dia</b>
+          <div class="exp-dias" id="exp-dias"></div>
         </div>
-        <p class="foot-note">Sistema de gestão pra arenas esportivas — quadras, turmas, matrículas e
-          pagamento num só lugar.</p>
+        <div class="exp-grupo">
+          <b>2. Escolha o horário</b>
+          <div class="exp-horas" id="exp-horas"></div>
+          <span class="exp-dica">Horários riscados já estão lotados.</span>
+        </div>
+        <div class="exp-resumo" id="exp-resumo-escolha" hidden>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+          <span class="exp-resumo-texto" style="flex: 1"></span>
+        </div>
+        <button type="button" class="btn btn-navy" id="exp-continuar" disabled>Continuar</button>
       </div>
-      <div class="foot-col">
-        <h4>Produto</h4>
-        <a href="#problema">O problema</a>
-        <a href="#recursos">Recursos</a>
-        <a href="#como-funciona">Como funciona</a>
-        <a href="#quem-usa">Pra quem é</a>
-      </div>
-      <div class="foot-col">
-        <h4>Contato</h4>
-        <a href="mailto:contato@opoint.com.br">contato@opoint.com.br</a>
-        <a href="tel:+5511972021630">(11) 97202-1630</a>
-      </div>
-      <div class="foot-col">
-        <h4>Empresa</h4>
-        <span>Patrimônio Real Holding Ltda</span>
-        <span>CNPJ 58.173.586/0001-76</span>
+
+      <form class="exp-etapa" data-etapa="dados" id="exp-form" hidden>
+        <div class="exp-resumo">
+          <span class="exp-resumo-texto"></span>
+          <button type="button" class="link-btn" id="exp-trocar">Trocar horário</button>
+        </div>
+        <b style="font-size: 14px">3. Seus dados</b>
+        <div class="campo">
+          <label for="exp-nome">Nome</label>
+          <input id="exp-nome" type="text" placeholder="Seu nome completo" autocomplete="name">
+        </div>
+        <div class="campo">
+          <label for="exp-whats">WhatsApp</label>
+          <input id="exp-whats" type="tel" placeholder="(31) 9 0000-0000" autocomplete="tel">
+          <span class="exp-dica">O professor vai confirmar a aula por este número.</span>
+        </div>
+        <button type="submit" class="btn btn-limao" id="exp-solicitar" disabled>Solicitar aula experimental</button>
+      </form>
+
+      <div class="exp-feito" data-etapa="feito" hidden>
+        <span class="exp-feito-icone"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <h3 id="exp-feito-titulo">Pedido enviado!</h3>
+        <p class="exp-resumo-texto"></p>
+        <div class="nota">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 22px"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
+          <span id="exp-feito-nota"></span>
+        </div>
+        <button type="button" class="btn btn-contorno" id="exp-outro">Solicitar outro horário</button>
       </div>
     </div>
-    <div class="foot-bottom">
-      <span>© 2026 OPoint. Todos os direitos reservados.</span>
-      <span>Feito para donos de arena esportiva no Brasil.</span>
+  </div>
+</section>
+
+<section id="como-funciona" class="secao">
+  <div class="wrap recursos">
+    <div class="cabeca">
+      <span class="rotulo">Como funciona</span>
+      <h2 class="h2">Do cadastro à primeira aula em três jogadas.</h2>
     </div>
+    <div class="jogadas">
+      <div class="jogada">
+        <span>01</span>
+        <h3>Monte suas turmas</h3>
+        <p>Cadastre quadras, professores, horários e limite de alunos por aula.</p>
+      </div>
+      <div class="jogada">
+        <span>02</span>
+        <h3>Convide alunos e professores</h3>
+        <p>Cada um recebe o convite e entra com e-mail e senha. Quem já usa o OPoint em outra arena entra com o mesmo login.</p>
+      </div>
+      <div class="jogada">
+        <span>03</span>
+        <h3>Deixe o OPoint conferir</h3>
+        <p>O professor faz a chamada, os check-ins chegam sozinhos e o OPoint avisa no WhatsApp quem precisa de check-in ou está com a mensalidade atrasada.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="visoes" class="secao visoes">
+  <div class="wrap recursos">
+    <div class="cabeca">
+      <span class="rotulo">Para quem</span>
+      <h2 class="h2">Um app, três visões. Cada um vê o que precisa.</h2>
+    </div>
+    <div class="cards">
+      <article class="visao">
+        <span class="tag">Aluno</span>
+        <h3>Reserva, check-in e saldo do mês na palma da mão</h3>
+        <div class="lista-check">
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Reserva aulas com vaga e entra na fila de espera das lotadas</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Vê quantas aulas fez e quantos check-ins faltam no mês</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Recebe lembrete para não esquecer o check-in</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Agenda a aula experimental sem precisar ligar</span>
+        </div>
+      </article>
+      <article class="visao escura">
+        <span class="tag">Professor</span>
+        <h3>Chamada no celular e turma sempre avisada</h3>
+        <div class="lista-check">
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4F04A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Agenda do dia em todas as arenas onde dá aula</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4F04A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Chamada com um toque por aluno</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4F04A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Alerta de quem está com check-in pendente</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4F04A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Confirma ou recusa pedidos de aula experimental</span>
+        </div>
+      </article>
+      <article class="visao limao">
+        <span class="tag">Arena</span>
+        <h3>Quadras, financeiro e benefícios sob controle</h3>
+        <div class="lista-check">
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Agenda por quadra com aulas, locações e manutenção</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Conferência de check-ins com fechamento mensal</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Cobrança com régua automática no WhatsApp e caixa do dia</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Relatórios de ocupação, receita e professores</span>
+        </div>
+      </article>
+    </div>
+    <div class="multi">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>
+      <span><strong>Várias arenas, um login.</strong> O mesmo aluno ou professor pode estar em mais de uma arena e troca entre elas pelo topo do app. Pode até ser aluno numa e professor em outra.</span>
+    </div>
+  </div>
+</section>
+
+<section id="planos" class="secao">
+  <div class="wrap recursos">
+    <div class="cabeca">
+      <span class="rotulo">Planos</span>
+      <h2 class="h2">Comece pequeno. Cresça junto com a sua turma.</h2>
+    </div>
+    <div class="cards cards-2">
+      <div class="plano">
+        <h3>Professor</h3>
+        <div class="plano-preco">Sob consulta</div>
+        <p>Para quem dá aula sozinho e quer organizar alunos e horários.</p>
+        <a class="btn btn-contorno" href="#comecar">Começar</a>
+      </div>
+      <div class="plano escuro">
+        <div class="plano-topo">
+          <h3>Arena</h3>
+          <span class="pilula">Mais escolhido</span>
+        </div>
+        <div class="plano-preco">Sob consulta</div>
+        <p>Várias quadras e professores, conferência de check-ins Wellhub (TotalPass em breve), cobrança automática no WhatsApp e caixa do dia.</p>
+        <a class="btn btn-limao" href="#comecar">Começar</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="duvidas" class="duvidas">
+  <div class="cabeca">
+    <span class="rotulo">Dúvidas</span>
+    <h2 class="h2">Perguntas frequentes</h2>
+  </div>
+  <div class="faq">
+    <div class="faq-item aberto">
+      <button type="button" aria-expanded="true"><span>O aluno precisa fazer o check-in em cada aula?</span><span class="faq-sinal" aria-hidden="true">−</span></button>
+      <p>Não. O check-in no Wellhub ou no TotalPass pode ser feito em qualquer dia. O que importa é que, no fim do mês, a quantidade de check-ins seja igual à quantidade de aulas confirmadas pelo professor. O OPoint mostra esse saldo para o aluno, o professor e a arena.</p>
+    </div>
+    <div class="faq-item">
+      <button type="button" aria-expanded="false"><span>Como o OPoint sabe que o aluno fez check-in?</span><span class="faq-sinal" aria-hidden="true">+</span></button>
+      <p hidden>O app do benefício avisa o OPoint automaticamente a cada check-in feito na sua arena. Não precisa digitar nada nem conferir planilha.</p>
+    </div>
+    <div class="faq-item">
+      <button type="button" aria-expanded="false"><span>Quem confirma a presença na aula?</span><span class="faq-sinal" aria-hidden="true">+</span></button>
+      <p hidden>O professor, pelo celular, na hora da chamada. Ele também vê quais alunos de benefício estão com check-in pendente.</p>
+    </div>
+    <div class="faq-item">
+      <button type="button" aria-expanded="false"><span>Como alunos e professores entram no app?</span><span class="faq-sinal" aria-hidden="true">+</span></button>
+      <p hidden>A arena envia um convite. A pessoa entra com e-mail e senha e, se já usa o OPoint em outra arena, só vincula a nova arena à mesma conta.</p>
+    </div>
+    <div class="faq-item">
+      <button type="button" aria-expanded="false"><span>O OPoint funciona com o TotalPass?</span><span class="faq-sinal" aria-hidden="true">+</span></button>
+      <p hidden>A integração com o TotalPass está chegando. Hoje o OPoint já recebe e confere os check-ins do Wellhub.</p>
+    </div>
+  </div>
+</section>
+
+<section id="comecar" class="comecar">
+  <div class="comecar-caixa">
+    <div class="comecar-texto">
+      <h2>Bora pro ponto?</h2>
+      <p>Deixe seu nome e WhatsApp e a gente libera seu acesso ao OPoint.</p>
+      <div class="contato">
+        <span>WhatsApp <strong>(11) 97202-1630</strong></span>
+        <span>E-mail <a href="mailto:contato@opoint.com.br"><strong>contato@opoint.com.br</strong></a></span>
+      </div>
+    </div>
+    <!-- Sem backend de leads: o envio abre uma conversa no WhatsApp de
+         contato já com nome e número preenchidos. -->
+    <form id="form-acesso">
+      <div class="campo">
+        <label for="nome">Seu nome</label>
+        <input id="nome" type="text" placeholder="Como podemos te chamar?" autocomplete="name" required>
+      </div>
+      <div class="campo">
+        <label for="whats">WhatsApp</label>
+        <input id="whats" type="tel" placeholder="(31) 9 0000-0000" autocomplete="tel" required>
+      </div>
+      <button type="submit" class="btn btn-navy">Quero meu acesso</button>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer class="rodape">
+  <div class="wrap">
+    <span class="marca" aria-label="OPoint">
+      <svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#F6F1E7" stroke-width="7"/><circle cx="34" cy="34" r="10" fill="#D4F04A" stroke="#0B2A3C" stroke-width="3.5"/><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#F6F1E7" stroke-width="2.2" stroke-linecap="round"/></svg><span>Point</span>
+    </span>
+    <span class="rodape-slogan">Sua arena no ponto.</span>
+    <div class="rodape-links">
+      <a href="https://app.opoint.com.br">Entrar</a>
+      <a href="#comecar">Contato</a>
+      <a href="mailto:contato@opoint.com.br">contato@opoint.com.br</a>
+    </div>
+    <small>© 2026 OPoint</small>
   </div>
 </footer>
 
+<script>
+(function () {
+  // FAQ: um aberto por vez, como no protótipo.
+  var itens = document.querySelectorAll(".faq-item");
+  itens.forEach(function (item) {
+    item.querySelector("button").addEventListener("click", function () {
+      var abrir = !item.classList.contains("aberto");
+      itens.forEach(function (outro) {
+        outro.classList.remove("aberto");
+        outro.querySelector("button").setAttribute("aria-expanded", "false");
+        outro.querySelector(".faq-sinal").textContent = "+";
+        outro.querySelector("p").hidden = true;
+      });
+      if (abrir) {
+        item.classList.add("aberto");
+        item.querySelector("button").setAttribute("aria-expanded", "true");
+        item.querySelector(".faq-sinal").textContent = "−";
+        item.querySelector("p").hidden = false;
+      }
+    });
+  });
+
+  // Demonstração da aula experimental.
+  var dias = [
+    { wd: "Seg", n: "5", full: "segunda, 5/10", times: ["07:00", "08:00", "18:00", "19:00", "20:00", "21:00"], lotado: ["08:00", "19:00"] },
+    { wd: "Ter", n: "6", full: "terça, 6/10", times: ["06:30", "07:30", "17:00", "18:00", "19:30", "20:30"], lotado: ["18:00"] },
+    { wd: "Qua", n: "7", full: "quarta, 7/10", times: ["07:00", "08:00", "18:00", "19:00", "20:00", "21:00"], lotado: ["07:00", "20:00", "21:00"] },
+    { wd: "Qui", n: "8", full: "quinta, 8/10", times: ["06:30", "07:30", "17:00", "18:00", "19:30", "20:30"], lotado: [] },
+    { wd: "Sáb", n: "10", full: "sábado, 10/10", times: ["08:00", "09:00", "10:00", "11:00", "15:00", "16:00"], lotado: ["09:00", "10:00"] }
+  ];
+  var exp = document.getElementById("exp");
+  var elDias = document.getElementById("exp-dias");
+  var elHoras = document.getElementById("exp-horas");
+  var continuar = document.getElementById("exp-continuar");
+  var nome = document.getElementById("exp-nome");
+  var whats = document.getElementById("exp-whats");
+  var solicitar = document.getElementById("exp-solicitar");
+  var estado = { dia: 0, hora: null };
+
+  function resumo() {
+    var d = dias[estado.dia];
+    return estado.hora ? "Aula experimental: " + d.full + " às " + estado.hora + ", Quadra 1 · Prof. Ana" : "";
+  }
+  function etapa(nomeEtapa) {
+    exp.querySelectorAll("[data-etapa]").forEach(function (el) { el.hidden = el.dataset.etapa !== nomeEtapa; });
+    exp.querySelectorAll(".exp-resumo-texto").forEach(function (el) { el.textContent = resumo(); });
+  }
+  function desenhar() {
+    elDias.innerHTML = "";
+    dias.forEach(function (d, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "exp-dia" + (i === estado.dia ? " ativo" : "");
+      b.innerHTML = "<small>" + d.wd + "</small><b>" + d.n + "</b>";
+      b.addEventListener("click", function () { estado.dia = i; estado.hora = null; desenhar(); });
+      elDias.appendChild(b);
+    });
+    elHoras.innerHTML = "";
+    var d = dias[estado.dia];
+    d.times.forEach(function (t) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = t;
+      b.className = "exp-hora" + (t === estado.hora ? " ativo" : "");
+      b.disabled = d.lotado.indexOf(t) > -1;
+      b.addEventListener("click", function () { estado.hora = t; desenhar(); });
+      elHoras.appendChild(b);
+    });
+    continuar.disabled = !estado.hora;
+    document.getElementById("exp-resumo-escolha").hidden = !estado.hora;
+    exp.querySelectorAll(".exp-resumo-texto").forEach(function (el) { el.textContent = resumo(); });
+  }
+  function validar() { solicitar.disabled = !(nome.value.trim() && whats.value.trim()); }
+
+  continuar.addEventListener("click", function () { if (estado.hora) etapa("dados"); });
+  document.getElementById("exp-trocar").addEventListener("click", function () { etapa("escolha"); });
+  nome.addEventListener("input", validar);
+  whats.addEventListener("input", validar);
+  document.getElementById("exp-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (solicitar.disabled) return;
+    document.getElementById("exp-feito-titulo").textContent = "Pedido enviado, " + nome.value.trim().split(" ")[0] + "!";
+    document.getElementById("exp-feito-nota").textContent =
+      "Aguardando confirmação do professor. Você vai receber a resposta no WhatsApp " + whats.value.trim() + ".";
+    etapa("feito");
+  });
+  document.getElementById("exp-outro").addEventListener("click", function () {
+    estado.hora = null;
+    nome.value = "";
+    whats.value = "";
+    validar();
+    desenhar();
+    etapa("escolha");
+  });
+  desenhar();
+
+  // "Bora pro ponto?": abre o WhatsApp de contato com a mensagem pronta.
+  document.getElementById("form-acesso").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var n = document.getElementById("nome").value.trim();
+    var w = document.getElementById("whats").value.trim();
+    var msg = "Olá! Sou " + n + " e quero testar o OPoint. Meu WhatsApp: " + w;
+    window.open("https://wa.me/5511972021630?text=" + encodeURIComponent(msg), "_blank", "noopener");
+  });
+})();
+</script>
 </body>
 </html>

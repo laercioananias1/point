@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import type { ConviteAdmin, PointRanking } from "../../api/types";
+import type { ConviteAdmin, PlataformaPainel, PointRanking } from "../../api/types";
 import { useAuth, type User } from "../../auth/AuthContext";
 import { useConfirm } from "../../components/ConfirmModal";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Layout } from "../../components/Layout";
-import { BotaoFlutuante } from "../../components/BotaoFlutuante";
 import { formatarCelular, formatarReais } from "../../lib/formato";
 
 /** Points da plataforma (pedido do usuário, 2026-08-26: "pode fazer" — a
@@ -22,6 +22,7 @@ export default function DonoAppPoints() {
   const location = useLocation();
   const criado = (location.state as { criado?: string } | null)?.criado;
   const [ranking, setRanking] = useState<PointRanking[]>([]);
+  const [painel, setPainel] = useState<PlataformaPainel | null>(null);
   const [convites, setConvites] = useState<ConviteAdmin[]>([]);
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -31,12 +32,14 @@ export default function DonoAppPoints() {
   const carregar = useCallback(async () => {
     setErro(null);
     try {
-      const [rankingRes, convitesRes] = await Promise.all([
+      const [rankingRes, convitesRes, painelRes] = await Promise.all([
         api.get<PointRanking[]>("/points/ranking"),
         api.get<ConviteAdmin[]>("/convites-admin"),
+        api.get<PlataformaPainel>("/plataforma/painel"),
       ]);
       setRanking(rankingRes);
       setConvites(convitesRes);
+      setPainel(painelRes);
       setPronto(true);
     } catch {
       setErro("Não foi possível carregar os Points. Tente novamente.");
@@ -71,81 +74,122 @@ export default function DonoAppPoints() {
     }
   }
 
+  // Dados do painel da plataforma (admins, turmas, recebido no mês) por Point.
+  const detalhes = new Map((painel?.points ?? []).map((p) => [p.id, p]));
+
   return (
     <Layout>
-      <h1>Points ({ranking.length})</h1>
+      <CabecalhoPagina
+        titulo="Points"
+        contexto={`Plataforma · ${ranking.length} ${ranking.length === 1 ? "Point" : "Points"}`}
+        novo={{ para: "/dono-app/points/criar", rotulo: "Novo Point" }}
+      />
 
       {erro && <p className="form-error">{erro}</p>}
       {criado && <p className="form-success">Point "{criado}" criado — convite de admin enviado.</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
       {pronto && (
-        <>
-          <section className="section">
-            {ranking.length === 0 ? (
-              <p className="empty-state">Nenhum Point cadastrado ainda.</p>
-            ) : (
-              <div className="card-list">
-                {ranking.map((p, i) => (
-                  <div className="item-card" key={p.point_id} style={{ alignItems: "flex-start" }}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">
-                        #{i + 1} · {p.nome}
+        <div className="points-corpo">
+          {ranking.length === 0 ? (
+            <p className="alunos-card alunos-vazio">Nenhum Point cadastrado ainda — crie o primeiro em "+ Novo Point".</p>
+          ) : (
+            <div className="points-grade">
+              {ranking.map((p) => {
+                const d = detalhes.get(p.point_id);
+                const semAdmin = d !== undefined && d.admins === 0;
+                return (
+                  <article key={p.point_id} className="alunos-card points-card">
+                    <div className="points-card-topo">
+                      <div>
+                        <h2 className="points-nome">{p.nome}</h2>
+                        {d && (
+                          <span className="alunos-sub">
+                            desde{" "}
+                            {new Date(d.criado_em + "T00:00").toLocaleDateString("pt-BR", {
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      <span className={semAdmin ? "status-pill status-risk" : "status-pill status-good"}>
+                        {semAdmin ? "Sem admin" : "Com admin"}
                       </span>
-                      <span className="item-card-subtitle">
-                        {p.professores_ativos} professor(es) · {p.alunos_ativos} aluno(s) ativo(s)
-                      </span>
-                      <span className="item-card-subtitle">
-                        recebido {formatarReais(p.total_recebido)}
-                      </span>
-                      {convidando === p.point_id && (
-                        <div style={{ marginTop: 10 }}>
-                          <ConvidarAdminForm
-                            pointId={p.point_id}
-                            onEnviado={() => {
-                              setConvidando(null);
-                              carregar();
-                            }}
-                          />
-                        </div>
-                      )}
                     </div>
-                    <div className="item-card-actions">
+
+                    <div className="points-numeros">
+                      <div>
+                        <strong>{p.alunos_ativos}</strong>
+                        <span>alunos</span>
+                      </div>
+                      <div>
+                        <strong>{p.professores_ativos}</strong>
+                        <span>{p.professores_ativos === 1 ? "professor" : "professores"}</span>
+                      </div>
+                      <div>
+                        <strong>{d?.turmas ?? "–"}</strong>
+                        <span>turmas</span>
+                      </div>
+                    </div>
+
+                    <div className="points-recebido">
+                      <span>
+                        <span className="alunos-sub">Recebido no mês</span>
+                        <strong>{formatarReais(d?.recebido_mes ?? 0)}</strong>
+                      </span>
+                      <span>
+                        <span className="alunos-sub">Total recebido</span>
+                        <strong>{formatarReais(p.total_recebido)}</strong>
+                      </span>
+                    </div>
+
+                    <div className="points-acoes">
                       <button
-                        className="secondary"
+                        type="button"
+                        className="cobr-btn cobr-btn-pagar"
                         disabled={entrandoComo === p.point_id}
                         onClick={() => handleEntrarComoSuporte(p.point_id)}
                       >
                         {entrandoComo === p.point_id ? "Entrando..." : "Entrar como suporte"}
                       </button>
                       <button
-                        className="secondary"
+                        type="button"
+                        className="cobr-btn"
                         onClick={() => setConvidando(convidando === p.point_id ? null : p.point_id)}
                       >
                         {convidando === p.point_id ? "Fechar" : "Convidar admin"}
                       </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
 
-          <BotaoFlutuante to="/dono-app/points/criar" rotulo="Criar Point" />
+                    {convidando === p.point_id && (
+                      <ConvidarAdminForm
+                        pointId={p.point_id}
+                        onEnviado={() => {
+                          setConvidando(null);
+                          carregar();
+                        }}
+                      />
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
 
-          <section className="section">
-            <h2>Convites de admin pendentes ({convitesPendentes.length})</h2>
+          <section className="alunos-card">
+            <h2 className="chk-secao-titulo">Convites de admin pendentes</h2>
             {convitesPendentes.length === 0 ? (
-              <p className="empty-state">Nenhum convite aguardando aceite.</p>
+              <p className="alunos-sub">Nenhum convite aguardando aceite.</p>
             ) : (
-              <div className="card-list">
+              <ul className="perfil-lista">
                 {convitesPendentes.map((c) => (
                   <ConviteAdminPendenteRow key={c.id} convite={c} onMudanca={carregar} />
                 ))}
-              </div>
+              </ul>
             )}
           </section>
-        </>
+        </div>
       )}
     </Layout>
   );
@@ -183,7 +227,7 @@ function ConvidarAdminForm({ pointId, onEnviado }: { pointId: number; onEnviado:
   }
 
   return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ maxWidth: "none" }}>
+    <form className="points-convite" onSubmit={handleSubmit}>
       <div className="form-row">
         <label>
           Nome
@@ -249,25 +293,26 @@ function ConviteAdminPendenteRow({
   }
 
   return (
-    <div className="item-card">
+    <li>
       {modal}
-      <div className="item-card-info">
-        <span className="item-card-title">
+      <span className="alunos-pessoa-texto">
+        <span className="alunos-nome">
           {convite.nome} · {convite.point.nome}
         </span>
-        <span className="item-card-subtitle">
+        <span className="alunos-sub">
           {convite.celular} · {convite.email} · expira em{" "}
           {new Date(convite.expira_em + "T00:00").toLocaleDateString("pt-BR")}
+          {convite.expirado && <span className="status-pill status-risk points-expirado">Expirado</span>}
         </span>
-      </div>
-      <div className="item-card-actions">
-        <button className="secondary" onClick={copiarLink}>
+      </span>
+      <span className="alunos-celula-acoes">
+        <button type="button" className="alunos-acao" onClick={copiarLink}>
           {copiado ? "Copiado!" : "Copiar link"}
         </button>
-        <button className="secondary" disabled={cancelando} onClick={cancelar}>
-          {cancelando ? "Cancelando..." : "Cancelar"}
+        <button type="button" className="alunos-acao" disabled={cancelando} onClick={cancelar}>
+          {cancelando ? "Cancelando..." : "Cancelar convite"}
         </button>
-      </div>
-    </div>
+      </span>
+    </li>
   );
 }

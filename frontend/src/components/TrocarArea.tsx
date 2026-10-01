@@ -30,30 +30,15 @@ export function TrocarArea({ papelAtual }: { papelAtual: Role }) {
   }
 
   return (
-    <section className="section">
-      <h2>Trocar de área</h2>
-      <p className="empty-state" style={{ paddingTop: 0 }}>
-        Sua conta também tem acesso a outra área — troca sem precisar sair e entrar de novo.
-      </p>
-      <div className="card-list">
+    <section className="alunos-card perfil-card">
+      <h2 className="chk-secao-titulo">Trocar de área</h2>
+      <p className="alunos-sub">Sua conta também tem acesso a outra área — troca sem sair e entrar de novo.</p>
+      <div className="perfil-areas">
         {outrosPapeis.map((papel) => (
-          <div
-            key={papel}
-            className="item-card item-card-clickable"
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate(ROTA_POR_PAPEL[papel])}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") navigate(ROTA_POR_PAPEL[papel]);
-            }}
-          >
-            <div className="item-card-info">
-              <span className="item-card-title">{ROTULO_POR_PAPEL[papel]}</span>
-            </div>
-            <span aria-hidden="true">
-              <Icon name="chevron-right" />
-            </span>
-          </div>
+          <button key={papel} type="button" className="perfil-area" onClick={() => navigate(ROTA_POR_PAPEL[papel])}>
+            {ROTULO_POR_PAPEL[papel]}
+            <Icon name="chevron-right" size={18} />
+          </button>
         ))}
       </div>
     </section>

@@ -1,43 +1,29 @@
 import { useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import { AjudaIcone } from "../../components/AjudaIcone";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Layout } from "../../components/Layout";
-import { FotoPerfil } from "../../components/FotoPerfil";
+import { PerfilTopo } from "../../components/PerfilTopo";
 import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 
 /** Perfil do admin do Point (pedido do usuário, 2026-08-25: "seguindo o
  * mesmo padrão" — virou aba própria). Só dados de quem administra — o "Meu
- * Point" (nome/endereço/banners) saiu daqui (pedido do usuário, 2026-09-01:
- * "na tela do adm tb mostra o cabecalho q tem no professor e os dados do
- * point embaixo com as imagens") e foi pra Início, mesmo tratamento já
- * dado ao professor (pedido do usuário, 2026-08-30: "retira do perfil") —
- * não repete a mesma informação em duas telas. */
+ * Point" (nome/endereço/banners) foi pra Início (pedido do usuário,
+ * 2026-09-01), pra não repetir a mesma informação em duas telas. Layout do
+ * kit (pedido do usuário, 2026-10-01): topo com foto + cards. */
 export default function AdminPointPerfil() {
   const { user, atualizarUser } = useAuth();
 
   return (
     <Layout>
-      <h1>Perfil</h1>
-
-      <section className="section">
-        <h2>Minha conta</h2>
-        <div className="item-card" style={{ alignItems: "flex-start" }}>
-          <div className="item-card-info">
-            <span className="item-card-title">{user?.nome}</span>
-            <span className="item-card-subtitle">Admin do Point</span>
-          </div>
-        </div>
-      </section>
-
-      {!user?.roles.includes("professor") && <VirarProfessorSection onVirou={atualizarUser} />}
-
-      <FotoPerfil />
-
-      <TemaToggle />
-
-      <TrocarArea papelAtual="admin_point" />
+      <CabecalhoPagina titulo="Perfil" contexto="Minha conta" />
+      <PerfilTopo papel="Admin do Point" />
+      <div className="perfil-grade">
+        {!user?.roles.includes("professor") && <VirarProfessorCard onVirou={atualizarUser} />}
+        <TemaToggle />
+        <TrocarArea papelAtual="admin_point" />
+      </div>
     </Layout>
   );
 }
@@ -45,10 +31,9 @@ export default function AdminPointPerfil() {
 /** Admin virar professor do próprio Point sem convite (pedido do usuário,
  * 2026-09-01: "isso mesmo, quero que aciona sem ter q enviar convite" —
  * caso comum de Point pequeno onde o dono também dá aula). Ativa na hora
- * com nome/celular/e-mail da própria conta (repasse saiu do sistema,
- * 2026-09-20, então não há mais nada a preencher). Some sozinho depois (a
- * seção só aparece pra quem ainda não tem o papel professor). */
-function VirarProfessorSection({ onVirou }: { onVirou: () => Promise<void> }) {
+ * com nome/celular/e-mail da própria conta. Some sozinho depois (o card só
+ * aparece pra quem ainda não tem o papel professor). */
+function VirarProfessorCard({ onVirou }: { onVirou: () => Promise<void> }) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -66,13 +51,13 @@ function VirarProfessorSection({ onVirou }: { onVirou: () => Promise<void> }) {
   }
 
   return (
-    <section className="section">
-      <h2 style={{ display: "inline-flex", alignItems: "center" }}>
-        Também dar aulas nesse Point
-        <AjudaIcone texto="Ativa na hora, sem convite — usa seu próprio nome, celular e e-mail." />
-      </h2>
+    <section className="alunos-card perfil-card">
+      <h2 className="chk-secao-titulo">Também dar aulas nesse Point</h2>
+      <p className="alunos-sub">
+        Ativa na hora, sem convite — usa seu próprio nome, celular e e-mail. Depois é só criar suas turmas.
+      </p>
       {erro && <p className="form-error">{erro}</p>}
-      <button type="button" className="secondary" disabled={enviando} onClick={virarProfessor}>
+      <button type="button" className="secondary perfil-card-botao" disabled={enviando} onClick={virarProfessor}>
         {enviando ? "Ativando..." : "Virar professor deste Point"}
       </button>
     </section>

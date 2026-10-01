@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import type { IntegracaoLog, IntegracaoNome } from "../../api/types";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Icon, Layout } from "../../components/Layout";
 
 type FiltroIntegracao = "todas" | IntegracaoNome;
@@ -49,9 +49,10 @@ function dataHora(iso: string): string {
  * Cada linha é só uma linha, em colunas (pedido do usuário, 2026-09-29:
  * "vai ter muitas requisições e isso vai tornar uma tela de rolagem muito
  * grande... deixe com colunas de integrador, data, função, status") — a
- * mensagem e o request/response completo só abrem num popup ao clicar. */
+ * mensagem e o request/response completo só abrem num popup ao clicar.
+ * Layout do kit (pedido do usuário, 2026-10-01): resumo por integração,
+ * filtros em pílula e a tabela num card. */
 export default function DonoAppIntegracoes() {
-  const navigate = useNavigate();
   const [logs, setLogs] = useState<IntegracaoLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -80,95 +81,124 @@ export default function DonoAppIntegracoes() {
   }, [carregar]);
 
   const totalErros = logs.filter((l) => !l.sucesso).length;
+  // Resumo por integração da lista carregada (cada card também filtra).
+  const resumo = FILTROS.filter((f) => f.valor !== "todas").map((f) => {
+    const daIntegracao = logs.filter((l) => l.integracao === f.valor);
+    return {
+      valor: f.valor,
+      rotulo: f.rotulo,
+      total: daIntegracao.length,
+      erros: daIntegracao.filter((l) => !l.sucesso).length,
+    };
+  });
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/dono-app")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Logs de integrações</h1>
-      </div>
-
-      <p className="cobranca-subtitulo">
-        WhatsApp, e-mail, Wellhub e TotalPass — cada chamada que falha ou dá certo fica registrada
-        aqui, os 200 mais recentes por filtro. Clique numa linha pra ver os detalhes.
+      <CabecalhoPagina titulo="Logs de integrações" contexto="Plataforma" />
+      <p className="alunos-sub logs-intro">
+        WhatsApp, e-mail, Wellhub e TotalPass — cada chamada que falha ou dá certo fica registrada aqui, as 200
+        mais recentes por filtro. Clique numa linha pra ver a requisição e a resposta.
       </p>
 
-      <div className="caixa-filtros">
-        <div className="toggle-grid">
-          {FILTROS.map((f) => (
-            <button
-              key={f.valor}
-              type="button"
-              className={`toggle-chip${filtro === f.valor ? " active" : ""}`}
-              onClick={() => setFiltro(f.valor)}
-            >
-              {f.rotulo}
+      {filtro === "todas" && !loading && (
+        <div className="logs-resumo">
+          {resumo.map((r) => (
+            <button key={r.valor} type="button" className="logs-resumo-card" onClick={() => setFiltro(r.valor)}>
+              <span className={`plat-status ${r.erros > 0 ? "erro" : r.total > 0 ? "ok" : "parado"}`} aria-hidden="true" />
+              <span className="logs-resumo-texto">
+                <strong>{r.rotulo}</strong>
+                <span className="alunos-sub">
+                  {r.total === 0
+                    ? "sem chamadas na lista"
+                    : `${r.total} ${r.total === 1 ? "chamada" : "chamadas"}${r.erros > 0 ? ` · ${r.erros} ${r.erros === 1 ? "erro" : "erros"}` : ""}`}
+                </span>
+              </span>
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className={`toggle-chip${somenteErros ? " active" : ""}`}
-          onClick={() => setSomenteErros((atual) => !atual)}
-        >
-          Só erros
-        </button>
-      </div>
+      )}
 
-      {erro && <p className="form-error">{erro}</p>}
-      {loading && <p className="empty-state">Carregando...</p>}
-
-      {!loading && (
-        <>
-          {!somenteErros && (
-            <p className="cobranca-auto" style={{ marginBottom: 16 }}>
-              <Icon name={totalErros > 0 ? "flag" : "check-circle"} size={15} />
-              <span>
-                {totalErros === 0
-                  ? "Nenhum erro nessa lista."
-                  : `${totalErros} com erro nessa lista.`}
-              </span>
-            </p>
+      <section className="alunos-card logs-card">
+        <div className="logs-filtros">
+          <div className="agenda-passos" role="tablist" aria-label="Integração">
+            {FILTROS.map((f) => (
+              <button
+                key={f.valor}
+                type="button"
+                role="tab"
+                aria-selected={filtro === f.valor}
+                className={filtro === f.valor ? "ativo" : ""}
+                onClick={() => setFiltro(f.valor)}
+              >
+                {f.rotulo}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={somenteErros}
+            className={somenteErros ? "logs-so-erros ativo" : "logs-so-erros"}
+            onClick={() => setSomenteErros((atual) => !atual)}
+          >
+            <Icon name="flag" size={14} /> Só erros
+          </button>
+          {!loading && !somenteErros && (
+            <span className={totalErros > 0 ? "logs-contagem erro" : "logs-contagem"}>
+              {totalErros === 0 ? "Nenhum erro nessa lista" : `${totalErros} com erro nessa lista`}
+            </span>
           )}
+        </div>
 
-          {logs.length === 0 ? (
-            <p className="empty-state">Nenhum log com esses filtros.</p>
+        {erro && <p className="form-error">{erro}</p>}
+        {loading && <p className="alunos-vazio">Carregando...</p>}
+
+        {!loading &&
+          (logs.length === 0 ? (
+            <p className="alunos-vazio">Nenhum log com esses filtros.</p>
           ) : (
-            <div className="log-tabela">
-              <div className="log-linha log-linha-cabecalho">
-                <span>Integração</span>
-                <span className="log-col-point">Point</span>
-                <span>Data</span>
-                <span>Função</span>
-                <span>Status</span>
+            <div className="alunos-tabela" role="table" aria-label="Logs de integrações">
+              <div className="alunos-linha logs-grade alunos-cabecalho" role="row">
+                <span role="columnheader">Integração</span>
+                <span role="columnheader">Point</span>
+                <span role="columnheader">Data</span>
+                <span role="columnheader">Função</span>
+                <span role="columnheader">Mensagem</span>
+                <span role="columnheader">Status</span>
               </div>
               {logs.map((log) => (
                 <button
                   type="button"
-                  className="log-linha"
                   key={log.id}
+                  role="row"
+                  className={log.sucesso ? "alunos-linha logs-grade logs-linha" : "alunos-linha logs-grade logs-linha com-erro"}
                   onClick={() => setLogAberto(log)}
                 >
-                  <span>{ROTULO_INTEGRACAO[log.integracao]}</span>
-                  <span className="log-col-point">{log.point_nome ?? "—"}</span>
-                  <span>{dataHora(log.criado_em)}</span>
-                  <span>{log.evento}</span>
-                  <span className={`status-pill ${log.sucesso ? "status-good" : "status-risk"}`}>
-                    {log.sucesso ? "Sucesso" : "Erro"}
+                  <span role="cell" className="alunos-nome">
+                    {ROTULO_INTEGRACAO[log.integracao]}
+                  </span>
+                  <span role="cell" data-rotulo="Point">
+                    {log.point_nome ?? "—"}
+                  </span>
+                  <span role="cell" data-rotulo="Data">
+                    {dataHora(log.criado_em)}
+                  </span>
+                  <span role="cell" data-rotulo="Função" className="logs-evento">
+                    {log.evento}
+                  </span>
+                  <span role="cell" data-rotulo="Mensagem" className="alunos-sub logs-mensagem">
+                    {log.mensagem}
+                  </span>
+                  <span role="cell" data-rotulo="Status">
+                    <span className={`status-pill ${log.sucesso ? "status-good" : "status-risk"}`}>
+                      {log.sucesso ? "Sucesso" : "Erro"}
+                    </span>
                   </span>
                 </button>
               ))}
             </div>
-          )}
-        </>
-      )}
+          ))}
+      </section>
 
       {logAberto && <LogDetalheModal log={logAberto} onFechar={() => setLogAberto(null)} />}
     </Layout>
@@ -187,47 +217,36 @@ function LogDetalheModal({ log, onFechar }: { log: IntegracaoLog; onFechar: () =
   return (
     <div className="modal-backdrop" onClick={onFechar}>
       <div className="modal-card log-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="cobranca-modal-topo">
-          <h2>
-            {ROTULO_INTEGRACAO[log.integracao]} · {log.evento}
-          </h2>
-          <button
-            type="button"
-            className="secondary cobranca-btn-icone"
-            onClick={onFechar}
-            aria-label="Fechar"
-          >
+        <div className="agenda-detalhe-topo">
+          <span className={`status-pill ${log.sucesso ? "status-good" : "status-risk"}`}>
+            {log.sucesso ? "Sucesso" : "Erro"}
+          </span>
+          <button type="button" className="agenda-detalhe-fechar" onClick={onFechar} aria-label="Fechar">
             <Icon name="x" size={16} />
           </button>
         </div>
+        <h2 className="agenda-detalhe-titulo">
+          {ROTULO_INTEGRACAO[log.integracao]} · {log.evento}
+        </h2>
 
-        <div className="item-card-info">
-          <span className="item-card-subtitle">
-            {dataHora(log.criado_em)}
-            {log.destino && ` · ${log.destino}`}
-            {log.point_nome && ` · ${log.point_nome}`}
-          </span>
-          <span className={`status-pill ${log.sucesso ? "status-good" : "status-risk"}`} style={{ width: "fit-content" }}>
-            {log.sucesso ? "Sucesso" : "Erro"}
-          </span>
-        </div>
+        <p className="alunos-sub logs-modal-meta">
+          {dataHora(log.criado_em)}
+          {log.destino && ` · ${log.destino}`}
+          {log.point_nome && ` · ${log.point_nome}`}
+        </p>
 
-        <p style={{ margin: 0 }}>{log.mensagem}</p>
+        <p className={log.sucesso ? "logs-modal-mensagem" : "logs-modal-mensagem erro"}>{log.mensagem}</p>
 
         {log.request_corpo && (
           <div>
-            <span className="item-card-subtitle" style={{ fontWeight: 700 }}>
-              Requisição
-            </span>
+            <span className="prof-aulas-titulo">Requisição</span>
             <pre className="log-corpo">{log.request_corpo}</pre>
           </div>
         )}
 
         {log.response_corpo && (
           <div>
-            <span className="item-card-subtitle" style={{ fontWeight: 700 }}>
-              Resposta
-            </span>
+            <span className="prof-aulas-titulo">Resposta</span>
             <pre className="log-corpo">{log.response_corpo}</pre>
           </div>
         )}

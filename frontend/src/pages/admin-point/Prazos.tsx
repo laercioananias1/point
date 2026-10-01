@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Point } from "../../api/types";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Icon, Layout } from "../../components/Layout";
 
 /** Tela própria pra prazos (pedido do usuário, 2026-08-30: "configurações
- * do Point separa em 2: prazos e horários de funcionamento") — metade do
- * que antes era ConfiguracoesPoint.tsx. Prazos que cada Point pode
- * ajustar pro próprio funcionamento (pedido do usuário, 2026-08-21). */
+ * do Point separa em 2: prazos e horários de funcionamento"). Prazos que
+ * cada Point pode ajustar pro próprio funcionamento (pedido do usuário,
+ * 2026-08-21). Layout do kit (pedido do usuário, 2026-10-01): um card por
+ * prazo, número grande e o efeito na prática. */
 export default function AdminPointPrazos() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [point, setPoint] = useState<Point | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,28 +34,57 @@ export default function AdminPointPrazos() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Prazos</h1>
-      </div>
+      <CabecalhoPagina titulo="Prazos" contexto="Configurações" />
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
-      {!loading && !erro && point && (
-        <section className="section">
-          <PrazosForm point={point} onSalvo={(p) => setPoint(p)} />
-        </section>
-      )}
+      {!loading && !erro && point && <PrazosForm point={point} onSalvo={(p) => setPoint(p)} />}
     </Layout>
+  );
+}
+
+function CartaoPrazo({
+  icone,
+  titulo,
+  unidade,
+  valor,
+  setValor,
+  min,
+  max,
+  explicacao,
+}: {
+  icone: "clock" | "ticket" | "calendar";
+  titulo: string;
+  unidade: string;
+  valor: string;
+  setValor: (v: string) => void;
+  min: number;
+  max?: number;
+  explicacao: string;
+}) {
+  return (
+    <section className="alunos-card config-card prazo-card">
+      <span className="prazo-icone">
+        <Icon name={icone} size={20} />
+      </span>
+      <h2 className="chk-secao-titulo">{titulo}</h2>
+      <label className="prazo-campo">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step="1"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          required
+          aria-label={titulo}
+        />
+        <span>{unidade}</span>
+      </label>
+      <p className="alunos-sub">{explicacao}</p>
+    </section>
   );
 }
 
@@ -78,8 +107,7 @@ function PrazosForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
         prazo_credito_dias: Number(prazoCredito),
         dia_vencimento_mensalidade: Number(diaVencimento),
         // Editados na tela de Horários de funcionamento, não aqui — só
-        // reenvia o que o Point já tinha (mesmo esquema de passthrough
-        // que já valia pro place_api_key).
+        // reenvia o que o Point já tinha.
         dias_semana_funcionamento: point.dias_semana_funcionamento,
         horarios_semana_funcionamento: point.horarios_semana_funcionamento,
         dias_fds_funcionamento: point.dias_fds_funcionamento,
@@ -96,49 +124,54 @@ function PrazosForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
     }
   }
 
+  const horas = Number(prazoCancelamento) || 0;
+  const dias = Number(prazoCredito) || 0;
+  const vence = Number(diaVencimento) || 0;
+
   return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ marginTop: 0 }}>
-      <label>
-        Antecedência mínima pra cancelar aula (horas)
-        <input
-          type="number"
-          min="0"
-          step="1"
-          value={prazoCancelamento}
-          onChange={(e) => setPrazoCancelamento(e.target.value)}
-          required
+    <form className="config" onSubmit={handleSubmit}>
+      <div className="config-grade config-grade-3">
+        <CartaoPrazo
+          icone="clock"
+          titulo="Cancelar aula"
+          unidade={horas === 1 ? "hora antes" : "horas antes"}
+          valor={prazoCancelamento}
+          setValor={setPrazoCancelamento}
+          min={0}
+          explicacao={`O aluno que cancelar com pelo menos ${horas}h de antecedência ganha um crédito de reposição. Depois disso, a aula não pode mais ser cancelada por ele.`}
         />
-      </label>
-      <label>
-        Validade do crédito de reposição (dias)
-        <input
-          type="number"
-          min="1"
-          step="1"
-          value={prazoCredito}
-          onChange={(e) => setPrazoCredito(e.target.value)}
-          required
+        <CartaoPrazo
+          icone="ticket"
+          titulo="Validade do crédito"
+          unidade={dias === 1 ? "dia" : "dias"}
+          valor={prazoCredito}
+          setValor={setPrazoCredito}
+          min={1}
+          explicacao={`O crédito de reposição precisa ser usado em até ${dias} ${dias === 1 ? "dia" : "dias"} depois da aula cancelada; depois vence.`}
         />
-      </label>
-      <label>
-        Dia do vencimento da mensalidade
-        <input
-          type="number"
-          min="1"
-          max="28"
-          step="1"
-          value={diaVencimento}
-          onChange={(e) => setDiaVencimento(e.target.value)}
-          required
+        <CartaoPrazo
+          icone="calendar"
+          titulo="Vencimento da mensalidade"
+          unidade="todo mês"
+          valor={diaVencimento}
+          setValor={setDiaVencimento}
+          min={1}
+          max={28}
+          explicacao={`As mensalidades geradas no dia 1 vencem no dia ${vence} do mês. Vai até o dia 28 pra caber em fevereiro.`}
         />
-      </label>
+      </div>
 
       {erro && <p className="form-error">{erro}</p>}
-      {sucesso && <p className="form-success">Prazos salvos.</p>}
-
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Salvando..." : "Salvar prazos"}
-      </button>
+      <div className="config-salvar">
+        {sucesso && (
+          <span className="meupoint-salvo">
+            <Icon name="check" size={14} /> Prazos salvos
+          </span>
+        )}
+        <button type="submit" disabled={enviando}>
+          {enviando ? "Salvando..." : "Salvar prazos"}
+        </button>
+      </div>
     </form>
   );
 }

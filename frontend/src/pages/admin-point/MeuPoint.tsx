@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { api, ApiError, urlArquivo } from "../../api/client";
 import type { Point } from "../../api/types";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
+import { LogoMark } from "../../components/LogoMark";
 import { Icon, Layout } from "../../components/Layout";
 
 const MAX_FOTOS = 5;
@@ -10,15 +11,17 @@ const MAX_BANNERS = 5;
 /** Tela "Meu Point" (pedido do usuário, 2026-08-30: "um botão de Meu
  * Point onde vai ter uma tela para fazer um cadastro de Sobre..., um
  * cadastro tb de informações importantes, e permitir inserir até 5 fotos
- * do point. Esses dados vão aparecer na página principal") — tudo isso
- * aparece na Início do aluno (ver pages/aluno/Inicio.tsx), em dois
- * pontos diferentes: Anúncios + Banners preenchem o banner do meio da
- * página (pedido do usuário, 2026-08-30: "na parte do meio vai colocar
- * anúncios" / "anúncios será imagens também, como banners"); Sobre,
- * Informações importantes e as Fotos (carrossel) aparecem juntos no fim,
- * depois de "Próximas aulas". */
+ * do point. Esses dados vão aparecer na página principal") — Banners
+ * viram o card "Avisos do Point" no Início de alunos e professores; Sobre,
+ * Informações importantes e Fotos formam o card do Point no fim do Início
+ * (components/PointNoInicio.tsx).
+ *
+ * Layout do kit (pedido do usuário, 2026-10-01: "restiliza meu point"):
+ * dados num card, logomarca com prévia do cabeçalho ao lado, banners e
+ * fotos em cards com grade. A "cor de destaque do portal" saiu da tela —
+ * desde o kit o app usa o limão fixo pra todo Point (o valor salvo segue
+ * sendo reenviado intacto). */
 export default function AdminPointMeuPoint() {
-  const navigate = useNavigate();
   const [point, setPoint] = useState<Point | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -41,69 +44,39 @@ export default function AdminPointMeuPoint() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Meu Point</h1>
-      </div>
+      <CabecalhoPagina titulo="Meu Point" contexto="Configurações" />
 
       {erro && <p className="form-error">{erro}</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
       {!loading && !erro && point && (
-        <>
-          <section className="section">
-            <h2>Logomarca</h2>
-            <p className="empty-state" style={{ paddingTop: 0 }}>
-              Aparece no canto esquerdo do cabeçalho, no lugar da marca genérica do app, pra quem
-              está logado nesse Point.
-            </p>
-            <LogoPoint point={point} onMudou={setPoint} />
-          </section>
-
-          <section className="section">
+        <div className="meupoint">
+          <div className="meupoint-linha">
             <PerfilForm point={point} onSalvo={setPoint} />
-          </section>
+            <LogoPoint point={point} onMudou={setPoint} />
+          </div>
 
-          <section className="section">
-            <h2>
-              Banners ({point.banners.length}/{MAX_BANNERS})
-            </h2>
-            <p className="empty-state" style={{ paddingTop: 0 }}>
-              Aparecem em carrossel na parte do meio da Início do aluno.
-            </p>
-            <ImagensPoint
-              imagens={point.banners}
-              max={MAX_BANNERS}
-              endpoint="/points/me/banners"
-              rotuloItem="banner"
-              onMudou={setPoint}
-            />
-          </section>
+          <ImagensPoint
+            titulo="Banners"
+            descricao="Avisos e anúncios — aparecem no card “Avisos do Point” no Início de alunos e professores, trocando sozinhos."
+            imagens={point.banners}
+            max={MAX_BANNERS}
+            endpoint="/points/me/banners"
+            rotuloItem="banner"
+            contido
+            onMudou={setPoint}
+          />
 
-          <section className="section">
-            <h2>
-              Fotos ({point.fotos.length}/{MAX_FOTOS})
-            </h2>
-            <p className="empty-state" style={{ paddingTop: 0 }}>
-              Aparecem em carrossel no fim da Início do aluno, junto de Sobre e Informações
-              importantes.
-            </p>
-            <ImagensPoint
-              imagens={point.fotos}
-              max={MAX_FOTOS}
-              endpoint="/points/me/fotos"
-              rotuloItem="foto"
-              onMudou={setPoint}
-            />
-          </section>
-        </>
+          <ImagensPoint
+            titulo="Fotos do Point"
+            descricao="Aparecem na galeria do card do Point, no fim do Início, junto de Sobre e Informações importantes."
+            imagens={point.fotos}
+            max={MAX_FOTOS}
+            endpoint="/points/me/fotos"
+            rotuloItem="foto"
+            onMudou={setPoint}
+          />
+        </div>
       )}
     </Layout>
   );
@@ -111,18 +84,26 @@ export default function AdminPointMeuPoint() {
 
 /** Grade de upload/remoção de imagem (pedido do usuário, 2026-08-30:
  * "anúncios será imagens também, como banners") — mesma mecânica pra
- * Fotos e Banners, só muda o endpoint/limite/rótulo. */
+ * Fotos e Banners, só muda o endpoint/limite/rótulo. O "+ Adicionar" é o
+ * último quadrado da própria grade. */
 function ImagensPoint({
+  titulo,
+  descricao,
   imagens,
   max,
   endpoint,
   rotuloItem,
+  contido = false,
   onMudou,
 }: {
+  titulo: string;
+  descricao: string;
   imagens: string[];
   max: number;
   endpoint: string;
   rotuloItem: string;
+  // Banner é pôster: mostra inteiro (contain), não corta.
+  contido?: boolean;
   onMudou: (p: Point) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -163,61 +144,67 @@ function ImagensPoint({
     }
   }
 
+  const rotuloMaiusculo = `${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)}`;
+
   return (
-    <div>
-      {imagens.length > 0 && (
-        <div className="foto-point-grade">
-          {imagens.map((imagem) => (
-            <div className="foto-point-item" key={imagem}>
-              <img src={urlArquivo(imagem)} alt={`${rotuloItem[0].toUpperCase()}${rotuloItem.slice(1)} do Point`} />
-              <button
-                type="button"
-                className="foto-point-remover"
-                disabled={removendo === imagem}
-                onClick={() => remover(imagem)}
-                aria-label={`Remover ${rotuloItem}`}
-              >
-                <Icon name="x" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+    <section className="alunos-card meupoint-card">
+      <div className="inicio-exp-topo">
+        <h2 className="chk-secao-titulo">{titulo}</h2>
+        <span className={imagens.length >= max ? "status-pill status-warn" : "status-pill status-neutral"}>
+          {imagens.length}/{max}
+        </span>
+      </div>
+      <p className="alunos-sub">{descricao}</p>
 
-      {erro && <p className="form-error">{erro}</p>}
-
-      {imagens.length < max ? (
-        <>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={selecionarArquivo}
-            style={{ display: "none" }}
-          />
+      <div className="meupoint-grade">
+        {imagens.map((imagem) => (
+          <div className={contido ? "meupoint-imagem contido" : "meupoint-imagem"} key={imagem}>
+            <img src={urlArquivo(imagem)} alt={`${rotuloMaiusculo} do Point`} />
+            <button
+              type="button"
+              className="meupoint-remover"
+              disabled={removendo === imagem}
+              onClick={() => remover(imagem)}
+              aria-label={`Remover ${rotuloItem}`}
+              title={`Remover ${rotuloItem}`}
+            >
+              <Icon name="trash" size={14} />
+            </button>
+          </div>
+        ))}
+        {imagens.length < max && (
           <button
             type="button"
-            className="secondary"
-            style={{ marginTop: 12 }}
+            className="meupoint-adicionar"
             disabled={enviando}
             onClick={() => inputRef.current?.click()}
           >
-            {enviando ? "Enviando..." : `Adicionar ${rotuloItem}`}
+            <Icon name="plus" size={22} />
+            <span>{enviando ? "Enviando..." : `Adicionar ${rotuloItem}`}</span>
           </button>
-        </>
-      ) : (
-        <p className="empty-state" style={{ marginTop: 12 }}>
+        )}
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        onChange={selecionarArquivo}
+        hidden
+      />
+      {imagens.length >= max && (
+        <p className="alunos-sub">
           Máximo de {max} {rotuloItem}s atingido — remova um pra adicionar outro.
         </p>
       )}
-    </div>
+      {erro && <p className="form-error">{erro}</p>}
+    </section>
   );
 }
 
 /** Slot único de logomarca (pedido do usuário, 2026-08-30: "coloque
- * também um ícone (logomarca do point)") — diferente de ImagensPoint
- * (lista): enviar um logo novo substitui o anterior automaticamente, sem
- * precisar remover primeiro. */
+ * também um ícone (logomarca do point)") — enviar um logo novo substitui
+ * o anterior automaticamente. Mostra uma prévia do cabeçalho com ele. */
 function LogoPoint({ point, onMudou }: { point: Point; onMudou: (p: Point) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [enviando, setEnviando] = useState(false);
@@ -256,40 +243,39 @@ function LogoPoint({ point, onMudou }: { point: Point; onMudou: (p: Point) => vo
   }
 
   return (
-    <div>
-      {point.logo && (
-        <div className="foto-point-item" style={{ width: 90, marginBottom: 12 }}>
-          <img src={urlArquivo(point.logo)} alt="Logomarca do Point" style={{ objectFit: "contain" }} />
-          <button
-            type="button"
-            className="foto-point-remover"
-            disabled={removendo}
-            onClick={remover}
-            aria-label="Remover logo"
-          >
-            <Icon name="x" />
-          </button>
-        </div>
-      )}
+    <section className="alunos-card meupoint-card meupoint-logo">
+      <h2 className="chk-secao-titulo">Logomarca</h2>
+      <p className="alunos-sub">
+        Aparece no canto do cabeçalho, no lugar da marca do app, pra todo mundo logado nesse Point.
+      </p>
 
-      {erro && <p className="form-error">{erro}</p>}
+      <div className="meupoint-logo-previa" aria-label="Prévia do cabeçalho">
+        <span className="meupoint-logo-caixa">
+          {point.logo ? <img src={urlArquivo(point.logo)} alt="Logomarca do Point" /> : <LogoMark />}
+        </span>
+        <span className="meupoint-logo-nome">{point.nome}</span>
+      </div>
 
       <input
         ref={inputRef}
         type="file"
         accept="image/png,image/jpeg,image/webp"
         onChange={selecionarArquivo}
-        style={{ display: "none" }}
+        hidden
       />
-      <button
-        type="button"
-        className="secondary"
-        disabled={enviando}
-        onClick={() => inputRef.current?.click()}
-      >
-        {enviando ? "Enviando..." : point.logo ? "Trocar logo" : "Adicionar logo"}
-      </button>
-    </div>
+      <div className="meupoint-logo-acoes">
+        <button type="button" className="secondary" disabled={enviando} onClick={() => inputRef.current?.click()}>
+          {enviando ? "Enviando..." : point.logo ? "Trocar logo" : "Adicionar logo"}
+        </button>
+        {point.logo && (
+          <button type="button" className="alunos-acao" disabled={removendo} onClick={remover}>
+            {removendo ? "Removendo..." : "Remover logo"}
+          </button>
+        )}
+      </div>
+      <span className="alunos-sub">PNG, JPG ou WebP. Quadrada fica melhor.</span>
+      {erro && <p className="form-error">{erro}</p>}
+    </section>
   );
 }
 
@@ -300,10 +286,6 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
   const [informacoesImportantes, setInformacoesImportantes] = useState(
     point.informacoes_importantes ?? "",
   );
-  // Cor de destaque do portal (pedido do usuário, 2026-09-14:
-  // "personalizar... as cores do portal") — vazio = usa a cor padrão do
-  // sistema (backend recebe null nesse caso).
-  const [corDestaque, setCorDestaque] = useState(point.cor_destaque ?? "");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
@@ -319,7 +301,9 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
         endereco,
         sobre: sobre || null,
         informacoes_importantes: informacoesImportantes || null,
-        cor_destaque: corDestaque.trim() || null,
+        // Sem campo na tela desde o kit (limão fixo) — reenvia o que já
+        // estava salvo pra não apagar.
+        cor_destaque: point.cor_destaque,
       });
       onSalvo(atualizado);
       setSucesso(true);
@@ -331,49 +315,23 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
   }
 
   return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ marginTop: 0 }}>
-      <label>
-        Nome do Point
-        <input value={nome} onChange={(e) => setNome(e.target.value)} required />
-      </label>
-      <label>
-        Endereço
-        <input value={endereco} onChange={(e) => setEndereco(e.target.value)} required />
-      </label>
-
-      <label>
-        Cor de destaque do portal (opcional)
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="color"
-            value={corDestaque || "#0e9594"}
-            onChange={(e) => setCorDestaque(e.target.value)}
-            style={{ width: 44, height: 36, padding: 2, flexShrink: 0 }}
-            aria-label="Cor de destaque do portal"
-          />
-          <input
-            value={corDestaque}
-            onChange={(e) => setCorDestaque(e.target.value)}
-            placeholder="Sem cor própria — usa o teal padrão"
-            pattern="^#[0-9a-fA-F]{6}$"
-            maxLength={7}
-          />
-          {corDestaque && (
-            <button type="button" className="secondary" onClick={() => setCorDestaque("")}>
-              Usar padrão
-            </button>
-          )}
-        </div>
-      </label>
-      <p className="empty-state" style={{ padding: 0, marginTop: -6 }}>
-        Substitui a cor teal padrão do sistema (botões, links, destaques) só pra quem está logado
-        nesse Point — inclusive nas páginas de convite e de aula experimental.
-      </p>
+    <form className="alunos-card meupoint-card meupoint-form" onSubmit={handleSubmit}>
+      <h2 className="chk-secao-titulo">Dados do Point</h2>
+      <div className="form-grade">
+        <label>
+          Nome do Point
+          <input value={nome} onChange={(e) => setNome(e.target.value)} required />
+        </label>
+        <label>
+          Endereço
+          <input value={endereco} onChange={(e) => setEndereco(e.target.value)} required />
+        </label>
+      </div>
 
       <label>
         Sobre
         <textarea
-          rows={4}
+          rows={5}
           placeholder="Conte pro aluno um pouco sobre o Point — estrutura, diferenciais, história..."
           value={sobre}
           onChange={(e) => setSobre(e.target.value)}
@@ -389,17 +347,20 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
           onChange={(e) => setInformacoesImportantes(e.target.value)}
         />
       </label>
-      <p className="empty-state" style={{ padding: 0, marginTop: -6 }}>
-        Sobre e Informações importantes aparecem no fim da Início do aluno, depois de "Próximas
-        aulas".
-      </p>
+      <p className="alunos-sub">Sobre e Informações importantes aparecem no card do Point, no fim do Início.</p>
 
       {erro && <p className="form-error">{erro}</p>}
-      {sucesso && <p className="form-success">Salvo.</p>}
 
-      <button type="submit" disabled={enviando}>
-        {enviando ? "Salvando..." : "Salvar"}
-      </button>
+      <div className="meupoint-salvar">
+        {sucesso && (
+          <span className="meupoint-salvo">
+            <Icon name="check" size={14} /> Salvo
+          </span>
+        )}
+        <button type="submit" disabled={enviando}>
+          {enviando ? "Salvando..." : "Salvar alterações"}
+        </button>
+      </div>
     </form>
   );
 }

@@ -391,6 +391,46 @@ export interface RelatorioMes {
   despesa: number;
 }
 
+/** Painel de Relatórios (GET /relatorios/painel — pedido do usuário,
+ * 2026-10-01). Percentuais inteiros; null = sem dado pra calcular. */
+export type PeriodoRelatorio = "semana" | "mes" | "trimestre";
+
+export interface PainelRelatorio {
+  periodo: PeriodoRelatorio;
+  inicio: string;
+  fim: string;
+  indicadores: {
+    receita: number;
+    receita_anterior: number;
+    ocupacao: number | null;
+    ocupacao_anterior: number | null;
+    alunos_ativos: number;
+    alunos_novos: number;
+    alunos_novos_anterior: number;
+    conversao: number | null;
+    conversao_anterior: number | null;
+    faltas: number | null;
+    faltas_anterior: number | null;
+  };
+  horas: string[];
+  mapa: { dia: string; celulas: (number | null)[] }[];
+  sugestao: string | null;
+  receita_origem: { rotulo: string; valor: number }[];
+  checkins_wellhub: number;
+  checkins_totalpass: number;
+  // [pedidos, confirmadas, compareceram, se matricularam]
+  funil: number[];
+  professores: {
+    nome: string;
+    modalidades: string;
+    aulas_dadas: number;
+    alunos_ativos: number;
+    experimentais: number;
+    faltas: number | null;
+    ocupacao: number | null;
+  }[];
+}
+
 export interface RelatorioResumo {
   alunos_ativos: number;
   turmas: number;
@@ -403,6 +443,41 @@ export interface RelatorioResumo {
   a_receber: number;
   atrasado: number;
   saldo: number;
+}
+
+/** Painel da plataforma pro dono do app (GET /plataforma/painel — pedido
+ * do usuário, 2026-10-01). */
+export interface PlataformaPainel {
+  totais: {
+    points: number;
+    points_novos_mes: number;
+    alunos: number;
+    alunos_novos_mes: number;
+    professores: number;
+    recebido_mes: number;
+    recebido_mes_anterior: number;
+    checkins_mes: number;
+    experimentais_mes: number;
+    experimentais_pendentes: number;
+  };
+  points: {
+    id: number;
+    nome: string;
+    criado_em: string;
+    admins: number;
+    professores: number;
+    alunos: number;
+    turmas: number;
+    recebido_mes: number;
+    recebido_mes_anterior: number;
+  }[];
+  integracoes: {
+    integracao: IntegracaoNome;
+    total_24h: number;
+    erros_24h: number;
+    ultimo_erro_em: string | null;
+    ultimo_erro: string | null;
+  }[];
 }
 
 export interface PointRanking {

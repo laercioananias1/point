@@ -29,6 +29,7 @@ from app.routers import (
     notificacoes,
     pagamentos,
     planos,
+    plataforma,
     points,
     professores,
     quadras,
@@ -90,6 +91,7 @@ app.include_router(feriados.router)
 app.include_router(notificacoes.router)
 app.include_router(experimental.router)
 app.include_router(integracao_logs.router)
+app.include_router(plataforma.router)
 
 # Fotos de Point (pedido do usuário, 2026-08-30) — arquivo estático servido
 # direto, sem passar por rota autenticada (mesma URL vale pra qualquer

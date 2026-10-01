@@ -49,6 +49,10 @@ export default function AdminPointFeriados() {
     carregar();
   }, [carregar]);
 
+  // Próximo feriado a partir de hoje (ganha destaque na lista).
+  const hojeIso = new Date().toISOString().slice(0, 10);
+  const proximo = feriados.find((f) => f.data >= hojeIso) ?? null;
+
   return (
     <Layout>
       <CabecalhoPagina
@@ -65,24 +69,21 @@ export default function AdminPointFeriados() {
 
       <div className="lista-com-form">
         <section className="cartao-lista">
-          <div className="caixa-mes-nav">
-            <button
-              type="button"
-              className="secondary cobranca-btn-icone"
-              onClick={() => setAno((a) => a - 1)}
-              aria-label="Ano anterior"
-            >
-              <Icon name="chevron-left" size={16} />
-            </button>
-            <span className="caixa-mes-rotulo">{ano}</span>
-            <button
-              type="button"
-              className="secondary cobranca-btn-icone"
-              onClick={() => setAno((a) => a + 1)}
-              aria-label="Próximo ano"
-            >
-              <Icon name="chevron-right" size={16} />
-            </button>
+          <div className="feriados-topo">
+            <div className="caixa-mes">
+              <button type="button" className="agenda-seta" onClick={() => setAno((a) => a - 1)} aria-label="Ano anterior">
+                <Icon name="chevron-left" size={18} />
+              </button>
+              <span className="caixa-mes-rotulo">{ano}</span>
+              <button type="button" className="agenda-seta" onClick={() => setAno((a) => a + 1)} aria-label="Próximo ano">
+                <Icon name="chevron-right" size={18} />
+              </button>
+            </div>
+            {!loading && (
+              <span className="alunos-sub">
+                {feriados.filter((f) => f.nacional).length} nacionais · {feriados.filter((f) => !f.nacional).length} locais
+              </span>
+            )}
           </div>
 
           {loading && !erro && <p className="empty-state">Carregando...</p>}
@@ -92,12 +93,18 @@ export default function AdminPointFeriados() {
           {!loading &&
             !erro &&
             feriados.map((f) => (
-              <FeriadoRow key={`${f.data}-${f.nome}`} feriado={f} onRemovido={carregar} />
+              <FeriadoRow
+                key={`${f.data}-${f.nome}`}
+                feriado={f}
+                proximo={f === proximo}
+                onRemovido={carregar}
+              />
             ))}
         </section>
 
-        <aside className="painel-form">
-          <h2>Cadastrar feriado local</h2>
+        <aside className="alunos-card feriados-form">
+          <h2 className="chk-secao-titulo">Cadastrar feriado local</h2>
+          <p className="alunos-sub">Aniversário da cidade, padroeiro, um dia em que o Point fecha...</p>
           <CadastrarFeriadoForm ano={ano} onCadastrado={carregar} />
         </aside>
       </div>
@@ -105,10 +112,20 @@ export default function AdminPointFeriados() {
   );
 }
 
-function FeriadoRow({ feriado, onRemovido }: { feriado: Feriado; onRemovido: () => void }) {
+function FeriadoRow({
+  feriado,
+  proximo,
+  onRemovido,
+}: {
+  feriado: Feriado;
+  proximo: boolean;
+  onRemovido: () => void;
+}) {
   const [removendo, setRemovendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const { confirmar, modal } = useConfirm();
+  const data = new Date(feriado.data + "T00:00");
+  const passou = feriado.data < new Date().toISOString().slice(0, 10);
 
   async function remover() {
     if (feriado.id === null) return;
@@ -126,19 +143,29 @@ function FeriadoRow({ feriado, onRemovido }: { feriado: Feriado; onRemovido: () 
   }
 
   return (
-    <div className="feriado-linha">
+    <div className={`feriado-item${proximo ? " proximo" : ""}${passou ? " passou" : ""}`}>
       {modal}
-      <span className="feriado-data">{rotuloData(feriado.data)}</span>
-      <div className="alunos-pessoa-texto">
+      <span className="aluno-aula-data feriado-bloco">
+        <span className="aluno-aula-dia">{data.getDate()}</span>
+        <span className="aluno-aula-mes">{data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}</span>
+      </span>
+      <div className="alunos-pessoa-texto feriado-texto">
         <span className="alunos-nome">{feriado.nome}</span>
+        <span className="alunos-sub">
+          {rotuloData(feriado.data)}
+          {proximo && " · próximo feriado"}
+        </span>
         {erro && <p className="form-error">{erro}</p>}
       </div>
       {feriado.nacional ? (
-        <span className="status-pill status-info">Nacional</span>
+        <span className="status-pill status-neutral">Nacional</span>
       ) : (
-        <button type="button" className="alunos-acao" disabled={removendo} onClick={remover}>
-          {removendo ? "Removendo..." : "Remover"}
-        </button>
+        <span className="feriado-local">
+          <span className="status-pill status-good">Local</span>
+          <button type="button" className="alunos-acao" disabled={removendo} onClick={remover}>
+            {removendo ? "Removendo..." : "Remover"}
+          </button>
+        </span>
       )}
     </div>
   );

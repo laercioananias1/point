@@ -1,34 +1,28 @@
-import { useNavigate } from "react-router-dom";
 import { AjudaCallout, AjudaPergunta } from "../../components/Ajuda";
-import { Icon, Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
+import { Layout } from "../../components/Layout";
 
 /** Ajuda do professor (pedido do usuário, 2026-09-01) — mesmo formato de
  * perguntas frequentes da Ajuda do admin (ver pages/admin-point/Ajuda.tsx),
  * conteúdo mais curto porque o professor mexe em menos telas. */
 export default function ProfessorAjuda() {
-  const navigate = useNavigate();
-
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate(-1)}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Ajuda</h1>
-      </div>
+      <CabecalhoPagina titulo="Ajuda" contexto="Perguntas frequentes" />
+      <nav className="ajuda-indice" aria-label="Seções da ajuda">
+        <a href="#ajuda-turmas" className="ajuda-indice-item">Turmas</a>
+        <a href="#ajuda-agenda" className="ajuda-indice-item">Agenda</a>
+        <a href="#ajuda-acompanhar" className="ajuda-indice-item">Acompanhar</a>
+        <a href="#ajuda-sua-conta" className="ajuda-indice-item">Sua conta</a>
+      </nav>
 
       <AjudaCallout>
         <b>Antes de tudo:</b> você só cria turma depois de aceitar um convite de vínculo de um
         Point — o admin te convida e você só aceita.
       </AjudaCallout>
 
-      <section className="section">
-        <h2>Turmas</h2>
+      <section className="ajuda-secao" id="ajuda-turmas">
+        <h2 className="chk-secao-titulo">Turmas</h2>
         <div className="card-list">
           <AjudaPergunta
             icon="grid"
@@ -56,8 +50,8 @@ export default function ProfessorAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Agenda</h2>
+      <section className="ajuda-secao" id="ajuda-agenda">
+        <h2 className="chk-secao-titulo">Agenda</h2>
         <div className="card-list">
           <AjudaPergunta
             icon="x"
@@ -84,8 +78,8 @@ export default function ProfessorAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Acompanhar</h2>
+      <section className="ajuda-secao" id="ajuda-acompanhar">
+        <h2 className="chk-secao-titulo">Acompanhar</h2>
         <div className="card-list">
           <AjudaPergunta icon="chart" pergunta="Como vejo a ocupação das quadras?">
             <p>Início → Ocupação de quadra: quantas vagas estão ocupadas, por quadra e horário.</p>
@@ -97,8 +91,8 @@ export default function ProfessorAjuda() {
         </div>
       </section>
 
-      <section className="section">
-        <h2>Sua conta</h2>
+      <section className="ajuda-secao" id="ajuda-sua-conta">
+        <h2 className="chk-secao-titulo">Sua conta</h2>
         <div className="card-list">
           <AjudaPergunta icon="check-circle" pergunta="Esqueci minha senha, e agora?">
             <p>

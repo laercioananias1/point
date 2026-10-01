@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import type { AlunoResumo, Assinatura, PeriodoDia } from "../../api/types";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Layout } from "../../components/Layout";
+import { PerfilTopo } from "../../components/PerfilTopo";
 import { StatusPill } from "../../components/StatusPill";
-import { FotoPerfil } from "../../components/FotoPerfil";
 import { TemaToggle } from "../../components/TemaToggle";
 import { TrocarArea } from "../../components/TrocarArea";
 import { rotuloTurma } from "../../lib/dias";
@@ -17,7 +18,8 @@ const PERIODOS_DIA: { value: PeriodoDia; label: string }[] = [
 
 /** Perfil do aluno (pedido do usuário, 2026-08-25) — dados da conta e
  * gestão dos planos mensais (assinatura); pagar/cancelar aula avulsa e
- * calendário ficam na Agenda. */
+ * calendário ficam na Agenda. Layout do kit (pedido do usuário,
+ * 2026-10-01): topo com foto + cards. */
 export default function AlunoPerfil() {
   const [perfil, setPerfil] = useState<AlunoResumo | null>(null);
   const [assinaturas, setAssinaturas] = useState<Assinatura[]>([]);
@@ -49,67 +51,56 @@ export default function AlunoPerfil() {
 
   return (
     <Layout>
-      <h1>Perfil</h1>
+      <CabecalhoPagina titulo="Perfil" contexto="Minha conta" />
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
       {pronto && perfil && (
         <>
-          <section className="section">
-            <h2>Minha conta</h2>
-            <div className="item-card" style={{ alignItems: "flex-start" }}>
-              <div className="item-card-info">
-                <span className="item-card-title">{perfil.nome}</span>
-                <span className="item-card-subtitle">{perfil.email}</span>
-                <span className="item-card-subtitle">{perfil.contato}</span>
-                <span className="item-card-subtitle">
-                  Pagamento preferido: {rotuloPagamentoMeio(perfil.forma_pagamento_preferida)}
-                </span>
-              </div>
-            </div>
-          </section>
+          <PerfilTopo
+            papel="Aluno"
+            detalhes={[
+              perfil.email,
+              perfil.contato,
+              `Pagamento preferido: ${rotuloPagamentoMeio(perfil.forma_pagamento_preferida)}`,
+            ]}
+          />
+          <div className="perfil-grade">
+            <section className="alunos-card perfil-card perfil-card-largo">
+              <h2 className="chk-secao-titulo">Meus planos mensais</h2>
+              {assinaturasAtivas.length === 0 ? (
+                <p className="alunos-sub">Nenhum plano mensal ativo — fale com o Point pra ativar um.</p>
+              ) : (
+                <ul className="perfil-lista">
+                  {assinaturasAtivas.map((a) => (
+                    <AssinaturaRow key={a.id} assinatura={a} onMudanca={carregar} />
+                  ))}
+                </ul>
+              )}
 
-          <section className="section">
-            <h2>Meus planos mensais ({assinaturasAtivas.length})</h2>
-            {assinaturasAtivas.length === 0 ? (
-              <p className="empty-state">
-                Nenhum plano mensal ativo — fale com o Point pra ativar um.
-              </p>
-            ) : (
-              <div className="card-list">
-                {assinaturasAtivas.map((a) => (
-                  <AssinaturaRow key={a.id} assinatura={a} onMudanca={carregar} />
-                ))}
-              </div>
-            )}
-
-            {assinaturasHistorico.length > 0 && (
-              <>
-                <button
-                  type="button"
-                  className="link-btn"
-                  style={{ marginTop: 12 }}
-                  onClick={() => setMostrarHistorico((v) => !v)}
-                >
-                  {mostrarHistorico ? "Esconder" : "Ver"} histórico ({assinaturasHistorico.length})
-                </button>
-                {mostrarHistorico && (
-                  <div className="card-list" style={{ marginTop: 10 }}>
-                    {assinaturasHistorico.map((a) => (
-                      <AssinaturaRow key={a.id} assinatura={a} onMudanca={carregar} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </section>
-
-          <FotoPerfil />
-
-          <TemaToggle />
-
-          <TrocarArea papelAtual="aluno" />
+              {assinaturasHistorico.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    className="perfil-link-claro"
+                    onClick={() => setMostrarHistorico((v) => !v)}
+                  >
+                    {mostrarHistorico ? "Esconder" : "Ver"} histórico ({assinaturasHistorico.length})
+                  </button>
+                  {mostrarHistorico && (
+                    <ul className="perfil-lista">
+                      {assinaturasHistorico.map((a) => (
+                        <AssinaturaRow key={a.id} assinatura={a} onMudanca={carregar} />
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </section>
+            <TemaToggle />
+            <TrocarArea papelAtual="aluno" />
+          </div>
         </>
       )}
     </Layout>
@@ -138,37 +129,31 @@ function AssinaturaRow({
   const rotuloPeriodo = PERIODOS_DIA.find((p) => p.value === assinatura.periodo_dia_desejado)?.label;
 
   return (
-    <div className="item-card" style={{ alignItems: "flex-start" }}>
-      <div className="item-card-info">
-        <span className="item-card-title">
+    <li>
+      <span className="alunos-pessoa-texto">
+        <span className="alunos-nome">
           {assinatura.modalidade.nome} · {assinatura.frequencia_semanal_desejada}x por semana
         </span>
-        <span className="item-card-subtitle">Período preferido: {rotuloPeriodo}</span>
+        <span className="alunos-sub">Período preferido: {rotuloPeriodo}</span>
         {assinatura.status === "ativa" && assinatura.turmas.length > 0 && (
-          <span className="item-card-subtitle">
-            {assinatura.turmas
-              .map((t) => rotuloTurma(t.dias_semana, t.turma.horario))
-              .join(" · ")}{" "}
-            · desde {assinatura.data_inicio}
+          <span className="alunos-sub">
+            {assinatura.turmas.map((t) => rotuloTurma(t.dias_semana, t.turma.horario)).join(" · ")} · desde{" "}
+            {assinatura.data_inicio}
           </span>
         )}
-        {assinatura.plano && (
-          <span className="item-card-subtitle">{formatarReais(assinatura.plano.preco)} / mês</span>
-        )}
+        {assinatura.plano && <span className="alunos-sub">{formatarReais(assinatura.plano.preco)} / mês</span>}
         {assinatura.fonte_pagamento !== "pix" && (
-          <span className="item-card-subtitle">
-            Pagamento: {rotuloPagamentoMeio(assinatura.fonte_pagamento)}
-          </span>
+          <span className="alunos-sub">Pagamento: {rotuloPagamentoMeio(assinatura.fonte_pagamento)}</span>
         )}
-      </div>
-      <div className="item-card-actions">
+      </span>
+      <span className="perfil-lista-acoes">
         <StatusPill status={assinatura.status} />
         {assinatura.status === "ativa" && (
-          <button className="secondary" disabled={enviando} onClick={desistir}>
+          <button type="button" className="alunos-acao" disabled={enviando} onClick={desistir}>
             {enviando ? "Cancelando..." : "Desistir"}
           </button>
         )}
-      </div>
-    </div>
+      </span>
+    </li>
   );
 }

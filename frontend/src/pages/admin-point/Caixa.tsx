@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import type { ContaCaixa, LancamentoCaixa, LancamentoTipo } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
@@ -9,7 +8,7 @@ import { formatarReais } from "../../lib/formato";
 type Filtro = "todos" | LancamentoTipo;
 
 const FILTROS: { valor: Filtro; rotulo: string }[] = [
-  { valor: "todos", rotulo: "Todos" },
+  { valor: "todos", rotulo: "Todas" },
   { valor: "entrada", rotulo: "Entradas" },
   { valor: "saida", rotulo: "Saídas" },
 ];
@@ -29,13 +28,22 @@ function mensagemDeErro(e: unknown, padrao: string): string {
   return e instanceof ApiError ? e.message : padrao;
 }
 
+function plural(n: number, um: string, varios: string): string {
+  return `${n} ${n === 1 ? um : varios}`;
+}
+
 /** Caixa do Point (pedido do usuário, 2026-09-20: "mudar para Caixa, onde
  * tem entradas e saídas") — substitui o antigo Faturamento. Lançamentos do
  * mês (entradas vindas sozinhas das cobranças pagas + lançamentos manuais,
  * entradas ou saídas, com opção de repetir todo mês). Repasse a
- * professores e taxa de serviço saíram do sistema (2026-09-20). */
+ * professores e taxa de serviço saíram do sistema (2026-09-20).
+ *
+ * Layout do kit (design/telas/Caixa.dc.html; pedido do usuário,
+ * 2026-10-01: "faça o caixa agora"). O protótipo é um caixa DO DIA (abrir/
+ * fechar, gaveta); o app continua sendo o livro do mês — só o visual
+ * segue o protótipo: números no topo, movimentações com ícone e, ao lado,
+ * total por conta e os lançamentos fixos. */
 export default function AdminPointCaixa() {
-  const navigate = useNavigate();
   const { confirmar, modal: modalConfirmar } = useConfirm();
 
   const [mes, setMes] = useState(() => {
@@ -49,8 +57,8 @@ export default function AdminPointCaixa() {
 
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [contaFiltro, setContaFiltro] = useState("");
-  // null = fechado; "novo" = criando; LancamentoCaixa = editando.
-  const [formulario, setFormulario] = useState<"novo" | LancamentoCaixa | null>(null);
+  // null = fechado; LancamentoTipo = criando desse tipo; LancamentoCaixa = editando.
+  const [formulario, setFormulario] = useState<LancamentoTipo | LancamentoCaixa | null>(null);
   const [ocupadoId, setOcupadoId] = useState<number | null>(null);
 
   const carregar = useCallback(async () => {
@@ -75,21 +83,33 @@ export default function AdminPointCaixa() {
     carregar();
   }, [carregar]);
 
-  const entradas = lancamentos
-    .filter((l) => l.tipo === "entrada")
-    .reduce((soma, l) => soma + l.valor, 0);
-  const saidas = lancamentos
-    .filter((l) => l.tipo === "saida")
-    .reduce((soma, l) => soma + l.valor, 0);
+  const listaEntradas = lancamentos.filter((l) => l.tipo === "entrada");
+  const listaSaidas = lancamentos.filter((l) => l.tipo === "saida");
+  const soma = (lista: LancamentoCaixa[]) => lista.reduce((total, l) => total + l.valor, 0);
+  const entradas = soma(listaEntradas);
+  const saidas = soma(listaSaidas);
   const saldo = entradas - saidas;
+  const fixos = lancamentos.filter((l) => l.fixo_ativo);
+
+  // Saldo por conta no mês (sem conta = "Sem conta").
+  const porConta = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const l of lancamentos) {
+      const nome = l.conta_nome ?? "Sem conta";
+      mapa.set(nome, (mapa.get(nome) ?? 0) + (l.tipo === "entrada" ? l.valor : -l.valor));
+    }
+    return Array.from(mapa.entries()).sort((a, b) => b[1] - a[1]);
+  }, [lancamentos]);
 
   const visiveis = useMemo(
     () =>
-      lancamentos.filter((l) => {
-        if (filtro !== "todos" && l.tipo !== filtro) return false;
-        if (contaFiltro && String(l.conta_id) !== contaFiltro) return false;
-        return true;
-      }),
+      lancamentos
+        .filter((l) => {
+          if (filtro !== "todos" && l.tipo !== filtro) return false;
+          if (contaFiltro && String(l.conta_id) !== contaFiltro) return false;
+          return true;
+        })
+        .sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id),
     [lancamentos, filtro, contaFiltro],
   );
 
@@ -130,183 +150,231 @@ export default function AdminPointCaixa() {
     );
   }
 
-  const rotuloMes = mes.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const rotuloMes = mes
+    .toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+    .replace(/^\w/, (c) => c.toUpperCase());
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Caixa</h1>
-      </div>
-
-      <p className="cobranca-subtitulo">
-        Tudo que entra e sai do Point. As cobranças pagas entram sozinhas; o resto você lança aqui.
-      </p>
-
-      <>
-      <div className="caixa-mes-nav">
-        <button
-          type="button"
-          className="secondary cobranca-btn-icone"
-          onClick={() => mudarMes(-1)}
-          aria-label="Mês anterior"
-        >
-          <Icon name="chevron-left" size={16} />
-        </button>
-        <span className="caixa-mes-rotulo">{rotuloMes}</span>
-        <button
-          type="button"
-          className="secondary cobranca-btn-icone"
-          onClick={() => mudarMes(1)}
-          aria-label="Próximo mês"
-        >
-          <Icon name="chevron-right" size={16} />
-        </button>
+      <div className="pagina-topo">
+        <div>
+          <div className="pagina-contexto">Financeiro</div>
+          <div className="caixa-titulo-linha">
+            <h1>Caixa</h1>
+            <div className="caixa-mes">
+              <button type="button" className="agenda-seta" onClick={() => mudarMes(-1)} aria-label="Mês anterior">
+                <Icon name="chevron-left" size={18} />
+              </button>
+              <span className="caixa-mes-rotulo">{rotuloMes}</span>
+              <button type="button" className="agenda-seta" onClick={() => mudarMes(1)} aria-label="Próximo mês">
+                <Icon name="chevron-right" size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="caixa-botoes">
+          <button type="button" className="botao-link" onClick={() => setFormulario("entrada")}>
+            + Entrada
+          </button>
+          <button type="button" className="botao-link botao-link-secundario" onClick={() => setFormulario("saida")}>
+            − Saída
+          </button>
+        </div>
       </div>
 
       {erro && <p className="form-error">{erro}</p>}
       {loading && <p className="empty-state">Carregando...</p>}
 
       {!loading && (
-        <>
-          <div className="stats-grid caixa-resumo">
-            <div className="stat-tile">
-              <div className="stat-label">Entradas</div>
-              <div className="stat-value caixa-valor-entrada">{formatarReais(entradas)}</div>
+        <div className="caixa-corpo">
+          <div className="chk-kpis">
+            <div className="chk-kpi">
+              <span className="chk-kpi-rotulo">Entradas</span>
+              <span className="chk-kpi-valor caixa-entrada">{formatarReais(entradas)}</span>
+              <span className="chk-kpi-nota">{plural(listaEntradas.length, "lançamento", "lançamentos")}</span>
             </div>
-            <div className="stat-tile">
-              <div className="stat-label">Saídas</div>
-              <div className="stat-value caixa-valor-saida">{formatarReais(saidas)}</div>
+            <div className="chk-kpi">
+              <span className="chk-kpi-rotulo">Saídas</span>
+              <span className="chk-kpi-valor caixa-saida">{formatarReais(saidas)}</span>
+              <span className="chk-kpi-nota">{plural(listaSaidas.length, "lançamento", "lançamentos")}</span>
             </div>
-            <div className="stat-tile">
-              <div className="stat-label">Saldo</div>
-              <div className={`stat-value ${saldo < 0 ? "caixa-valor-saida" : ""}`}>
-                {formatarReais(saldo)}
-              </div>
+            <div className="chk-kpi escuro">
+              <span className="chk-kpi-rotulo">Saldo do mês</span>
+              <span className="chk-kpi-valor">{formatarReais(saldo)}</span>
+              <span className="chk-kpi-nota">entradas − saídas</span>
+            </div>
+            <div className="chk-kpi limao">
+              <span className="chk-kpi-rotulo">Lançamentos fixos</span>
+              <span className="chk-kpi-valor">{fixos.length}</span>
+              <span className="chk-kpi-nota">repetem todo mês sozinhos</span>
             </div>
           </div>
 
-          <div className="caixa-filtros">
-            <div className="toggle-grid">
-              {FILTROS.map((f) => (
-                <button
-                  key={f.valor}
-                  type="button"
-                  className={`toggle-chip${filtro === f.valor ? " active" : ""}`}
-                  onClick={() => setFiltro(f.valor)}
-                >
-                  {f.rotulo}
-                </button>
-              ))}
-            </div>
-            {contas.length > 0 && (
-              <select value={contaFiltro} onChange={(e) => setContaFiltro(e.target.value)}>
-                <option value="">Todas as contas</option>
-                {contas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {visiveis.length === 0 ? (
-            <p className="empty-state">
-              {lancamentos.length === 0
-                ? "Nenhum lançamento neste mês."
-                : "Nenhum lançamento com esses filtros."}
-            </p>
-          ) : (
-            <div className="card-list">
-              {visiveis.map((l) => (
-                <div className="item-card cobranca-item" key={l.id}>
-                  <div className="item-card-info">
-                    <span className="item-card-title cobranca-aluno">
-                      {l.descricao}
-                      {l.fixo_id !== null && (
-                        <span
-                          className="cobranca-recorrente"
-                          title={l.fixo_ativo ? "Repete todo mês" : "Repetição encerrada"}
-                        >
-                          <Icon name="repeat" size={13} />
-                        </span>
-                      )}
-                    </span>
-                    <span className="item-card-subtitle">
-                      {diaMes(l.data)}
-                      {l.conta_nome && ` · ${l.conta_nome}`}
-                      {l.automatico && " · automático"}
-                    </span>
+          <div className="caixa-layout">
+            <section className="alunos-card caixa-movimentos">
+              <div className="caixa-movimentos-topo">
+                <h2 className="chk-secao-titulo">Movimentações</h2>
+                <div className="caixa-filtros-novo">
+                  <div className="agenda-passos" role="tablist" aria-label="Tipo">
+                    {FILTROS.map((f) => (
+                      <button
+                        key={f.valor}
+                        type="button"
+                        role="tab"
+                        aria-selected={filtro === f.valor}
+                        className={filtro === f.valor ? "ativo" : ""}
+                        onClick={() => setFiltro(f.valor)}
+                      >
+                        {f.rotulo}
+                      </button>
+                    ))}
                   </div>
-                  <div className="cobranca-direita">
-                    <span
-                      className={`cobranca-valor ${
-                        l.tipo === "entrada" ? "caixa-valor-entrada" : "caixa-valor-saida"
-                      }`}
+                  {contas.length > 0 && (
+                    <select
+                      className="filtro-pilula"
+                      aria-label="Filtrar por conta"
+                      value={contaFiltro}
+                      onChange={(e) => setContaFiltro(e.target.value)}
                     >
-                      {l.tipo === "entrada" ? "+" : "−"} {formatarReais(l.valor)}
-                    </span>
-                    <div className="cobranca-acoes">
-                      {l.fixo_ativo && (
-                        <button
-                          type="button"
-                          className="secondary"
-                          disabled={ocupadoId === l.id}
-                          onClick={() => pararDeRepetir(l)}
-                        >
-                          Parar de repetir
-                        </button>
-                      )}
-                      {!l.automatico && (
-                        <>
-                          <button
-                            type="button"
-                            className="secondary cobranca-btn-icone"
-                            title="Editar"
-                            aria-label="Editar"
-                            disabled={ocupadoId === l.id}
-                            onClick={() => setFormulario(l)}
-                          >
-                            <Icon name="edit" size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary cobranca-btn-icone"
-                            title="Remover"
-                            aria-label="Remover"
-                            disabled={ocupadoId === l.id}
-                            onClick={() => remover(l)}
-                          >
-                            <Icon name="trash" size={16} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                      <option value="">Todas as contas</option>
+                      {contas.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+              </div>
 
-      <button type="button" className="fab" onClick={() => setFormulario("novo")}>
-        <Icon name="plus" />
-        Novo lançamento
-      </button>
-      </>
+              {visiveis.length === 0 ? (
+                <p className="alunos-vazio">
+                  {lancamentos.length === 0
+                    ? "Nenhum lançamento neste mês. As cobranças pagas entram sozinhas; o resto você lança em \"+ Entrada\" ou \"− Saída\"."
+                    : "Nenhum lançamento com esses filtros."}
+                </p>
+              ) : (
+                <ul className="caixa-lista">
+                  {visiveis.map((l) => (
+                    <li key={l.id} className="caixa-mov">
+                      <span className={`caixa-mov-icone ${l.tipo}`} aria-hidden="true">
+                        {l.tipo === "entrada" ? "↑" : "↓"}
+                      </span>
+                      <span className="caixa-mov-texto">
+                        <span className="alunos-nome caixa-mov-descricao">
+                          {l.descricao}
+                          {l.fixo_id !== null && (
+                            <span
+                              className="caixa-mov-repete"
+                              title={l.fixo_ativo ? "Repete todo mês" : "Repetição encerrada"}
+                            >
+                              <Icon name="repeat" size={13} />
+                            </span>
+                          )}
+                        </span>
+                        <span className="alunos-sub">
+                          {diaMes(l.data)}
+                          {l.conta_nome ? ` · ${l.conta_nome}` : ""}
+                          {l.automatico ? " · automático (cobrança paga)" : ""}
+                          {l.fixo_ativo ? " · fixo" : ""}
+                        </span>
+                      </span>
+                      <strong className={`caixa-mov-valor ${l.tipo}`}>
+                        {l.tipo === "entrada" ? "+" : "−"} {formatarReais(l.valor)}
+                      </strong>
+                      <span className="caixa-mov-acoes">
+                        {l.fixo_ativo && (
+                          <button
+                            type="button"
+                            className="cobr-icone"
+                            title="Parar de repetir"
+                            aria-label={`Parar de repetir ${l.descricao}`}
+                            disabled={ocupadoId === l.id}
+                            onClick={() => pararDeRepetir(l)}
+                          >
+                            <Icon name="pause" size={15} />
+                          </button>
+                        )}
+                        {!l.automatico && (
+                          <>
+                            <button
+                              type="button"
+                              className="cobr-icone"
+                              title="Editar"
+                              aria-label={`Editar ${l.descricao}`}
+                              disabled={ocupadoId === l.id}
+                              onClick={() => setFormulario(l)}
+                            >
+                              <Icon name="edit" size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              className="cobr-icone"
+                              title="Remover"
+                              aria-label={`Remover ${l.descricao}`}
+                              disabled={ocupadoId === l.id}
+                              onClick={() => remover(l)}
+                            >
+                              <Icon name="trash" size={15} />
+                            </button>
+                          </>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <div className="caixa-lateral">
+              <section className="alunos-card">
+                <h2 className="chk-secao-titulo">Por conta</h2>
+                {porConta.length === 0 ? (
+                  <p className="alunos-sub">Sem movimento no mês.</p>
+                ) : (
+                  <ul className="caixa-resumo-lista">
+                    {porConta.map(([nome, valor]) => (
+                      <li key={nome}>
+                        <span>{nome}</span>
+                        <strong className={valor < 0 ? "caixa-saida" : ""}>{formatarReais(valor)}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="alunos-card">
+                <h2 className="chk-secao-titulo">Lançamentos fixos</h2>
+                <p className="alunos-sub caixa-fixos-dica">
+                  Entram sozinhos todo mês, no mesmo dia. Pra criar um, marque "Repetir todo mês" no lançamento.
+                </p>
+                {fixos.length === 0 ? (
+                  <p className="alunos-sub">Nenhum fixo ativo neste mês.</p>
+                ) : (
+                  <ul className="caixa-resumo-lista">
+                    {fixos.map((l) => (
+                      <li key={l.id}>
+                        <span>
+                          {l.descricao}
+                          <span className="alunos-sub"> · dia {Number(l.data.slice(8, 10))}</span>
+                        </span>
+                        <strong className={l.tipo === "saida" ? "caixa-saida" : "caixa-entrada"}>
+                          {l.tipo === "entrada" ? "+" : "−"} {formatarReais(l.valor)}
+                        </strong>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
 
       {formulario !== null && (
         <LancamentoModal
-          lancamento={formulario === "novo" ? null : formulario}
+          lancamento={typeof formulario === "string" ? null : formulario}
+          tipoInicial={typeof formulario === "string" ? formulario : formulario.tipo}
           contas={contas}
           onFechar={() => setFormulario(null)}
           onSalvo={() => {
@@ -324,17 +392,19 @@ const NOVA_CONTA = "__nova__";
 
 function LancamentoModal({
   lancamento,
+  tipoInicial,
   contas,
   onFechar,
   onSalvo,
 }: {
   lancamento: LancamentoCaixa | null;
+  tipoInicial: LancamentoTipo;
   contas: ContaCaixa[];
   onFechar: () => void;
   onSalvo: () => void;
 }) {
   const editando = lancamento !== null;
-  const [tipo, setTipo] = useState<LancamentoTipo>(lancamento?.tipo ?? "entrada");
+  const [tipo, setTipo] = useState<LancamentoTipo>(lancamento?.tipo ?? tipoInicial);
   const [descricao, setDescricao] = useState(lancamento?.descricao ?? "");
   const [valor, setValor] = useState(lancamento ? String(lancamento.valor) : "");
   const [data, setData] = useState(lancamento?.data ?? isoLocal(new Date()));

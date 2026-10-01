@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, or_
@@ -14,7 +14,16 @@ from app.models.matricula import Matricula
 from app.models.turma import Turma
 from app.models.user import User
 from app.models.vinculo import Vinculo
-from app.schemas.relatorio import RelatorioMesOut, RelatorioResumoOut
+from app.schemas.relatorio import (
+    PainelIndicadoresOut,
+    PainelMapaLinhaOut,
+    PainelOrigemOut,
+    PainelProfessorOut,
+    PainelRelatorioOut,
+    RelatorioMesOut,
+    RelatorioResumoOut,
+)
+from app.services import relatorios as rel
 
 router = APIRouter(prefix="/relatorios", tags=["relatorios"])
 
@@ -130,4 +139,109 @@ def resumo(
         a_receber=a_receber,
         atrasado=sum(float(c.valor) for c in atrasadas),
         saldo=entrou - saiu,
+    )
+
+
+@router.get("/painel", response_model=PainelRelatorioOut)
+def painel(
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+    periodo: Literal["semana", "mes", "trimestre"] = "mes",
+) -> PainelRelatorioOut:
+    """Painel do protótipo de Relatórios (pedido do usuário, 2026-10-01) —
+    indicadores do período com comparação ao anterior, mapa de ocupação dia
+    × hora, receita por origem, funil da aula experimental e desempenho por
+    professor. Regras e limitações em app/services/relatorios.py."""
+    point_id = admin.point_id
+    hoje = date.today()
+    inicio, fim = rel.intervalo(periodo, hoje)
+    ant_inicio, ant_fim = rel.intervalo_anterior(periodo, inicio)
+
+    turmas = rel.turmas_do_point(db, point_id)
+    turma_ids = [t.id for t in turmas]
+    atual = rel.ocorrencias(db, point_id, turmas, inicio, fim)
+    anterior = rel.ocorrencias(db, point_id, turmas, ant_inicio, ant_fim)
+
+    funil = rel.funil_experimental(db, turma_ids, point_id, inicio, fim)
+    funil_ant = rel.funil_experimental(db, turma_ids, point_id, ant_inicio, ant_fim)
+
+    def conversao(f: list[int]) -> int | None:
+        return round(100 * f[3] / f[0]) if f[0] else None
+
+    # Mapa dia × hora: ocupação média das ocorrências daquela célula.
+    horas = sorted({int(t.horario[:2]) for t in turmas})
+    soma: dict[tuple[int, int], list[int]] = {}
+    for o in atual.ocorrencias:
+        chave = (o.data.weekday(), int(o.turma.horario[:2]))
+        acc = soma.setdefault(chave, [0, 0])
+        acc[0] += min(o.inscritos, o.turma.capacidade)
+        acc[1] += o.turma.capacidade
+    celula = {k: round(100 * v[0] / v[1]) for k, v in soma.items() if v[1]}
+    mapa = [
+        PainelMapaLinhaOut(dia=rel.ROTULO_DIA[d], celulas=[celula.get((d, h)) for h in horas])
+        for d in range(7)
+        if any((d, h) in celula for h in horas)
+    ]
+    sugestao = None
+    if celula:
+        (d_min, h_min), v_min = min(celula.items(), key=lambda kv: kv[1])
+        (d_max, h_max), v_max = max(celula.items(), key=lambda kv: kv[1])
+        if v_max >= 90:
+            sugestao = (
+                f"{rel.ROTULO_DIA[d_max]} às {h_max}h está com {v_max}% de ocupação — "
+                "dá pra abrir outra turma nesse horário."
+            )
+        elif v_min <= 40:
+            sugestao = f"{rel.ROTULO_DIA[d_min]} às {h_min}h tem espaço sobrando ({v_min}% de ocupação)."
+
+    plataformas = rel.checkins_plataformas(db, point_id, inicio, fim)
+
+    exp_por_turma = rel.experimentais_por_turma(db, turma_ids, inicio, fim)
+    por_vinculo: dict[int, list[Turma]] = {}
+    for t in turmas:
+        por_vinculo.setdefault(t.vinculo_id, []).append(t)
+    professores = []
+    for turmas_v in por_vinculo.values():
+        ids = {t.id for t in turmas_v}
+        ocs = [o for o in atual.ocorrencias if o.turma.id in ids]
+        professores.append(
+            PainelProfessorOut(
+                nome=turmas_v[0].vinculo.professor.nome,
+                modalidades=" · ".join(sorted({t.modalidade.nome for t in turmas_v})),
+                aulas_dadas=sum(1 for o in ocs if o.data < hoje),
+                alunos_ativos=len(rel.alunos_ativos(turmas_v)),
+                experimentais=sum(exp_por_turma.get(i, 0) for i in ids),
+                faltas=rel.faltas_pct(ocs, hoje),
+                ocupacao=rel.ocupacao_pct(ocs),
+            )
+        )
+    professores.sort(key=lambda p: (-(p.ocupacao or 0), p.nome))
+
+    return PainelRelatorioOut(
+        periodo=periodo,
+        inicio=inicio.isoformat(),
+        fim=fim.isoformat(),
+        indicadores=PainelIndicadoresOut(
+            receita=rel.receita(db, point_id, inicio, fim),
+            receita_anterior=rel.receita(db, point_id, ant_inicio, ant_fim),
+            ocupacao=rel.ocupacao_pct(atual.ocorrencias),
+            ocupacao_anterior=rel.ocupacao_pct(anterior.ocorrencias),
+            alunos_ativos=len(rel.alunos_ativos(turmas)),
+            alunos_novos=rel.alunos_novos(db, point_id, inicio, fim),
+            alunos_novos_anterior=rel.alunos_novos(db, point_id, ant_inicio, ant_fim),
+            conversao=conversao(funil),
+            conversao_anterior=conversao(funil_ant),
+            faltas=rel.faltas_pct(atual.ocorrencias, hoje),
+            faltas_anterior=rel.faltas_pct(anterior.ocorrencias, hoje),
+        ),
+        horas=[f"{h:02d}h" for h in horas],
+        mapa=mapa,
+        sugestao=sugestao,
+        receita_origem=[
+            PainelOrigemOut(rotulo=r, valor=v) for r, v in rel.receita_por_origem(db, point_id, inicio, fim)
+        ],
+        checkins_wellhub=plataformas.get("wellhub", 0),
+        checkins_totalpass=plataformas.get("totalpass", 0),
+        funil=funil,
+        professores=professores,
     )

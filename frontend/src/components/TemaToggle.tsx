@@ -20,14 +20,17 @@ export function TemaToggle() {
   }
 
   return (
-    <section className="section">
-      <h2>Aparência</h2>
-      <div className="toggle-grid">
+    <section className="alunos-card perfil-card">
+      <h2 className="chk-secao-titulo">Aparência</h2>
+      <p className="alunos-sub">"Sistema" segue o modo claro/escuro do seu celular ou computador.</p>
+      <div className="agenda-passos perfil-tema" role="radiogroup" aria-label="Tema">
         {OPCOES.map((op) => (
           <button
             key={op.valor}
             type="button"
-            className={tema === op.valor ? "toggle-chip active" : "toggle-chip"}
+            role="radio"
+            aria-checked={tema === op.valor}
+            className={tema === op.valor ? "ativo" : ""}
             onClick={() => escolher(op.valor)}
           >
             {op.rotulo}
