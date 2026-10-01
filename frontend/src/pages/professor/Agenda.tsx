@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api/client";
 import type { Matricula, SolicitacaoExperimental, TurmaResumo } from "../../api/types";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Layout } from "../../components/Layout";
 import { AgendaTurmasCalendario } from "../../components/AgendaTurmasCalendario";
 
@@ -53,20 +54,18 @@ export default function ProfessorAgenda() {
 
   return (
     <Layout>
-      <h1>Agenda</h1>
+      <CabecalhoPagina titulo="Agenda" contexto="Suas aulas" />
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
       {pronto && (
-        <section className="section">
-          <AgendaTurmasCalendario
-            turmas={turmas}
-            matriculas={matriculas}
-            solicitacoesExperimentais={solicitacoesExperimentais}
-            onMudanca={carregar}
-          />
-        </section>
+        <AgendaTurmasCalendario
+          turmas={turmas}
+          matriculas={matriculas}
+          solicitacoesExperimentais={solicitacoesExperimentais}
+          onMudanca={carregar}
+        />
       )}
     </Layout>
   );

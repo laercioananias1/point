@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import type { Matricula } from "../../api/types";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Layout } from "../../components/Layout";
 import { toISODate } from "../../components/Calendar";
 import { AgendaAlunoCalendario, type Ocorrencia } from "../../components/AgendaAlunoCalendario";
@@ -47,7 +48,7 @@ export default function AlunoAgenda() {
 
   return (
     <Layout>
-      <h1>Agenda</h1>
+      <CabecalhoPagina titulo="Agenda" contexto="Suas aulas" />
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
@@ -64,16 +65,15 @@ export default function AlunoAgenda() {
       )}
 
       {pronto && (
-        <section className="section">
-          <h2>Calendário</h2>
+        <>
           {ativas.length === 0 ? (
-            <p className="empty-state">
+            <p className="alunos-card alunos-vazio">
               Nenhuma matrícula ativa ainda — o calendário aparece aqui assim que você tiver uma.
             </p>
           ) : (
             <AgendaAlunoCalendario matriculas={ativas} onCancelar={setCancelando} />
           )}
-        </section>
+        </>
       )}
     </Layout>
   );

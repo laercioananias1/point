@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Matricula, SolicitacaoExperimental, TurmaResumo } from "../../api/types";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Layout } from "../../components/Layout";
 import { AgendaTurmasCalendario } from "../../components/AgendaTurmasCalendario";
 
@@ -73,37 +74,45 @@ export default function AdminPointAgenda() {
 
   return (
     <Layout>
-      <h1>Agenda</h1>
+      <CabecalhoPagina
+        titulo="Agenda"
+        contexto="Quadras e aulas"
+        novo={pronto ? { para: "/admin-point/turmas/cadastrar", rotulo: "Nova turma" } : null}
+      />
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
       {pronto && (
-        <section className="section">
+        <>
           {turmas.length > 0 && (
-            <div className="form-row" style={{ marginBottom: 16 }}>
-              <label className="filter-label">
-                Filtrar por professor
-                <select value={professorId} onChange={(e) => setProfessorId(e.target.value)}>
-                  <option value="">Todos os professores</option>
-                  {professores.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="filter-label">
-                Filtrar por quadra
-                <select value={quadraId} onChange={(e) => setQuadraId(e.target.value)}>
-                  <option value="">Todas as quadras</option>
-                  {quadras.map((q) => (
-                    <option key={q.id} value={q.id}>
-                      {q.nome}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="alunos-filtros turmas-filtros agenda-filtros">
+              <select
+                className="filtro-pilula"
+                aria-label="Filtrar por professor"
+                value={professorId}
+                onChange={(e) => setProfessorId(e.target.value)}
+              >
+                <option value="">Todos os professores</option>
+                {professores.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="filtro-pilula"
+                aria-label="Filtrar por quadra"
+                value={quadraId}
+                onChange={(e) => setQuadraId(e.target.value)}
+              >
+                <option value="">Todas as quadras</option>
+                {quadras.map((q) => (
+                  <option key={q.id} value={q.id}>
+                    {q.nome}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -113,7 +122,7 @@ export default function AdminPointAgenda() {
             solicitacoesExperimentais={solicitacoesExperimentais}
             onMudanca={carregar}
           />
-        </section>
+        </>
       )}
     </Layout>
   );

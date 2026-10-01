@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, ApiError } from "../api/client";
 import type { Checkin, Feriado, Matricula, SolicitacaoExperimental, TurmaResumo } from "../api/types";
 import { CategoriaBadge } from "./CategoriaBadge";
@@ -106,12 +106,12 @@ export function ocorrenciasEmDatas(
   return mapa;
 }
 
-type Granularidade = "dia" | "semana" | "mes";
+export type Granularidade = "dia" | "semana" | "mes";
 
 /** Datas exibidas conforme a granularidade (pedido do usuário, 2026-09-21:
  * "troca para semana e mês não muda a agenda") — dia: só o selecionado;
  * semana: seg→dom da semana dele; mês: todos os dias do mês dele. */
-function datasDoPeriodo(ref: Date, passo: Granularidade): Date[] {
+export function datasDoPeriodo(ref: Date, passo: Granularidade): Date[] {
   if (passo === "dia") return [ref];
   if (passo === "semana") {
     const inicio = inicioDaSemana(ref);
@@ -121,7 +121,7 @@ function datasDoPeriodo(ref: Date, passo: Granularidade): Date[] {
   return Array.from({ length: ultimo }, (_, i) => new Date(ref.getFullYear(), ref.getMonth(), i + 1));
 }
 
-function minutosDoHorario(horario: string): number {
+export function minutosDoHorario(horario: string): number {
   const [h, m] = horario.split(":").map(Number);
   return h * 60 + m;
 }
@@ -191,9 +191,11 @@ export function AgendaTurmasCalendario({
   } | null>(null);
   // Detalhe de UMA ocorrência (pedido do usuário, 2026-09-15: grade por
   // quadra/horário no lugar da lista empilhada — não sobra espaço pra
-  // mostrar presença/cancelar dentro do bloco, então abre num modal ao
-  // clicar).
+  // mostrar presença/cancelar dentro do bloco). Era um modal; no layout do
+  // kit (design/telas/Agenda.dc.html, pedido do usuário, 2026-10-01) virou
+  // o painel ao lado da grade.
   const [detalheAberto, setDetalheAberto] = useState<OcorrenciaTurma | null>(null);
+  const painelRef = useRef<HTMLElement>(null);
   const [diaSelecionado, setDiaSelecionado] = useState(new Date());
   const [passo, setPasso] = useState<Granularidade>("dia");
 
@@ -246,6 +248,44 @@ export function AgendaTurmasCalendario({
         .filter((s) => s.turma.id === oc.turmaId && s.data === iso)
         .map((s): Pessoa => ({ id: s.id, nome: s.nome, tipo: "experimental" })),
     ];
+  }
+
+  // De onde vem cada aluno, pro painel de presença (mesma leitura do
+  // Início do professor).
+  const origemPorMatricula = useMemo(
+    () =>
+      new Map(
+        matriculas.map((m) => [
+          m.id,
+          m.fonte_pagamento === "wellhub"
+            ? "Wellhub"
+            : m.fonte_pagamento === "totalpass"
+              ? "TotalPass"
+              : m.tipo === "mensal"
+                ? "Mensalista"
+                : "Avulso",
+        ]),
+      ),
+    [matriculas],
+  );
+
+  // O painel só mostra aula do período que está na tela — trocar de dia ou
+  // de semana limpa a seleção. No Mês não tem painel: clicar no dia abre a
+  // agenda daquele dia.
+  const detalhe =
+    detalheAberto &&
+    passo !== "mes" &&
+    datasVisiveis.some((d) => toISODate(d) === toISODate(detalheAberto.data))
+      ? detalheAberto
+      : null;
+  const chaveDetalhe = detalhe ? `${detalhe.turmaId}-${toISODate(detalhe.data)}` : null;
+
+  function abrirDetalhe(oc: OcorrenciaTurma) {
+    setDetalheAberto(oc);
+    // No celular o painel fica embaixo da grade — rola até ele.
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      requestAnimationFrame(() => painelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
   }
 
   const ocorrenciasAtivas = ocorrenciasDoDia.filter((oc) => !oc.cancelada);
@@ -314,233 +354,217 @@ export function AgendaTurmasCalendario({
         />
       )}
 
-      {detalheAberto && (
-        <DetalheOcorrenciaModal
-          ocorrencia={detalheAberto}
-          pessoas={pessoasDaOcorrencia(detalheAberto)}
-          onFechar={() => setDetalheAberto(null)}
-          onCancelarTurma={(alunosCount) => {
-            setRemovendo({ ocorrencia: detalheAberto, alunosCount });
-            setDetalheAberto(null);
-          }}
-          onCancelarAluno={(matriculaId, nome) => {
-            setCancelandoAluno({ matriculaId, nome, ocorrencia: detalheAberto });
-            setDetalheAberto(null);
-          }}
-        />
-      )}
-
       <AgendaDiaNav
         diaSelecionado={diaSelecionado}
         onSelecionarDia={setDiaSelecionado}
         passo={passo}
         onMudarPasso={setPasso}
+        diasComAula={(d) => (ocorrenciasPorDia.get(toISODate(d)) ?? []).some((oc) => !oc.cancelada)}
+        resumo={
+          ocorrenciasAtivasPeriodo.length > 0
+            ? (() => {
+                // Resumo do período (pedido do usuário, 2026-09-15: "tambem
+                // mostra % ocupacao e qtde de alunos") — vagas ocupadas
+                // contam por aula; "Alunos" conta pessoas distintas (na
+                // semana/mês o mesmo aluno aparece em várias aulas).
+                const capacidade = ocorrenciasAtivasPeriodo.reduce((soma, oc) => soma + oc.capacidade, 0);
+                const ocupadas = ocorrenciasAtivasPeriodo.reduce(
+                  (soma, oc) => soma + pessoasDaOcorrencia(oc).length,
+                  0,
+                );
+                const pessoas = new Set(
+                  ocorrenciasAtivasPeriodo.flatMap((oc) =>
+                    pessoasDaOcorrencia(oc).map((p) => `${p.tipo}:${p.id}`),
+                  ),
+                ).size;
+                const aulas = ocorrenciasAtivasPeriodo.length;
+                const ocupacao = capacidade > 0 ? Math.round((ocupadas / capacidade) * 100) : 0;
+                return (
+                  <>
+                    <span>
+                      <strong>{aulas}</strong> {aulas === 1 ? "aula" : "aulas"}
+                    </span>
+                    <span>
+                      <strong>{ocupacao}%</strong> ocupação
+                    </span>
+                    <span>
+                      <strong>{pessoas}</strong> {pessoas === 1 ? "aluno" : "alunos"}
+                    </span>
+                  </>
+                );
+              })()
+            : null
+        }
       />
 
-      {ocorrenciasAtivasPeriodo.length > 0 &&
-        (() => {
-          // Resumo do dia (pedido do usuário, 2026-09-15: "tambem mostra
-          // % ocupacao e qtde de alunos") — soma todas as aulas ativas do
-          // dia selecionado, mesma conta de vaga usada em cada bloco.
-          const capacidadeDia = ocorrenciasAtivasPeriodo.reduce((soma, oc) => soma + oc.capacidade, 0);
-          // Vagas ocupadas contam por aula; "Alunos" conta pessoas distintas
-          // no período (na semana/mês o mesmo aluno aparece em várias aulas).
-          const vagasOcupadas = ocorrenciasAtivasPeriodo.reduce(
-            (soma, oc) => soma + pessoasDaOcorrencia(oc).length,
-            0,
-          );
-          const pessoasDia = new Set(
-            ocorrenciasAtivasPeriodo.flatMap((oc) =>
-              pessoasDaOcorrencia(oc).map((p) => `${p.tipo}:${p.id}`),
-            ),
-          ).size;
-          const pctOcupacao = capacidadeDia > 0 ? Math.round((vagasOcupadas / capacidadeDia) * 100) : 0;
-          return (
-            <div className="agenda-stats-row">
-              <div className="agenda-stats-item">
-                <span className="agenda-stats-numero">{pctOcupacao}%</span>
-                <span className="agenda-stats-rotulo">Ocupação</span>
-              </div>
-              <div className="agenda-stats-item">
-                <span className="agenda-stats-numero">{pessoasDia}</span>
-                <span className="agenda-stats-rotulo">Alunos</span>
-              </div>
-            </div>
-          );
-        })()}
+      {passo === "dia" && nomeFeriadoDoDia && (
+        <p className="agenda-feriado">
+          <Icon name="flag" size={16} /> Feriado: {nomeFeriadoDoDia}
+        </p>
+      )}
 
-      {passo === "dia" && (
-        <>
-          {nomeFeriadoDoDia && (
-            <div className="item-card" style={{ marginBottom: 8 }}>
-              <div className="item-card-info">
-                <span
-                  className="item-card-title"
-                  style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--good)" }}
-                >
-                  <Icon name="flag" /> Feriado: {nomeFeriadoDoDia}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {ocorrenciasDoDia.length === 0 ? (
-            !nomeFeriadoDoDia && <p className="empty-state">Nenhuma aula nesse dia.</p>
-          ) : (
-            <>
-              {ocorrenciasAtivas.length > 0 && (
-                <div className="agenda-timeline">
-                  <div className="agenda-timeline-header">
-                    <div className="agenda-timeline-corner" />
-                    {quadras.map((q) => (
-                      <div key={q} className="agenda-timeline-quadra-pill">
-                        {q}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="agenda-timeline-body" style={{ height: alturaGrade }}>
-                    <div className="agenda-timeline-horas">
-                      {horasDaGrade.map((h) => (
-                        <span
-                          key={h}
-                          className="agenda-timeline-hora-label"
-                          style={{ top: (h - horaInicioGrade) * 60 }}
-                        >
-                          {h}h
-                        </span>
-                      ))}
-                    </div>
-                    {horasDaGrade.map((h) => (
-                      <div
-                        key={h}
-                        className="agenda-timeline-linha"
-                        style={{ top: (h - horaInicioGrade) * 60 }}
-                      />
-                    ))}
-                    {ehHoje && offsetAgora >= 0 && offsetAgora <= alturaGrade && (
-                      <div className="agenda-timeline-agora" style={{ top: offsetAgora }} />
-                    )}
-                    <div className="agenda-timeline-colunas">
+      <div className="agenda-layout">
+        <section className="alunos-card agenda-grade-card">
+          {passo === "dia" &&
+            (ocorrenciasDoDia.length === 0 ? (
+              <p className="alunos-vazio">
+                {nomeFeriadoDoDia ? "Feriado — sem aulas nesse dia." : "Nenhuma aula nesse dia."}
+              </p>
+            ) : (
+              <>
+                {ocorrenciasAtivas.length > 0 && (
+                  <div className="agenda-timeline">
+                    <div className="agenda-timeline-header">
+                      <div className="agenda-timeline-corner" />
                       {quadras.map((q) => (
-                        <div key={q} className="agenda-timeline-coluna">
-                          {ocorrenciasAtivas
-                            .filter((oc) => oc.quadraNome === q)
-                            .map((oc) => {
-                              const pessoas = pessoasDaOcorrencia(oc);
-                              const top = minutosDoHorario(oc.horario) - horaInicioGrade * 60;
-                              return (
-                                <button
-                                  key={oc.turmaId}
-                                  type="button"
-                                  className="agenda-timeline-bloco"
-                                  style={{
-                                    top,
-                                    height: Math.max(oc.duracaoMinutos, 34),
-                                    background: hexParaRgba(oc.categoriaCor, 0.2),
-                                    borderColor: oc.categoriaCor,
-                                    color: oc.categoriaCor,
-                                  }}
-                                  onClick={() => setDetalheAberto(oc)}
-                                >
-                                  <span className="agenda-timeline-bloco-titulo">{oc.categoriaNome}</span>
-                                  <span className="agenda-timeline-bloco-sub">
-                                    {pessoas.length}/{oc.capacidade}
-                                  </span>
-                                </button>
-                              );
-                            })}
+                        <div key={q} className="agenda-timeline-quadra-pill">
+                          {q}
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {ocorrenciasCanceladas.length > 0 && (
-                <div className="card-list" style={{ marginTop: ocorrenciasAtivas.length > 0 ? 16 : 0 }}>
-                  {ocorrenciasCanceladas.map((oc, i) => (
-                    <div
-                      key={i}
-                      className="item-card"
-                      style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
-                    >
-                      <div className="item-card-info">
-                        <span
-                          className="item-card-title"
-                          style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--risk)" }}
-                        >
-                          <Icon name="x-circle" /> {oc.horario} – {horarioFim(oc.horario, oc.duracaoMinutos)}{" "}
-                          cancelada
-                        </span>
-                        <span className="item-card-subtitle">
-                          <CategoriaBadge nome={oc.categoriaNome} cor={oc.categoriaCor} />
-                        </span>
-                        <span className="item-card-subtitle">
-                          {oc.modalidadeNome} · com {oc.professorNome}
-                        </span>
-                        <span
-                          className="item-card-subtitle"
-                          style={{ display: "flex", alignItems: "center", gap: 6 }}
-                        >
-                          <Icon name="pin" /> {oc.pointNome} · {oc.quadraNome}
-                        </span>
+                    <div className="agenda-timeline-body" style={{ height: alturaGrade }}>
+                      <div className="agenda-timeline-horas">
+                        {horasDaGrade.map((h) => (
+                          <span
+                            key={h}
+                            className="agenda-timeline-hora-label"
+                            style={{ top: (h - horaInicioGrade) * 60 }}
+                          >
+                            {h}h
+                          </span>
+                        ))}
                       </div>
-                      {oc.motivoCancelamento && (
-                        <div className="info-box" style={{ borderColor: "var(--risk)" }}>
-                          <span>Motivo: {oc.motivoCancelamento}</span>
-                        </div>
+                      {horasDaGrade.map((h) => (
+                        <div
+                          key={h}
+                          className="agenda-timeline-linha"
+                          style={{ top: (h - horaInicioGrade) * 60 }}
+                        />
+                      ))}
+                      {ehHoje && offsetAgora >= 0 && offsetAgora <= alturaGrade && (
+                        <div className="agenda-timeline-agora" style={{ top: offsetAgora }} />
                       )}
+                      <div className="agenda-timeline-colunas">
+                        {quadras.map((q) => (
+                          <div key={q} className="agenda-timeline-coluna">
+                            {ocorrenciasAtivas
+                              .filter((oc) => oc.quadraNome === q)
+                              .map((oc) => {
+                                const pessoas = pessoasDaOcorrencia(oc);
+                                const top = minutosDoHorario(oc.horario) - horaInicioGrade * 60;
+                                const selecionado = chaveDetalhe === `${oc.turmaId}-${toISODate(oc.data)}`;
+                                return (
+                                  <button
+                                    key={oc.turmaId}
+                                    type="button"
+                                    className={`agenda-timeline-bloco${selecionado ? " selecionado" : ""}`}
+                                    aria-pressed={selecionado}
+                                    style={{
+                                      top,
+                                      height: Math.max(oc.duracaoMinutos, 34),
+                                      background: hexParaRgba(oc.categoriaCor, 0.2),
+                                      borderColor: oc.categoriaCor,
+                                      color: oc.categoriaCor,
+                                    }}
+                                    onClick={() => abrirDetalhe(oc)}
+                                  >
+                                    <span className="agenda-timeline-bloco-titulo">{oc.categoriaNome}</span>
+                                    <span className="agenda-timeline-bloco-sub">
+                                      {pessoas.length}/{oc.capacidade}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </>
+                  </div>
+                )}
+
+                {ocorrenciasCanceladas.length > 0 && (
+                  <div className="agenda-canceladas">
+                    {ocorrenciasCanceladas.map((oc, i) => (
+                      <div key={i} className="agenda-cancelada">
+                        <span className="agenda-cancelada-titulo">
+                          <Icon name="x-circle" size={16} /> {oc.horario} –{" "}
+                          {horarioFim(oc.horario, oc.duracaoMinutos)} cancelada
+                        </span>
+                        <span className="alunos-sub">
+                          <CategoriaBadge nome={oc.categoriaNome} cor={oc.categoriaCor} /> · {oc.modalidadeNome}{" "}
+                          · com {oc.professorNome} · {oc.quadraNome}
+                        </span>
+                        {oc.motivoCancelamento && (
+                          <span className="alunos-sub">Motivo: {oc.motivoCancelamento}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ))}
+
+          {passo === "semana" && ocorrenciasPorDia.size === 0 && (
+            <p className="alunos-vazio">Nenhuma aula nessa semana.</p>
           )}
-        </>
-      )}
 
-      {passo === "semana" && ocorrenciasPorDia.size === 0 && (
-        <p className="empty-state">Nenhuma aula nessa semana.</p>
-      )}
+          {passo === "semana" && ocorrenciasPorDia.size > 0 && (
+            <AgendaSemana
+              datas={datasVisiveis}
+              ocorrenciasPorDia={ocorrenciasPorDia}
+              feriadosPorData={feriadosPorData}
+              horaInicioGrade={horaInicioGrade}
+              horasDaGrade={horasDaGrade}
+              alturaGrade={alturaGrade}
+              pessoasDaOcorrencia={pessoasDaOcorrencia}
+              chaveSelecionada={chaveDetalhe}
+              onAbrir={abrirDetalhe}
+              onIrParaDia={(d) => {
+                setDiaSelecionado(d);
+                setPasso("dia");
+              }}
+            />
+          )}
 
-      {passo === "semana" && ocorrenciasPorDia.size > 0 && (
-        <AgendaSemana
-          datas={datasVisiveis}
-          ocorrenciasPorDia={ocorrenciasPorDia}
-          feriadosPorData={feriadosPorData}
-          horaInicioGrade={horaInicioGrade}
-          horasDaGrade={horasDaGrade}
-          alturaGrade={alturaGrade}
-          pessoasDaOcorrencia={pessoasDaOcorrencia}
-          onAbrir={setDetalheAberto}
-          onIrParaDia={(d) => {
-            setDiaSelecionado(d);
-            setPasso("dia");
-          }}
-        />
-      )}
+          {passo === "mes" && (
+            <AgendaMes
+              referencia={diaSelecionado}
+              ocorrenciasPorDia={ocorrenciasPorDia}
+              feriadosPorData={feriadosPorData}
+              pessoasDaOcorrencia={pessoasDaOcorrencia}
+              onIrParaDia={(d) => {
+                setDiaSelecionado(d);
+                setPasso("dia");
+              }}
+            />
+          )}
+        </section>
 
-      {passo === "mes" && (
-        <AgendaMes
-          referencia={diaSelecionado}
-          ocorrenciasPorDia={ocorrenciasPorDia}
-          feriadosPorData={feriadosPorData}
-          pessoasDaOcorrencia={pessoasDaOcorrencia}
-          onIrParaDia={(d) => {
-            setDiaSelecionado(d);
-            setPasso("dia");
-          }}
-        />
-      )}
+        {passo !== "mes" && (
+          <aside className="alunos-card agenda-detalhe" ref={painelRef}>
+            {detalhe ? (
+              <DetalheOcorrencia
+                key={chaveDetalhe}
+                ocorrencia={detalhe}
+                pessoas={pessoasDaOcorrencia(detalhe)}
+                origemPorMatricula={origemPorMatricula}
+                onFechar={() => setDetalheAberto(null)}
+                onCancelarTurma={(alunosCount) => setRemovendo({ ocorrencia: detalhe, alunosCount })}
+                onCancelarAluno={(matriculaId, nome) =>
+                  setCancelandoAluno({ matriculaId, nome, ocorrencia: detalhe })
+                }
+              />
+            ) : (
+              <p className="agenda-detalhe-vazio">
+                Toque em uma aula na agenda para ver os alunos e marcar presença.
+              </p>
+            )}
+          </aside>
+        )}
+      </div>
     </>
   );
 }
-
-/** Checklist de presença dos alunos esperados nessa ocorrência (pedido do
- * usuário, 2026-08-26: "mostrar também os alunos e um check pra marcar
- * presença de cada um"). Cada check é um Checkin de origem "presumido" —
- * o backend confere de novo se esse aluno realmente tem aula nessa data
- * antes de marcar. */
 
 /** Presença de uma ocorrência (turma + data): quem já tem check-in
  * confirmado e o alternar marcar/desmarcar — compartilhado entre a lista
@@ -606,15 +630,20 @@ export function usePresenca(turmaId: number, iso: string) {
   return { presentes, carregado, alterando, alternar, chave };
 }
 
+/** Checklist de presença dos alunos esperados nessa ocorrência (pedido do
+ * usuário, 2026-08-26: "mostrar também os alunos e um check pra marcar
+ * presença de cada um"). Cada marcação é um Checkin de origem "presumido" —
+ * o backend confere de novo se esse aluno realmente tem aula nessa data
+ * antes de marcar. Botão Presente/Marcar do kit (Agenda.dc.html). */
 function PresencaLista({
-  turmaId,
-  data,
   pessoas,
+  origemPorMatricula,
+  presenca,
   onCancelarAluno,
 }: {
-  turmaId: number;
-  data: Date;
   pessoas: Pessoa[];
+  origemPorMatricula: Map<number, string>;
+  presenca: ReturnType<typeof usePresenca>;
   // Cancelar a aula de UM aluno específico, não a turma inteira (pedido
   // do usuário, 2026-09-01: "o professor pode cancelar uma aula de um
   // determinado aluno de última hora, precisa informar o motivo e opção
@@ -623,60 +652,58 @@ function PresencaLista({
   // pra cancelar).
   onCancelarAluno: (matriculaId: number, nome: string) => void;
 }) {
-  const iso = toISODate(data);
-  const { presentes, carregado, alterando, alternar, chave } = usePresenca(turmaId, iso);
+  const { presentes, carregado, alterando, alternar, chave } = presenca;
 
   if (pessoas.length === 0) {
-    return (
-      <p className="empty-state" style={{ margin: 0, padding: 0 }}>
-        Nenhum aluno matriculado nessa aula.
-      </p>
-    );
+    return <p className="alunos-sub">Nenhum aluno matriculado nessa aula.</p>;
   }
 
   return (
-    <div
-      style={{
-        borderTop: "1px solid var(--line)",
-        paddingTop: 8,
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-      }}
-    >
-      <span className="item-card-subtitle" style={{ fontWeight: 600 }}>
-        Presença {carregado && `(${presentes.size}/${pessoas.length})`}
-      </span>
-      {pessoas.map((p) => (
-        <div
-          key={chave(p)}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
-        >
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              style={{ width: "auto" }}
-              checked={presentes.has(chave(p))}
-              disabled={!carregado || alterando === chave(p)}
-              onChange={() => alternar(p)}
-            />
-            {p.nome}
-            {p.tipo === "experimental" && (
-              <span className="status-pill status-good">Experimental</span>
-            )}
-          </label>
-          {p.tipo === "matricula" && (
+    <div className="agenda-presenca">
+      <span className="prof-aulas-titulo agenda-presenca-titulo">Presença · confirmada pelo professor</span>
+      {pessoas.map((p) => {
+        const presente = presentes.has(chave(p));
+        const iniciais = p.nome
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((parte) => parte[0].toUpperCase())
+          .join("");
+        return (
+          <div key={chave(p)} className="agenda-presenca-linha">
+            <span className="agenda-presenca-avatar">{iniciais}</span>
+            <span className="alunos-pessoa-texto agenda-presenca-pessoa">
+              <span className="alunos-nome">{p.nome}</span>
+              <span className="alunos-sub">
+                {p.tipo === "experimental" ? "Aula experimental" : origemPorMatricula.get(p.id) ?? "Aluno"}
+                {p.tipo === "matricula" && (
+                  <>
+                    {" · "}
+                    <button type="button" className="alunos-acao" onClick={() => onCancelarAluno(p.id, p.nome)}>
+                      cancelar aula dele
+                    </button>
+                  </>
+                )}
+              </span>
+            </span>
             <button
               type="button"
-              className="link-btn"
-              style={{ padding: 0, fontSize: 12.5 }}
-              onClick={() => onCancelarAluno(p.id, p.nome)}
+              className={`prof-presenca-botao${presente ? " presente" : ""}`}
+              disabled={!carregado || alterando === chave(p)}
+              aria-label={`Presença de ${p.nome}: ${presente ? "presente" : "não marcada"}`}
+              onClick={() => alternar(p)}
             >
-              Cancelar aula dele
+              {presente ? (
+                <>
+                  <Icon name="check" size={14} /> Presente
+                </>
+              ) : (
+                "Marcar"
+              )}
             </button>
-          )}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -685,16 +712,21 @@ function PresencaLista({
  * somente o debaixo com dia, semana e mês"; 2026-09-21: "troca para semana
  * e mês não muda a agenda") — o passo escolhido (Dia/Semana/Mês) define o
  * que a agenda mostra abaixo e o quanto as setinhas andam. */
-function AgendaDiaNav({
+export function AgendaDiaNav({
   diaSelecionado,
   onSelecionarDia,
   passo,
   onMudarPasso,
+  diasComAula,
+  resumo,
 }: {
   diaSelecionado: Date;
   onSelecionarDia: (data: Date) => void;
   passo: Granularidade;
   onMudarPasso: (passo: Granularidade) => void;
+  diasComAula: (data: Date) => boolean;
+  // Números do período, ao lado da data (cada agenda decide o que mostrar).
+  resumo?: ReactNode;
 }) {
   function navegar(direcao: 1 | -1) {
     if (passo === "semana") {
@@ -725,35 +757,75 @@ function AgendaDiaNav({
         ? `${inicio.getDate()} – ${fim.getDate()} de ${mesFim}`
         : `${inicio.getDate()} de ${inicio.toLocaleDateString("pt-BR", { month: "long" })} – ${fim.getDate()} de ${mesFim}`;
   } else {
-    rotulo = diaSelecionado.toLocaleDateString("pt-BR", {
-      weekday: "long",
-      day: "2-digit",
-      month: "long",
-    });
+    rotulo = diaSelecionado
+      .toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })
+      .replace(/^\w/, (c) => c.toUpperCase());
   }
 
+  const hoje = toISODate(new Date());
+  const selecionadoIso = toISODate(diaSelecionado);
+  const semana = Array.from({ length: 7 }, (_, i) => somarDias(inicioDaSemana(diaSelecionado), i));
+
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div className="toggle-grid" style={{ marginBottom: 10 }}>
-        {(["dia", "semana", "mes"] as const).map((g) => (
-          <button
-            key={g}
-            type="button"
-            className={passo === g ? "toggle-chip active" : "toggle-chip"}
-            onClick={() => onMudarPasso(g)}
-          >
-            {g === "dia" ? "Dia" : g === "semana" ? "Semana" : "Mês"}
+    <div className="agenda-nav">
+      <div className="agenda-nav-linha">
+        <div className="agenda-nav-periodo">
+          <button type="button" className="agenda-seta" onClick={() => navegar(-1)} aria-label="Anterior">
+            <Icon name="chevron-left" size={18} />
           </button>
-        ))}
+          {passo === "dia" ? (
+            <div className="agenda-dias" role="tablist" aria-label="Dias da semana">
+              {semana.map((d, i) => {
+                const iso = toISODate(d);
+                const classes = ["agenda-dia"];
+                if (iso === selecionadoIso) classes.push("escolhido");
+                else if (iso === hoje) classes.push("hoje");
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    role="tab"
+                    aria-selected={iso === selecionadoIso}
+                    className={classes.join(" ")}
+                    onClick={() => onSelecionarDia(d)}
+                  >
+                    <span className="agenda-dia-letra">{ROTULO_DIA_CURTO[i]}</span>
+                    <span className="agenda-dia-numero">{d.getDate()}</span>
+                    <span className={diasComAula(d) ? "agenda-dia-ponto" : "agenda-dia-ponto vazio"} />
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <h3 className="agenda-nav-rotulo">{rotulo}</h3>
+          )}
+          <button type="button" className="agenda-seta" onClick={() => navegar(1)} aria-label="Próximo">
+            <Icon name="chevron-right" size={18} />
+          </button>
+          {selecionadoIso !== hoje && (
+            <button type="button" className="filtro-pilula agenda-hoje" onClick={() => onSelecionarDia(new Date())}>
+              Hoje
+            </button>
+          )}
+        </div>
+        <div className="agenda-passos" role="tablist" aria-label="Período">
+          {(["dia", "semana", "mes"] as const).map((g) => (
+            <button
+              key={g}
+              type="button"
+              role="tab"
+              aria-selected={passo === g}
+              className={passo === g ? "ativo" : ""}
+              onClick={() => onMudarPasso(g)}
+            >
+              {g === "dia" ? "Dia" : g === "semana" ? "Semana" : "Mês"}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="mini-calendar-dia-nav">
-        <button type="button" className="secondary" onClick={() => navegar(-1)} aria-label="Anterior">
-          ‹
-        </button>
-        <h3 className="mini-calendar-dia-titulo">{rotulo}</h3>
-        <button type="button" className="secondary" onClick={() => navegar(1)} aria-label="Próximo">
-          ›
-        </button>
+      <div className="agenda-nav-resumo">
+        {passo === "dia" && <span className="agenda-nav-data">{rotulo}</span>}
+        {resumo}
       </div>
     </div>
   );
@@ -798,7 +870,7 @@ function distribuirEmFaixas(
   return resultado;
 }
 
-const ROTULO_DIA_CURTO = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+export const ROTULO_DIA_CURTO = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 /** Visão de semana (pedido do usuário, 2026-09-21) — 7 colunas (seg→dom) ×
  * horas, mesmo bloco colorido por categoria da visão de dia. Clicar no
@@ -811,6 +883,7 @@ function AgendaSemana({
   horasDaGrade,
   alturaGrade,
   pessoasDaOcorrencia,
+  chaveSelecionada,
   onAbrir,
   onIrParaDia,
 }: {
@@ -821,6 +894,7 @@ function AgendaSemana({
   horasDaGrade: number[];
   alturaGrade: number;
   pessoasDaOcorrencia: (oc: OcorrenciaTurma) => Pessoa[];
+  chaveSelecionada: string | null;
   onAbrir: (oc: OcorrenciaTurma) => void;
   onIrParaDia: (d: Date) => void;
 }) {
@@ -876,7 +950,7 @@ function AgendaSemana({
                     <button
                       key={`${oc.turmaId}-${iso}`}
                       type="button"
-                      className={`agenda-timeline-bloco${oc.cancelada ? " cancelada" : ""}`}
+                      className={`agenda-timeline-bloco${oc.cancelada ? " cancelada" : ""}${chaveSelecionada === `${oc.turmaId}-${iso}` ? " selecionado" : ""}`}
                       title={oc.cancelada ? `${titulo} — cancelada` : titulo}
                       style={{
                         top,
@@ -906,7 +980,7 @@ function AgendaSemana({
   );
 }
 
-const MAX_CHIPS_POR_DIA = 3;
+export const MAX_CHIPS_POR_DIA = 3;
 
 /** Visão de mês (pedido do usuário, 2026-09-21) — grade de calendário; cada
  * dia lista as aulas (hora + categoria + ocupação) e clicar abre o dia. */
@@ -991,67 +1065,73 @@ function AgendaMes({
 }
 
 /** Detalhe de uma ocorrência ao clicar no bloco da grade (pedido do
- * usuário, 2026-09-15: grade por quadra/horário, "não precisa ter o
- * horário dentro, só coloca a qtde" — o bloco em si fica pequeno demais
- * pra presença/cancelamento; isso tudo migrou pra aqui). */
-function DetalheOcorrenciaModal({
+ * usuário, 2026-09-15: o bloco em si fica pequeno demais pra presença/
+ * cancelamento). Painel ao lado da grade no layout do kit
+ * (design/telas/Agenda.dc.html; pedido do usuário, 2026-10-01): inscritos,
+ * presentes e vagas, a presença e o cancelamento. */
+function DetalheOcorrencia({
   ocorrencia,
   pessoas,
+  origemPorMatricula,
   onFechar,
   onCancelarTurma,
   onCancelarAluno,
 }: {
   ocorrencia: OcorrenciaTurma;
   pessoas: Pessoa[];
+  origemPorMatricula: Map<number, string>;
   onFechar: () => void;
   onCancelarTurma: (alunosCount: number) => void;
   onCancelarAluno: (matriculaId: number, nome: string) => void;
 }) {
-  useEffect(() => {
-    function aoTeclar(e: KeyboardEvent) {
-      if (e.key === "Escape") onFechar();
-    }
-    window.addEventListener("keydown", aoTeclar);
-    return () => window.removeEventListener("keydown", aoTeclar);
-  }, [onFechar]);
+  const presenca = usePresenca(ocorrencia.turmaId, toISODate(ocorrencia.data));
+  const vagas = Math.max(0, ocorrencia.capacidade - pessoas.length);
+  const quando = ocorrencia.data
+    .toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
+    .replace(".", "")
+    .replace(/^\w/, (c) => c.toUpperCase());
 
   return (
-    <div className="modal-backdrop" onClick={onFechar}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="item-card-info">
-          <span className="item-card-title">
-            {ocorrencia.horario} – {horarioFim(ocorrencia.horario, ocorrencia.duracaoMinutos)}
-          </span>
-          <span className="item-card-subtitle">
-            <CategoriaBadge nome={ocorrencia.categoriaNome} cor={ocorrencia.categoriaCor} />
-          </span>
-          <span className="item-card-subtitle">
-            {ocorrencia.modalidadeNome} · com {ocorrencia.professorNome}
-          </span>
-          <span className="item-card-subtitle" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Icon name="pin" /> {ocorrencia.pointNome} · {ocorrencia.quadraNome}
-          </span>
-          <span className="item-card-subtitle" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Icon name="users" /> {pessoas.length}/{ocorrencia.capacidade} vaga(s)
-          </span>
+    <div className="agenda-detalhe-corpo">
+      <div className="agenda-detalhe-topo">
+        <CategoriaBadge nome={ocorrencia.categoriaNome} cor={ocorrencia.categoriaCor} />
+        <button type="button" className="agenda-detalhe-fechar" onClick={onFechar} aria-label="Fechar detalhe">
+          <Icon name="x" size={16} />
+        </button>
+      </div>
+      <div>
+        <h2 className="agenda-detalhe-titulo">{ocorrencia.modalidadeNome}</h2>
+        <p className="alunos-sub">
+          {quando} · {ocorrencia.horario} – {horarioFim(ocorrencia.horario, ocorrencia.duracaoMinutos)} ·{" "}
+          {ocorrencia.quadraNome}
+        </p>
+        <p className="alunos-sub">com {ocorrencia.professorNome}</p>
+      </div>
+      <div className="agenda-detalhe-numeros">
+        <div>
+          <strong>{pessoas.length}</strong>
+          <span>inscritos</span>
         </div>
-
-        <PresencaLista
-          turmaId={ocorrencia.turmaId}
-          data={ocorrencia.data}
-          pessoas={pessoas}
-          onCancelarAluno={onCancelarAluno}
-        />
-
-        <div className="item-card-actions" style={{ marginTop: 8 }}>
-          <button className="secondary" onClick={() => onCancelarTurma(pessoas.length)}>
-            Cancelar aula
-          </button>
-          <button className="secondary" onClick={onFechar}>
-            Fechar
-          </button>
+        <div>
+          <strong>{presenca.carregado ? presenca.presentes.size : "–"}</strong>
+          <span>presentes</span>
+        </div>
+        <div>
+          <strong>{vagas}</strong>
+          <span>{vagas === 1 ? "vaga" : "vagas"}</span>
         </div>
       </div>
+
+      <PresencaLista
+        pessoas={pessoas}
+        origemPorMatricula={origemPorMatricula}
+        presenca={presenca}
+        onCancelarAluno={onCancelarAluno}
+      />
+
+      <button type="button" className="secondary agenda-detalhe-cancelar" onClick={() => onCancelarTurma(pessoas.length)}>
+        Cancelar aula
+      </button>
     </div>
   );
 }
