@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Feriado } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { Icon, Layout } from "../../components/Layout";
 
 function rotuloData(iso: string): string {
@@ -25,7 +25,6 @@ function rotuloData(iso: string): string {
  * feriado) e nas validações de avulsa/reagendamento; essa tela é só o
  * cadastro/visualização. */
 export default function AdminPointFeriados() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const anoAtual = new Date().getFullYear();
   const [ano, setAno] = useState(anoAtual);
@@ -52,56 +51,56 @@ export default function AdminPointFeriados() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Feriados</h1>
-      </div>
-      <p className="empty-state" style={{ paddingTop: 0 }}>
+      <CabecalhoPagina
+        titulo="Feriados"
+        contexto={loading ? "Cadastros" : `Cadastros · ${feriados.length} em ${ano}`}
+      />
+      <p className="pagina-intro">
         O sistema nunca agenda aula em dia de feriado — nacional (já calculado) ou local, o que você
         cadastrar aqui.
       </p>
 
-      <div className="mini-calendar-nav" style={{ marginBottom: 16 }}>
-        <button className="secondary" onClick={() => setAno((a) => a - 1)} aria-label="Ano anterior">
-          ‹
-        </button>
-        <span className="mini-calendar-titulo">{ano}</span>
-        <button className="secondary" onClick={() => setAno((a) => a + 1)} aria-label="Próximo ano">
-          ›
-        </button>
-      </div>
-
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
-      {loading && !erro && <p className="empty-state">Carregando...</p>}
 
-      {!loading && !erro && (
-        <>
-          <section className="section">
-            {feriados.length === 0 ? (
-              <p className="empty-state">Nenhum feriado em {ano}.</p>
-            ) : (
-              <div className="card-list">
-                {feriados.map((f) => (
-                  <FeriadoRow key={`${f.data}-${f.nome}`} feriado={f} onRemovido={carregar} />
-                ))}
-              </div>
-            )}
-          </section>
+      <div className="lista-com-form">
+        <section className="cartao-lista">
+          <div className="caixa-mes-nav">
+            <button
+              type="button"
+              className="secondary cobranca-btn-icone"
+              onClick={() => setAno((a) => a - 1)}
+              aria-label="Ano anterior"
+            >
+              <Icon name="chevron-left" size={16} />
+            </button>
+            <span className="caixa-mes-rotulo">{ano}</span>
+            <button
+              type="button"
+              className="secondary cobranca-btn-icone"
+              onClick={() => setAno((a) => a + 1)}
+              aria-label="Próximo ano"
+            >
+              <Icon name="chevron-right" size={16} />
+            </button>
+          </div>
 
-          <section className="section">
-            <h2>Cadastrar feriado local</h2>
-            <CadastrarFeriadoForm ano={ano} onCadastrado={carregar} />
-          </section>
-        </>
-      )}
+          {loading && !erro && <p className="empty-state">Carregando...</p>}
+          {!loading && !erro && feriados.length === 0 && (
+            <p className="empty-state">Nenhum feriado em {ano}.</p>
+          )}
+          {!loading &&
+            !erro &&
+            feriados.map((f) => (
+              <FeriadoRow key={`${f.data}-${f.nome}`} feriado={f} onRemovido={carregar} />
+            ))}
+        </section>
+
+        <aside className="painel-form">
+          <h2>Cadastrar feriado local</h2>
+          <CadastrarFeriadoForm ano={ano} onCadastrado={carregar} />
+        </aside>
+      </div>
     </Layout>
   );
 }
@@ -127,19 +126,17 @@ function FeriadoRow({ feriado, onRemovido }: { feriado: Feriado; onRemovido: () 
   }
 
   return (
-    <div className="item-card">
+    <div className="feriado-linha">
       {modal}
-      <div className="item-card-info">
-        <span className="item-card-title" style={{ textTransform: "capitalize" }}>
-          {rotuloData(feriado.data)}
-        </span>
-        <span className="item-card-subtitle">{feriado.nome}</span>
+      <span className="feriado-data">{rotuloData(feriado.data)}</span>
+      <div className="alunos-pessoa-texto">
+        <span className="alunos-nome">{feriado.nome}</span>
         {erro && <p className="form-error">{erro}</p>}
       </div>
       {feriado.nacional ? (
         <span className="status-pill status-info">Nacional</span>
       ) : (
-        <button className="secondary" disabled={removendo} onClick={remover}>
+        <button type="button" className="alunos-acao" disabled={removendo} onClick={remover}>
           {removendo ? "Removendo..." : "Remover"}
         </button>
       )}
@@ -169,22 +166,20 @@ function CadastrarFeriadoForm({ ano, onCadastrado }: { ano: number; onCadastrado
   }
 
   return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ maxWidth: "none" }}>
-      <div className="form-row">
-        <label>
-          Data
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} required />
-        </label>
-        <label>
-          Nome
-          <input
-            placeholder="Aniversário da cidade"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            required
-          />
-        </label>
-      </div>
+    <form className="painel-form-campos" onSubmit={handleSubmit}>
+      <label>
+        Data
+        <input type="date" value={data} onChange={(e) => setData(e.target.value)} required />
+      </label>
+      <label>
+        Nome
+        <input
+          placeholder="Aniversário da cidade"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          required
+        />
+      </label>
       {erro && <p className="form-error">{erro}</p>}
       <button type="submit" disabled={enviando}>
         {enviando ? "Cadastrando..." : "Cadastrar feriado"}

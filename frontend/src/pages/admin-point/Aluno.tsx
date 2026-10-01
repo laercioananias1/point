@@ -133,9 +133,9 @@ export default function AdminPointAluno() {
 
   return (
     <Layout>
-      <div className="alunos-topo">
+      <div className="pagina-topo">
         <div>
-          <div className="alunos-contexto">
+          <div className="pagina-contexto">
             Cadastros · {totalAlunos} {totalAlunos === 1 ? "aluno" : "alunos"}
             {totalConvites > 0 &&
               ` · ${totalConvites} ${totalConvites === 1 ? "convite pendente" : "convites pendentes"}`}

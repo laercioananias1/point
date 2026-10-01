@@ -85,9 +85,9 @@ export default function AdminPointProfessor() {
 
   return (
     <Layout>
-      <div className="alunos-topo">
+      <div className="pagina-topo">
         <div>
-          <div className="alunos-contexto">
+          <div className="pagina-contexto">
             Cadastros · {vinculos.length} {vinculos.length === 1 ? "professor" : "professores"}
             {pendentes.length > 0 &&
               ` · ${pendentes.length} ${pendentes.length === 1 ? "convite pendente" : "convites pendentes"}`}

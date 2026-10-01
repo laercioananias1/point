@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade, Quadra } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
-import { Icon, Layout } from "../../components/Layout";
-import { BotaoFlutuante } from "../../components/BotaoFlutuante";
+import { Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 
 /** Tela própria pra quadras — saiu de dentro da antiga Configurações
  * (pedido do usuário, 2026-08-30: "Ver Mais" com um botão por seção). */
 export default function AdminPointQuadras() {
-  const navigate = useNavigate();
   const location = useLocation();
   const criada = (location.state as { criada?: string } | null)?.criada;
   const { user } = useAuth();
@@ -43,17 +42,11 @@ export default function AdminPointQuadras() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Quadras {!loading && `(${quadras.length})`}</h1>
-      </div>
+      <CabecalhoPagina
+        titulo="Quadras"
+        contexto={loading ? "Cadastros" : `Cadastros · ${quadras.length} ${quadras.length === 1 ? "quadra" : "quadras"}`}
+        novo={loading ? null : modalidades.length > 0 ? { para: "/admin-point/configuracoes/quadras/cadastrar", rotulo: "Nova quadra" } : null}
+      />
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
@@ -66,7 +59,7 @@ export default function AdminPointQuadras() {
             {quadras.length === 0 ? (
               <p className="empty-state">Nenhuma quadra cadastrada ainda.</p>
             ) : (
-              <div className="card-list">
+              <div className="cadastro-grid">
                 {quadras.map((q) => (
                   <QuadraRow key={q.id} quadra={q} modalidades={modalidades} onSalva={carregar} />
                 ))}
@@ -74,14 +67,12 @@ export default function AdminPointQuadras() {
             )}
           </section>
 
-          {modalidades.length === 0 ? (
+          {modalidades.length === 0 && (
             <section className="section">
               <p className="form-error">
                 Cadastre uma modalidade (Ver mais → Modalidades) antes de criar quadras.
               </p>
             </section>
-          ) : (
-            <BotaoFlutuante to="/admin-point/configuracoes/quadras/cadastrar" rotulo="Nova quadra" />
           )}
         </>
       )}
@@ -144,7 +135,7 @@ function QuadraRow({
 
   if (editando) {
     return (
-      <div className="item-card" style={{ alignItems: "flex-start" }}>
+      <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
         <div className="item-card-info" style={{ flex: 1 }}>
           <label>
             Nome
@@ -177,13 +168,21 @@ function QuadraRow({
   }
 
   return (
-    <div className="item-card" style={{ alignItems: "flex-start" }}>
+    <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
       {modal}
       <div className="item-card-info">
         <span className="item-card-title">{quadra.nome}</span>
-        <span className="item-card-subtitle">
-          {quadra.modalidades.map((m) => m.nome).join(", ") || "nenhuma modalidade associada"}
-        </span>
+        {quadra.modalidades.length === 0 ? (
+          <span className="item-card-subtitle">nenhuma modalidade associada</span>
+        ) : (
+          <div className="prof-chips">
+            {quadra.modalidades.map((m) => (
+              <span key={m.id} className="prof-chip">
+                {m.nome}
+              </span>
+            ))}
+          </div>
+        )}
         {erro && <p className="form-error">{erro}</p>}
       </div>
       <div className="item-card-actions">

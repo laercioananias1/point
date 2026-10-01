@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { TipoTurma } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
-import { Icon, Layout } from "../../components/Layout";
-import { BotaoFlutuante } from "../../components/BotaoFlutuante";
+import { Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 
 /** Tela própria pra tipos/formatos de turma — mesmo padrão de
  * Categorias.tsx (pedido do usuário, 2026-09-09: "Padrão", "Aula
  * individual", "Dupla", "Família"). */
 export default function AdminPointTiposTurma() {
-  const navigate = useNavigate();
   const location = useLocation();
   const criado = (location.state as { criado?: string } | null)?.criado;
   const { user } = useAuth();
@@ -38,17 +37,11 @@ export default function AdminPointTiposTurma() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Tipos de turma {!loading && `(${tipos.length})`}</h1>
-      </div>
+      <CabecalhoPagina
+        titulo="Tipos de turma"
+        contexto={loading ? "Cadastros" : `Cadastros · ${tipos.length} ${tipos.length === 1 ? "tipo" : "tipos"}`}
+        novo={loading ? null : { para: "/admin-point/configuracoes/tipos-turma/cadastrar", rotulo: "Novo tipo de turma" }}
+      />
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
@@ -61,7 +54,7 @@ export default function AdminPointTiposTurma() {
             {tipos.length === 0 ? (
               <p className="empty-state">Nenhum tipo de turma cadastrado ainda.</p>
             ) : (
-              <div className="card-list">
+              <div className="cadastro-grid">
                 {tipos.map((t) => (
                   <TipoTurmaRow key={t.id} tipo={t} onSalvo={carregar} />
                 ))}
@@ -69,7 +62,6 @@ export default function AdminPointTiposTurma() {
             )}
           </section>
 
-          <BotaoFlutuante to="/admin-point/configuracoes/tipos-turma/cadastrar" rotulo="Novo tipo de turma" />
         </>
       )}
     </Layout>
@@ -114,7 +106,7 @@ function TipoTurmaRow({ tipo, onSalvo }: { tipo: TipoTurma; onSalvo: () => void 
 
   if (editando) {
     return (
-      <div className="item-card" style={{ alignItems: "flex-start" }}>
+      <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
         <div className="item-card-info" style={{ flex: 1 }}>
           <label>
             Nome
@@ -135,7 +127,7 @@ function TipoTurmaRow({ tipo, onSalvo }: { tipo: TipoTurma; onSalvo: () => void 
   }
 
   return (
-    <div className="item-card">
+    <div className="item-card cadastro-card">
       {modal}
       <div className="item-card-info">
         <span className="item-card-title">{tipo.nome}</span>

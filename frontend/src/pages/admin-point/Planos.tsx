@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Plano } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
-import { Icon, Layout } from "../../components/Layout";
-import { BotaoFlutuante } from "../../components/BotaoFlutuante";
+import { Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { formatarReais } from "../../lib/formato";
 
 /** Tela própria pra planos mensais — saiu de dentro da antiga
  * Configurações (pedido do usuário, 2026-08-30: "Ver Mais" com um botão
  * por seção). */
 export default function AdminPointPlanos() {
-  const navigate = useNavigate();
   const location = useLocation();
   const criado = (location.state as { criado?: number } | null)?.criado;
   const { user } = useAuth();
@@ -39,17 +38,11 @@ export default function AdminPointPlanos() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Planos mensais {!loading && `(${planos.length})`}</h1>
-      </div>
+      <CabecalhoPagina
+        titulo="Planos mensais"
+        contexto={loading ? "Cadastros" : `Cadastros · ${planos.length} ${planos.length === 1 ? "plano" : "planos"}`}
+        novo={loading ? null : new Set(planos.map((p) => p.frequencia_semanal)).size < 6 ? { para: "/admin-point/configuracoes/planos/cadastrar", rotulo: "Novo plano" } : null}
+      />
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
@@ -65,7 +58,7 @@ export default function AdminPointPlanos() {
             {planos.length === 0 ? (
               <p className="empty-state">Nenhum plano cadastrado ainda.</p>
             ) : (
-              <div className="card-list">
+              <div className="cadastro-grid">
                 {planos.map((p) => (
                   <PlanoRow key={p.id} plano={p} onSalva={carregar} />
                 ))}
@@ -73,9 +66,6 @@ export default function AdminPointPlanos() {
             )}
           </section>
 
-          {new Set(planos.map((p) => p.frequencia_semanal)).size < 6 && (
-            <BotaoFlutuante to="/admin-point/configuracoes/planos/cadastrar" rotulo="Novo plano" />
-          )}
         </>
       )}
     </Layout>
@@ -124,7 +114,7 @@ function PlanoRow({ plano, onSalva }: { plano: Plano; onSalva: () => void }) {
 
   if (editando) {
     return (
-      <div className="item-card" style={{ alignItems: "flex-start" }}>
+      <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
         <div className="item-card-info" style={{ flex: 1 }}>
           <span className="item-card-title">{plano.frequencia_semanal}x por semana</span>
           <label style={{ marginTop: "6px" }}>
@@ -152,7 +142,7 @@ function PlanoRow({ plano, onSalva }: { plano: Plano; onSalva: () => void }) {
   }
 
   return (
-    <div className="item-card" style={{ alignItems: "flex-start" }}>
+    <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
       {modal}
       <div className="item-card-info">
         <span className="item-card-title">{plano.frequencia_semanal}x por semana</span>

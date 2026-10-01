@@ -242,213 +242,202 @@ function CriarTurmaForm({
   }
 
   return (
-    <form className="form-card" onSubmit={handleSubmit} style={{ maxWidth: "none" }}>
-      {vinculos.length > 1 && (
-        <label>
-          Point
-          <select value={vinculoId} onChange={(e) => setVinculoId(Number(e.target.value))}>
-            {vinculos.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.point.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
-      <label>
-        Tipo de turma
-        <select
-          value={tipoTurmaId ?? ""}
-          onChange={(e) => setTipoTurmaId(Number(e.target.value))}
-        >
-          {tiposTurma.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.nome}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label>
-        Modalidade
-        <select
-          value={modalidadeId ?? ""}
-          onChange={(e) => setModalidadeId(Number(e.target.value))}
-        >
-          {modalidades.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.nome}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label>
-        Categoria (nível)
-        <select
-          value={categoriaId ?? ""}
-          onChange={(e) => setCategoriaId(Number(e.target.value))}
-        >
-          {categorias.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label style={{ flexDirection: "row", alignItems: "center", gap: "8px" }}>
-        <input
-          type="checkbox"
-          checked={privada}
-          onChange={(e) => setPrivada(e.target.checked)}
-          style={{ width: "auto" }}
-        />
-        Turma privada
-        <AjudaIcone texto='Turma privada não aparece pro aluno comprar avulsa ou reagendar crédito sozinho — só o professor ou o admin do Point matriculam alguém aqui (ex.: aula individual, dupla, família).' />
-      </label>
-
-      <label>
-        <span style={{ display: "inline-flex", alignItems: "center" }}>
-          Aula experimental
-          <AjudaIcone texto='Define se essa turma aparece na página pública de aula experimental (Início → Aula experimental). "Aceita" compartilha a mesma vaga com quem já é aluno; "somente experimental" é dedicada só a visitantes.' />
-        </span>
-        <select
-          value={aulaExperimental}
-          onChange={(e) => setAulaExperimental(e.target.value as ExperimentalConfig)}
-        >
-          <option value="nao">Não participa</option>
-          <option value="aceita">Aceita — turma normal, com vaga livre pra visitante experimentar</option>
-          <option value="somente">Somente experimental — não recebe matrícula normal</option>
-        </select>
-      </label>
-
-      {quadras.length === 0 ? (
-        <p className="form-error">
-          Nenhuma quadra cadastrada pra essa modalidade — peça pro admin associar uma.
-        </p>
-      ) : (
-        <div className="form-row">
+    <form className="turma-form" onSubmit={handleSubmit}>
+      <section className="turma-form-bloco">
+        <h2>Turma</h2>
+        <div className="form-grade">
+          {vinculos.length > 1 && (
+            <label>
+              Point
+              <select value={vinculoId} onChange={(e) => setVinculoId(Number(e.target.value))}>
+                {vinculos.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.point.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
-            Quadra
-            <select value={quadraId ?? ""} onChange={(e) => setQuadraId(Number(e.target.value))}>
-              {quadras.map((q) => (
-                <option key={q.id} value={q.id}>
-                  {q.nome}
+            Modalidade
+            <select value={modalidadeId ?? ""} onChange={(e) => setModalidadeId(Number(e.target.value))}>
+              {modalidades.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Capacidade
+            Tipo de turma
+            <select value={tipoTurmaId ?? ""} onChange={(e) => setTipoTurmaId(Number(e.target.value))}>
+              {tiposTurma.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Categoria (nível)
+            <select value={categoriaId ?? ""} onChange={(e) => setCategoriaId(Number(e.target.value))}>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="turma-form-bloco">
+        <h2>Local e vagas</h2>
+        {quadras.length === 0 ? (
+          <p className="form-error">Nenhuma quadra cadastrada pra essa modalidade — peça pro admin associar uma.</p>
+        ) : (
+          <div className="form-grade form-grade-3">
+            <label>
+              Quadra
+              <select value={quadraId ?? ""} onChange={(e) => setQuadraId(Number(e.target.value))}>
+                {quadras.map((q) => (
+                  <option key={q.id} value={q.id}>
+                    {q.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Capacidade
+              <input
+                type="number"
+                min="1"
+                value={capacidade}
+                onChange={(e) => setCapacidade(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Duração (min)
+              <input
+                type="number"
+                min="15"
+                step="15"
+                value={duracaoMinutos}
+                onChange={(e) => setDuracaoMinutos(e.target.value)}
+                required
+              />
+            </label>
+          </div>
+        )}
+      </section>
+
+      <section className="turma-form-bloco">
+        <h2>Período e horários</h2>
+        <div className="form-grade">
+          <label>
+            Início do período
             <input
-              type="number"
-              min="1"
-              value={capacidade}
-              onChange={(e) => setCapacidade(e.target.value)}
+              type="date"
+              value={periodoInicio}
+              onChange={(e) => setPeriodoInicio(e.target.value)}
               required
             />
           </label>
+          <label>
+            Fim do período
+            <input
+              type="date"
+              value={periodoFim}
+              onChange={(e) => setPeriodoFim(e.target.value)}
+              disabled={recorrente}
+              required={!recorrente}
+            />
+          </label>
         </div>
-      )}
-
-      <label>
-        Duração da aula (min)
-        <input
-          type="number"
-          min="15"
-          step="15"
-          value={duracaoMinutos}
-          onChange={(e) => setDuracaoMinutos(e.target.value)}
-          required
-        />
-      </label>
-
-      <div className="form-row">
-        <label>
-          Início do período
-          <input
-            type="date"
-            value={periodoInicio}
-            onChange={(e) => setPeriodoInicio(e.target.value)}
-            required
-          />
+        <label className="turma-form-check">
+          <input type="checkbox" checked={recorrente} onChange={(e) => setRecorrente(e.target.checked)} />
+          Sem data de término (recorrente)
         </label>
-        <label>
-          Fim do período
-          <input
-            type="date"
-            value={periodoFim}
-            onChange={(e) => setPeriodoFim(e.target.value)}
-            disabled={recorrente}
-            required={!recorrente}
-          />
+
+        <div className="turma-form-campo">
+          <span className="turma-form-rotulo">Dias da semana</span>
+          {diasPermitidos.length === 0 ? (
+            <p className="empty-state" style={{ padding: 0 }}>
+              Esse Point ainda não configurou os dias em que funciona.
+            </p>
+          ) : (
+            <div className="toggle-grid">
+              {DIAS_SEMANA.filter((d) => diasPermitidos.includes(d.value)).map((d) => (
+                <button
+                  key={d.value}
+                  type="button"
+                  className={diasSemana.includes(d.value) ? "toggle-chip active" : "toggle-chip"}
+                  onClick={() => setDiasSemana((atual) => toggleEmLista(atual, d.value))}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="turma-form-campo">
+          <span className="turma-form-rotulo">
+            Horários (hora cheia)
+            <AjudaIcone texto="Cria uma turma pra cada horário marcado, cada uma acontecendo em todos os dias selecionados." />
+          </span>
+          {horariosPermitidos.length === 0 ? (
+            <p className="empty-state" style={{ padding: 0 }}>
+              Esse Point ainda não configurou os horários em que funciona.
+            </p>
+          ) : (
+            <div className="toggle-grid">
+              {HORAS_DISPONIVEIS.filter((h) =>
+                horariosPermitidos.includes(`${String(h).padStart(2, "0")}:00`),
+              ).map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  className={horarios.includes(h) ? "toggle-chip active" : "toggle-chip"}
+                  onClick={() => setHorarios((atual) => toggleEmLista(atual, h))}
+                >
+                  {h}h
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="turma-form-bloco">
+        <h2>Opções</h2>
+        <div className="form-grade">
+          <label>
+            <span className="turma-form-rotulo">
+              Aula experimental
+              <AjudaIcone texto='Define se essa turma aparece na página pública de aula experimental (Início → Aula experimental). "Aceita" compartilha a mesma vaga com quem já é aluno; "Só experimental" é dedicada só a visitantes.' />
+            </span>
+            <select
+              value={aulaExperimental}
+              onChange={(e) => setAulaExperimental(e.target.value as ExperimentalConfig)}
+            >
+              <option value="nao">Não participa</option>
+              <option value="aceita">Aceita visitante</option>
+              <option value="somente">Só experimental</option>
+            </select>
+          </label>
+        </div>
+        <label className="turma-form-check">
+          <input type="checkbox" checked={privada} onChange={(e) => setPrivada(e.target.checked)} />
+          Turma privada
+          <AjudaIcone texto="Turma privada não aparece pro aluno comprar avulsa ou reagendar crédito sozinho — só o professor ou o admin do Point matriculam alguém aqui (ex.: aula individual, dupla, família)." />
         </label>
-      </div>
-
-      <label style={{ flexDirection: "row", alignItems: "center", gap: "8px" }}>
-        <input
-          type="checkbox"
-          checked={recorrente}
-          onChange={(e) => setRecorrente(e.target.checked)}
-          style={{ width: "auto" }}
-        />
-        Sem data de término (recorrente)
-      </label>
-
-      <label>
-        Dias da semana
-        {diasPermitidos.length === 0 ? (
-          <p className="empty-state" style={{ padding: "4px 0 0" }}>
-            Esse Point ainda não configurou os dias em que funciona.
-          </p>
-        ) : (
-          <div className="toggle-grid">
-            {DIAS_SEMANA.filter((d) => diasPermitidos.includes(d.value)).map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                className={diasSemana.includes(d.value) ? "toggle-chip active" : "toggle-chip"}
-                onClick={() => setDiasSemana((atual) => toggleEmLista(atual, d.value))}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </label>
-
-      <label>
-        <span style={{ display: "inline-flex", alignItems: "center" }}>
-          Horários (hora cheia)
-          <AjudaIcone texto="Cria uma turma pra cada horário marcado acima, cada uma acontecendo em todos os dias selecionados." />
-        </span>
-        {horariosPermitidos.length === 0 ? (
-          <p className="empty-state" style={{ padding: "4px 0 0" }}>
-            Esse Point ainda não configurou os horários em que funciona.
-          </p>
-        ) : (
-          <div className="toggle-grid">
-            {HORAS_DISPONIVEIS.filter((h) =>
-              horariosPermitidos.includes(`${String(h).padStart(2, "0")}:00`),
-            ).map((h) => (
-              <button
-                key={h}
-                type="button"
-                className={horarios.includes(h) ? "toggle-chip active" : "toggle-chip"}
-                onClick={() => setHorarios((atual) => toggleEmLista(atual, h))}
-              >
-                {h}h
-              </button>
-            ))}
-          </div>
-        )}
-      </label>
+      </section>
 
       {erro && <p className="form-error">{erro}</p>}
 
-      <button type="submit" disabled={enviando || quadras.length === 0}>
+      <button type="submit" className="turma-form-enviar" disabled={enviando || quadras.length === 0}>
         {enviando ? "Criando..." : "Criar turma(s)"}
       </button>
     </form>

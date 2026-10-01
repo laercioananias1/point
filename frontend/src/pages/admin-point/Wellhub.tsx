@@ -1,245 +1,455 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../../api/client";
-import type { PlataformaCheckin, WellhubCheckin } from "../../api/types";
+import type {
+  PlataformaCheckin,
+  WellhubCheckin,
+  WellhubReconciliacao,
+  WellhubReconciliacaoLinha,
+} from "../../api/types";
 import { inicioDaSemana, somarDias } from "../../components/Calendar";
 import { Icon, Layout } from "../../components/Layout";
-import { SaldoDoMes } from "../../components/SaldoDoMes";
+import { VincularAlunoModal, type PessoaSemVinculo } from "../../components/VincularAlunoModal";
 import { rotuloPagamentoMeio } from "../../lib/formato";
 
-type Periodo = "hoje" | "semana" | "mes";
+/** Controle de check-ins (Wellhub/TotalPass) no layout do kit de design
+ * (design/telas/Checkins.dc.html; pedido do usuário, 2026-10-01). O saldo
+ * é mensal e só conta quantidade: check-ins - aulas confirmadas pelo
+ * professor (a data do check-in não precisa bater com a da aula). Do
+ * protótipo ficaram de fora "lembrar divergentes", "lembretes
+ * automáticos" (ainda não existe envio de lembrete de check-in) e a
+ * exportação da conciliação. */
 
-const PERIODOS: { valor: Periodo; rotulo: string }[] = [
+type PeriodoLista = "hoje" | "semana" | "mes";
+type Filtro = "Todos" | "Faltando" | "Em dia" | "Adiantados" | "Sem vínculo";
+
+const FILTROS: Filtro[] = ["Todos", "Faltando", "Em dia", "Adiantados", "Sem vínculo"];
+const PERIODOS: { valor: PeriodoLista; rotulo: string }[] = [
   { valor: "hoje", rotulo: "Hoje" },
   { valor: "semana", rotulo: "Semana" },
   { valor: "mes", rotulo: "Mês" },
 ];
-
-function intervalo(periodo: Periodo, ref: Date): [Date, Date] {
-  if (periodo === "hoje") return [ref, ref];
-  if (periodo === "semana") {
-    const inicio = inicioDaSemana(ref);
-    return [inicio, somarDias(inicio, 6)];
-  }
-  return [new Date(ref.getFullYear(), ref.getMonth(), 1), new Date(ref.getFullYear(), ref.getMonth() + 1, 0)];
-}
-
-function navegar(periodo: Periodo, ref: Date, delta: number): Date {
-  if (periodo === "hoje") return somarDias(ref, delta);
-  if (periodo === "semana") return somarDias(ref, delta * 7);
-  return new Date(ref.getFullYear(), ref.getMonth() + delta, 1);
-}
-
-function mesmoDia(a: Date, b: Date): boolean {
-  return isoLocal(a) === isoLocal(b);
-}
-
-/** O backend grava created_at em UTC sem marcar o fuso — sem o "Z" o
- * navegador leria como hora local e mostraria 3h adiantado. */
-function horaLocal(iso: string): string {
-  const utc = /[zZ]|[+-]\d{2}:\d{2}$/.test(iso) ? iso : `${iso}Z`;
-  return new Date(utc).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-}
+// Acima disso a barra de pílulas fica ilegível — mostra as primeiras.
+const MAX_PILULAS = 24;
 
 /** "2026-09-05" — sem passar por UTC (toISOString mudaria o dia à noite). */
 function isoLocal(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** "2026-09-05" → "05/09". */
-function diaMes(iso: string): string {
-  const [, mes, dia] = iso.split("-");
-  return `${dia}/${mes}`;
+function mesParam(d: Date): string {
+  return isoLocal(d).slice(0, 7);
 }
 
-function mensagemDeErro(e: unknown, padrao: string): string {
-  return e instanceof ApiError ? e.message : padrao;
+/** O backend grava created_at em UTC sem marcar o fuso — sem o "Z" o
+ * navegador leria como hora local e mostraria 3h adiantado. */
+function dataUtc(iso: string): Date {
+  return new Date(/[zZ]|[+-]\d{2}:\d{2}$/.test(iso) ? iso : `${iso}Z`);
 }
 
-/** Check-ins validados pela Wellhub/TotalPass nesse Point (automático
- * via webhook ou digitado na hora), com o saldo check-ins x aulas do mês
- * em cima (components/SaldoDoMes.tsx). Sem trava nenhuma — ver app/services/wellhub.py no
- * backend pro porquê de não amarrar check-in com aula. */
+function quandoFoi(iso: string): string {
+  const d = dataUtc(iso);
+  return `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function plural(n: number, um: string, varios: string): string {
+  return `${n} ${n === 1 ? um : varios}`;
+}
+
+function situacao(l: WellhubReconciliacaoLinha): { rotulo: string; classe: string } {
+  if (l.aluno_id === null) return { rotulo: "Sem vínculo", classe: "status-pill status-warn" };
+  if (l.saldo < 0) return { rotulo: `${-l.saldo === 1 ? "Falta" : "Faltam"} ${-l.saldo}`, classe: "status-pill status-risk" };
+  if (l.saldo === 0) return { rotulo: "Em dia", classe: "status-pill status-good" };
+  return { rotulo: `+${l.saldo} ${l.saldo === 1 ? "adiantado" : "adiantados"}`, classe: "status-pill status-info" };
+}
+
+function passaNoFiltro(l: WellhubReconciliacaoLinha, f: Filtro): boolean {
+  if (f === "Todos") return true;
+  if (f === "Sem vínculo") return l.aluno_id === null;
+  if (l.aluno_id === null) return false;
+  if (f === "Faltando") return l.saldo < 0;
+  if (f === "Em dia") return l.saldo === 0;
+  return l.saldo > 0;
+}
+
 export default function AdminPointWellhub() {
-  const navigate = useNavigate();
-
-  // Filtro hoje/semana/mês (pedido do usuário, 2026-09-30).
-  const [periodo, setPeriodo] = useState<Periodo>("mes");
-  const [referencia, setReferencia] = useState(() => new Date());
-  const [checkins, setCheckins] = useState<WellhubCheckin[]>([]);
-  const [loading, setLoading] = useState(true);
+  const hoje = new Date();
+  const [mes, setMes] = useState(() => new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  const [linhas, setLinhas] = useState<WellhubReconciliacaoLinha[]>([]);
+  const [checkinsMes, setCheckinsMes] = useState<WellhubCheckin[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState<Filtro>("Todos");
+  const [vinculando, setVinculando] = useState<PessoaSemVinculo | null>(null);
   const [formularioAberto, setFormularioAberto] = useState(false);
-  // Incrementa quando entra check-in novo, pro saldo do mês recarregar junto.
-  const [versaoSaldo, setVersaoSaldo] = useState(0);
+  const [versao, setVersao] = useState(0);
 
   const carregar = useCallback(async () => {
     setErro(null);
-    const [inicio, fim] = intervalo(periodo, referencia);
     try {
-      setCheckins(
-        await api.get<WellhubCheckin[]>(`/wellhub/checkins?inicio=${isoLocal(inicio)}&fim=${isoLocal(fim)}`),
-      );
+      const [acerto, lista] = await Promise.all([
+        api.get<WellhubReconciliacao>(`/wellhub/reconciliacao?mes=${mesParam(mes)}`),
+        api.get<WellhubCheckin[]>(`/wellhub/checkins?mes=${mesParam(mes)}`),
+      ]);
+      setLinhas(acerto.linhas);
+      setCheckinsMes(lista);
     } catch {
       setErro("Não foi possível carregar os check-ins. Tente novamente.");
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
-  }, [periodo, referencia]);
+  }, [mes]);
 
   useEffect(() => {
     carregar();
-  }, [carregar]);
+  }, [carregar, versao]);
 
-  function mudarPeriodo(novo: Periodo) {
-    setLoading(true);
-    setPeriodo(novo);
-    setReferencia(new Date());
+  const meses = [2, 1, 0].map((n) => new Date(hoje.getFullYear(), hoje.getMonth() - n, 1));
+  const mesEmAndamento = mesParam(mes) === mesParam(hoje);
+  const nomeMes = mes.toLocaleDateString("pt-BR", { month: "long" });
+
+  const vinculadas = linhas.filter((l) => l.aluno_id !== null);
+  const faltando = vinculadas.filter((l) => l.saldo < 0);
+  const checkinsFaltando = faltando.reduce((s, l) => s - l.saldo, 0);
+  const checkinsSobrando = vinculadas.reduce((s, l) => s + Math.max(0, l.saldo), 0);
+  const emDia = vinculadas.filter((l) => l.saldo === 0).length;
+  const totalCheckins = linhas.reduce((s, l) => s + l.checkins_no_mes, 0);
+  const visiveis = linhas.filter((l) => passaNoFiltro(l, filtro));
+
+  // "Ultimo check-in automático" no lugar do "webhook online" do protótipo:
+  // é o sinal de vida que dá pra ver sem acesso aos logs.
+  const ultimoAutomatico = useMemo(
+    () =>
+      checkinsMes
+        .filter((c) => c.origem === "webhook")
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null,
+    [checkinsMes],
+  );
+  const automaticoRecente =
+    ultimoAutomatico !== null && Date.now() - dataUtc(ultimoAutomatico.created_at).getTime() < 24 * 3600 * 1000;
+
+  function ultimoCheckinDa(l: WellhubReconciliacaoLinha): WellhubCheckin | undefined {
+    return checkinsMes.find((c) => c.plataforma === l.plataforma && c.gympass_id === l.gympass_id);
   }
 
-  function mover(delta: number) {
-    setLoading(true);
-    setReferencia((atual) => navegar(periodo, atual, delta));
+  function nomeDaLinha(l: WellhubReconciliacaoLinha): string {
+    return l.aluno_nome ?? ultimoCheckinDa(l)?.aluno_nome ?? l.gympass_id ?? "—";
   }
 
-  const hoje = new Date();
-  const [inicioPeriodo, fimPeriodo] = intervalo(periodo, referencia);
-  const noPeriodoAtual = isoLocal(hoje) >= isoLocal(inicioPeriodo) && isoLocal(hoje) <= isoLocal(fimPeriodo);
-  const rotuloPeriodo =
-    periodo === "hoje"
-      ? mesmoDia(referencia, hoje)
-        ? "Hoje"
-        : referencia.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
-      : periodo === "semana"
-        ? `${diaMes(isoLocal(inicioPeriodo))} – ${diaMes(isoLocal(fimPeriodo))}`
-        : referencia.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-  const tituloLista =
-    periodo === "hoje"
-      ? mesmoDia(referencia, hoje)
-        ? "Check-ins de hoje"
-        : "Check-ins do dia"
-      : periodo === "semana"
-        ? noPeriodoAtual
-          ? "Check-ins da semana"
-          : "Check-ins da semana escolhida"
-        : "Check-ins do mês";
+  function abrirVinculo(l: WellhubReconciliacaoLinha) {
+    if (l.gympass_id === null) return;
+    const ultimo = ultimoCheckinDa(l);
+    setVinculando({
+      plataforma: l.plataforma,
+      gympass_id: l.gympass_id,
+      nome: ultimo?.aluno_nome ?? null,
+      email: ultimo?.email_wellhub ?? null,
+    });
+  }
+
+  const tituloFechamento =
+    faltando.length === 0
+      ? vinculadas.length === 0
+        ? "Nenhum aluno com benefício nesse mês"
+        : emDia === vinculadas.length
+          ? "Todos os alunos com o saldo em dia"
+          : "Nenhum aluno com check-in faltando"
+      : mesEmAndamento
+        ? `${plural(faltando.length, "aluno está", "alunos estão")} com check-in faltando — ${plural(checkinsFaltando, "check-in", "check-ins")} até o fim do mês`
+        : `${plural(faltando.length, "aluno fechou", "alunos fecharam")} ${nomeMes} com ${plural(checkinsFaltando, "check-in faltando", "check-ins faltando")}`;
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Checkins</h1>
+      <div className="pagina-topo">
+        <div>
+          <div className="pagina-contexto">Benefícios · Wellhub e TotalPass</div>
+          <h1>Controle de check-ins</h1>
+        </div>
+        <div className="chk-topo-direita">
+          <span className="chk-status" title="Último check-in que chegou sozinho pelo webhook">
+            <span className={automaticoRecente ? "chk-status-ponto ativo" : "chk-status-ponto"} />
+            {ultimoAutomatico
+              ? `Último automático: ${quandoFoi(ultimoAutomatico.created_at)}`
+              : "Nenhum check-in automático no mês"}
+          </span>
+          <div className="chk-meses" role="group" aria-label="Mês">
+            {meses.map((m) => (
+              <button
+                key={mesParam(m)}
+                type="button"
+                className={mesParam(m) === mesParam(mes) ? "ativo" : ""}
+                onClick={() => {
+                  setCarregando(true);
+                  setMes(m);
+                }}
+              >
+                {m.toLocaleDateString("pt-BR", { month: "long" })}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-
-      <p className="cobranca-subtitulo">
-        Check-ins validados pela Wellhub e pela TotalPass nesse Point. As plataformas não sabem em
-        qual aula o aluno vai — só que o benefício está ativo no dia.
-      </p>
-
-      <div className="toggle-grid checkin-periodos" role="group" aria-label="Período">
-        {PERIODOS.map((p) => (
-          <button
-            key={p.valor}
-            type="button"
-            className={periodo === p.valor ? "toggle-chip active" : "toggle-chip"}
-            onClick={() => mudarPeriodo(p.valor)}
-          >
-            {p.rotulo}
-          </button>
-        ))}
-      </div>
-
-      <div className="caixa-mes-nav">
-        <button
-          type="button"
-          className="secondary cobranca-btn-icone"
-          onClick={() => mover(-1)}
-          aria-label="Período anterior"
-        >
-          <Icon name="chevron-left" size={16} />
-        </button>
-        <span className="caixa-mes-rotulo">{rotuloPeriodo}</span>
-        <button
-          type="button"
-          className="secondary cobranca-btn-icone"
-          onClick={() => mover(1)}
-          aria-label="Próximo período"
-        >
-          <Icon name="chevron-right" size={16} />
-        </button>
-      </div>
-
-      <SaldoDoMes
-        mes={new Date(referencia.getFullYear(), referencia.getMonth(), 1)}
-        versao={versaoSaldo}
-        totalCheckinsPeriodo={checkins.length}
-        onVinculado={carregar}
-      />
 
       {erro && <p className="form-error">{erro}</p>}
-      {loading && <p className="empty-state">Carregando...</p>}
 
-      {!loading && (
-        <>
-          <section className="section">
-            <h2>
-              {tituloLista} ({checkins.length})
-            </h2>
-            {checkins.length === 0 ? (
-              <p className="empty-state">Nenhum check-in nesse período.</p>
-            ) : (
-              <div className="card-list">
-                {checkins.map((c) => (
-                  <div className="item-card" key={c.id}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">{c.aluno_nome ?? c.gympass_id}</span>
-                      <span className="item-card-subtitle">
-                        {diaMes(c.data)} às {horaLocal(c.created_at)} · {c.gympass_id}
-                      </span>
-                      {(c.email_wellhub || c.telefone_wellhub) && (
-                        <span className="item-card-subtitle">
-                          {[c.email_wellhub, c.telefone_wellhub].filter(Boolean).join(" · ")}
-                        </span>
-                      )}
-                    </div>
-                    <div className="checkin-pills">
-                      <span className="status-pill status-neutral">{rotuloPagamentoMeio(c.plataforma)}</span>
-                      <span className={`status-pill ${c.origem === "webhook" ? "status-good" : "status-info"}`}>
-                        {c.origem === "webhook" ? "Automático" : "Manual"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+      <div className="chk-kpis">
+        <div className="chk-kpi">
+          <span className="chk-kpi-rotulo">Alunos no mês</span>
+          <span className="chk-kpi-valor">{vinculadas.length}</span>
+          <span className="chk-kpi-nota">com benefício e vínculo</span>
+        </div>
+        <div className="chk-kpi">
+          <span className="chk-kpi-rotulo">Check-ins no mês</span>
+          <span className="chk-kpi-valor">{totalCheckins}</span>
+          <span className="chk-kpi-nota">Wellhub e TotalPass</span>
+        </div>
+        <div className="chk-kpi escuro">
+          <span className="chk-kpi-rotulo">Check-ins faltando</span>
+          <span className="chk-kpi-valor">{checkinsFaltando}</span>
+          <span className="chk-kpi-nota">em {plural(faltando.length, "aluno", "alunos")}</span>
+        </div>
+        <div className="chk-kpi">
+          <span className="chk-kpi-rotulo">Check-ins sobrando</span>
+          <span className="chk-kpi-valor">{checkinsSobrando}</span>
+          <span className="chk-kpi-nota">adiantados</span>
+        </div>
+        <div className="chk-kpi limao">
+          <span className="chk-kpi-rotulo">Alunos em dia</span>
+          <span className="chk-kpi-valor">{emDia}</span>
+          <span className="chk-kpi-nota">saldo zerado</span>
+        </div>
+      </div>
+
+      <div className="chk-fechamento">
+        <div className="chk-fechamento-texto">
+          <span className="chk-fechamento-tag">Fechamento de {nomeMes}</span>
+          <span className="chk-fechamento-titulo">{tituloFechamento}</span>
+          <span className="chk-fechamento-explica">
+            Os check-ins não ficam presos a uma aula: o que vale é a quantidade. No fechamento, o total
+            de check-ins de cada aluno precisa ser igual ao total de aulas confirmadas pelo professor.
+          </span>
+        </div>
+      </div>
+
+      <div className="chk-corpo">
+        <section className="alunos-card chk-tabela-card">
+          <div className="alunos-filtros">
+            <h2 className="chk-secao-titulo">Check-ins por aluno</h2>
+            <div className="toggle-grid" role="group" aria-label="Filtrar">
+              {FILTROS.map((f) => {
+                const n = linhas.filter((l) => passaNoFiltro(l, f)).length;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    className={filtro === f ? "toggle-chip active" : "toggle-chip"}
+                    onClick={() => setFiltro(f)}
+                  >
+                    {f} <span className="chk-contagem">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {carregando && <p className="empty-state">Carregando...</p>}
+          {!carregando && (
+            <div className="alunos-tabela" role="table" aria-label="Check-ins por aluno">
+              <div className="alunos-linha chk-grade alunos-cabecalho" role="row">
+                <span role="columnheader">Aluno</span>
+                <span role="columnheader">Benefício</span>
+                <span role="columnheader">Aulas x check-ins</span>
+                <span role="columnheader">Aulas</span>
+                <span role="columnheader">Check-ins</span>
+                <span role="columnheader">Saldo</span>
               </div>
-            )}
-          </section>
-        </>
-      )}
+              {visiveis.map((l) => (
+                <LinhaAluno
+                  key={`${l.plataforma}-${l.aluno_id ?? l.gympass_id}`}
+                  linha={l}
+                  nome={nomeDaLinha(l)}
+                  onVincular={() => abrirVinculo(l)}
+                />
+              ))}
+              {visiveis.length === 0 && (
+                <p className="alunos-vazio">
+                  {linhas.length === 0 ? `Nenhum check-in ou aula com benefício em ${nomeMes}.` : "Ninguém nesse filtro."}
+                </p>
+              )}
+              <div className="chk-legenda">
+                <span><i className="chk-pip coberta" /> Aula coberta por check-in</span>
+                <span><i className="chk-pip descoberta" /> Aula sem check-in</span>
+                <span><i className="chk-pip adiantado" /> Check-in adiantado</span>
+              </div>
+            </div>
+          )}
+        </section>
 
-      <button type="button" className="fab" onClick={() => setFormularioAberto(true)}>
-        <Icon name="plus" />
-        Registrar check-in
-      </button>
+        <CheckinsRecebidos versao={versao} onRegistrar={() => setFormularioAberto(true)} />
+      </div>
+
+      {vinculando && (
+        <VincularAlunoModal
+          pessoa={vinculando}
+          onFechar={() => setVinculando(null)}
+          onSalvo={() => {
+            setVinculando(null);
+            setVersao((v) => v + 1);
+          }}
+        />
+      )}
 
       {formularioAberto && (
         <CheckinManualModal
           onFechar={() => setFormularioAberto(false)}
           onSalvo={() => {
             setFormularioAberto(false);
-            carregar();
-            setVersaoSaldo((v) => v + 1);
+            setVersao((v) => v + 1);
           }}
         />
       )}
     </Layout>
   );
+}
+
+function LinhaAluno({
+  linha: l,
+  nome,
+  onVincular,
+}: {
+  linha: WellhubReconciliacaoLinha;
+  nome: string;
+  onVincular: () => void;
+}) {
+  const st = situacao(l);
+  const cobertas = Math.min(l.aulas_no_mes, l.checkins_no_mes);
+  const descobertas = Math.max(0, l.aulas_no_mes - l.checkins_no_mes);
+  const adiantadas = l.aluno_id === null ? 0 : Math.max(0, l.checkins_no_mes - l.aulas_no_mes);
+  const pilulas = [
+    ...Array<string>(cobertas).fill("coberta"),
+    ...Array<string>(descobertas).fill("descoberta"),
+    ...Array<string>(adiantadas).fill("adiantado"),
+  ];
+
+  return (
+    <div className="alunos-linha chk-grade" role="row">
+      <div className="alunos-pessoa" role="cell">
+        <div className="alunos-pessoa-texto">
+          <span className="alunos-nome">{nome}</span>
+          <span className="alunos-sub">{l.gympass_id ?? "sem identificador da plataforma"}</span>
+        </div>
+      </div>
+      <span role="cell" data-rotulo="Benefício">
+        <span className={`status-pill plano-${l.plataforma}`}>{rotuloPagamentoMeio(l.plataforma)}</span>
+      </span>
+      <span role="cell" data-rotulo="Aulas x check-ins" className="chk-pips-celula">
+        {l.aluno_id === null ? (
+          <span className="alunos-sub">Vincule o aluno pra comparar com as aulas.</span>
+        ) : (
+          <>
+            <span className="chk-pips" aria-hidden="true">
+              {pilulas.slice(0, MAX_PILULAS).map((tipo, i) => (
+                <i key={i} className={`chk-pip ${tipo}`} />
+              ))}
+            </span>
+            <span className="alunos-sub">
+              {plural(l.aulas_no_mes, "aula", "aulas")}, {plural(l.checkins_no_mes, "check-in", "check-ins")}
+            </span>
+          </>
+        )}
+      </span>
+      <span role="cell" data-rotulo="Aulas">
+        <strong>{l.aluno_id === null ? "—" : l.aulas_no_mes}</strong>
+      </span>
+      <span role="cell" data-rotulo="Check-ins">
+        <strong>{l.checkins_no_mes}</strong>
+      </span>
+      <span role="cell" data-rotulo="Saldo" className="alunos-celula-acoes">
+        <span className={st.classe}>{st.rotulo}</span>
+        {l.aluno_id === null && l.gympass_id !== null && (
+          <button type="button" className="alunos-acao" onClick={onVincular}>
+            Vincular aluno
+          </button>
+        )}
+      </span>
+    </div>
+  );
+}
+
+function intervaloLista(periodo: PeriodoLista): [Date, Date] {
+  const hoje = new Date();
+  if (periodo === "hoje") return [hoje, hoje];
+  if (periodo === "semana") {
+    const inicio = inicioDaSemana(hoje);
+    return [inicio, somarDias(inicio, 6)];
+  }
+  return [new Date(hoje.getFullYear(), hoje.getMonth(), 1), new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0)];
+}
+
+/** Lista dos check-ins que chegaram, com o filtro hoje/semana/mês (pedido
+ * do usuário, 2026-09-30) — no lugar dos "eventos do webhook" do kit. */
+function CheckinsRecebidos({ versao, onRegistrar }: { versao: number; onRegistrar: () => void }) {
+  const [periodo, setPeriodo] = useState<PeriodoLista>("hoje");
+  const [itens, setItens] = useState<WellhubCheckin[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    const [inicio, fim] = intervaloLista(periodo);
+    setCarregando(true);
+    api
+      .get<WellhubCheckin[]>(`/wellhub/checkins?inicio=${isoLocal(inicio)}&fim=${isoLocal(fim)}`)
+      .then(setItens)
+      .catch(() => setItens([]))
+      .finally(() => setCarregando(false));
+  }, [periodo, versao]);
+
+  const ordenados = [...itens].sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  return (
+    <aside className="alunos-card chk-recebidos">
+      <div className="chk-recebidos-topo">
+        <h2 className="chk-secao-titulo">
+          Check-ins recebidos <span className="chk-contagem">{carregando ? "" : itens.length}</span>
+        </h2>
+        <div className="toggle-grid" role="group" aria-label="Período">
+          {PERIODOS.map((p) => (
+            <button
+              key={p.valor}
+              type="button"
+              className={periodo === p.valor ? "toggle-chip active" : "toggle-chip"}
+              onClick={() => setPeriodo(p.valor)}
+            >
+              {p.rotulo}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {carregando && <p className="empty-state">Carregando...</p>}
+      {!carregando && ordenados.length === 0 && <p className="empty-state">Nenhum check-in nesse período.</p>}
+      {!carregando &&
+        ordenados.map((c) => (
+          <div className="chk-evento" key={c.id}>
+            <span className={c.origem === "webhook" ? "chk-evento-ponto auto" : "chk-evento-ponto"} />
+            <div className="alunos-pessoa-texto chk-evento-texto">
+              <span className="alunos-nome">{c.aluno_nome ?? c.gympass_id}</span>
+              <span className="alunos-sub">
+                {rotuloPagamentoMeio(c.plataforma)} · {c.origem === "webhook" ? "automático" : "manual"}
+                {c.email_wellhub ? ` · ${c.email_wellhub}` : ""}
+              </span>
+            </div>
+            <span className="alunos-sub chk-evento-hora">{quandoFoi(c.created_at)}</span>
+          </div>
+        ))}
+
+      <button type="button" className="chk-registrar" onClick={onRegistrar}>
+        <Icon name="plus" size={16} /> Registrar check-in
+      </button>
+    </aside>
+  );
+}
+
+function mensagemDeErro(e: unknown, padrao: string): string {
+  return e instanceof ApiError ? e.message : padrao;
 }
 
 function CheckinManualModal({ onFechar, onSalvo }: { onFechar: () => void; onSalvo: () => void }) {

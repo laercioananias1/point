@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Categoria } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
-import { Icon, Layout } from "../../components/Layout";
-import { BotaoFlutuante } from "../../components/BotaoFlutuante";
+import { Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 
 /** Tela própria pra categorias (nível de aluno) — mesmo padrão de
  * Modalidades.tsx (pedido do usuário, 2026-09-08: "cada point faz seu
  * cadastro e define uma cor"). */
 export default function AdminPointCategorias() {
-  const navigate = useNavigate();
   const location = useLocation();
   const criada = (location.state as { criada?: string } | null)?.criada;
   const { user } = useAuth();
@@ -38,17 +37,11 @@ export default function AdminPointCategorias() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Categorias {!loading && `(${categorias.length})`}</h1>
-      </div>
+      <CabecalhoPagina
+        titulo="Categorias"
+        contexto={loading ? "Cadastros" : `Cadastros · ${categorias.length} ${categorias.length === 1 ? "categoria" : "categorias"}`}
+        novo={loading ? null : { para: "/admin-point/configuracoes/categorias/cadastrar", rotulo: "Nova categoria" }}
+      />
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
@@ -61,7 +54,7 @@ export default function AdminPointCategorias() {
             {categorias.length === 0 ? (
               <p className="empty-state">Nenhuma categoria cadastrada ainda.</p>
             ) : (
-              <div className="card-list">
+              <div className="cadastro-grid">
                 {categorias.map((c) => (
                   <CategoriaRow key={c.id} categoria={c} onSalva={carregar} />
                 ))}
@@ -69,7 +62,6 @@ export default function AdminPointCategorias() {
             )}
           </section>
 
-          <BotaoFlutuante to="/admin-point/configuracoes/categorias/cadastrar" rotulo="Nova categoria" />
         </>
       )}
     </Layout>
@@ -115,7 +107,7 @@ function CategoriaRow({ categoria, onSalva }: { categoria: Categoria; onSalva: (
 
   if (editando) {
     return (
-      <div className="item-card" style={{ alignItems: "flex-start" }}>
+      <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
         <div className="item-card-info" style={{ flex: 1 }}>
           <label>
             Nome
@@ -154,7 +146,7 @@ function CategoriaRow({ categoria, onSalva }: { categoria: Categoria; onSalva: (
   }
 
   return (
-    <div className="item-card" style={{ alignItems: "flex-start" }}>
+    <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
       {modal}
       <div className="item-card-info">
         <span

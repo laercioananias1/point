@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Modalidade } from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
-import { Icon, Layout } from "../../components/Layout";
-import { BotaoFlutuante } from "../../components/BotaoFlutuante";
+import { Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
 import { formatarReais } from "../../lib/formato";
 
 /** Tela própria pra modalidades — saiu de dentro da antiga Configurações
  * (pedido do usuário, 2026-08-30: "Ver Mais" com um botão por seção). */
 export default function AdminPointModalidades() {
-  const navigate = useNavigate();
   const location = useLocation();
   const criada = (location.state as { criada?: string } | null)?.criada;
   const { user } = useAuth();
@@ -38,17 +37,11 @@ export default function AdminPointModalidades() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Modalidades {!loading && `(${modalidades.length})`}</h1>
-      </div>
+      <CabecalhoPagina
+        titulo="Modalidades"
+        contexto={loading ? "Cadastros" : `Cadastros · ${modalidades.length} ${modalidades.length === 1 ? "modalidade" : "modalidades"}`}
+        novo={loading ? null : { para: "/admin-point/configuracoes/modalidades/cadastrar", rotulo: "Nova modalidade" }}
+      />
 
       {!user?.point_id && <p className="empty-state">Não foi possível identificar o seu Point.</p>}
       {erro && <p className="form-error">{erro}</p>}
@@ -61,7 +54,7 @@ export default function AdminPointModalidades() {
             {modalidades.length === 0 ? (
               <p className="empty-state">Nenhuma modalidade cadastrada ainda.</p>
             ) : (
-              <div className="card-list">
+              <div className="cadastro-grid">
                 {modalidades.map((m) => (
                   <ModalidadeRow key={m.id} modalidade={m} onSalva={carregar} />
                 ))}
@@ -69,7 +62,6 @@ export default function AdminPointModalidades() {
             )}
           </section>
 
-          <BotaoFlutuante to="/admin-point/configuracoes/modalidades/cadastrar" rotulo="Nova modalidade" />
         </>
       )}
     </Layout>
@@ -130,7 +122,7 @@ function ModalidadeRow({
 
   if (editando) {
     return (
-      <div className="item-card" style={{ alignItems: "flex-start" }}>
+      <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
         <div className="item-card-info" style={{ flex: 1 }}>
           <label>
             Nome
@@ -173,7 +165,7 @@ function ModalidadeRow({
   }
 
   return (
-    <div className="item-card" style={{ alignItems: "flex-start" }}>
+    <div className="item-card cadastro-card" style={{ alignItems: "flex-start" }}>
       {modal}
       <div className="item-card-info">
         <span className="item-card-title">{modalidade.nome}</span>
