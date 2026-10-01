@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Matricula, SolicitacaoExperimental, TurmaResumo } from "../../api/types";
@@ -21,7 +22,11 @@ export default function AdminPointAgenda() {
   const [erro, setErro] = useState<string | null>(null);
   // Filtros por professor e por quadra (pedido do usuário, 2026-08-26) —
   // "" = todos, os dois podem estar ativos ao mesmo tempo.
-  const [professorId, setProfessorId] = useState("");
+  // ?professor=ID já abre filtrada — é pra onde o card do professor leva
+  // (a tela antiga de agenda por professor saiu, pedido do usuário,
+  // 2026-10-01).
+  const [searchParams] = useSearchParams();
+  const [professorId, setProfessorId] = useState(searchParams.get("professor") ?? "");
   const [quadraId, setQuadraId] = useState("");
 
   const carregar = useCallback(async () => {

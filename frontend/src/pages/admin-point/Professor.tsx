@@ -1,148 +1,198 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
-import type { ConviteVinculo, Vinculo } from "../../api/types";
-import { AbasPilula } from "../../components/AbasPilula";
+import { useAuth } from "../../auth/AuthContext";
+import type { ConviteVinculo, Matricula, TurmaResumo, Vinculo } from "../../api/types";
 import { Avatar } from "../../components/Avatar";
 import { useConfirm } from "../../components/ConfirmModal";
-import { Icon, Layout } from "../../components/Layout";
-import { BotaoFlutuante } from "../../components/BotaoFlutuante";
+import { Layout } from "../../components/Layout";
 import { StatusPill } from "../../components/StatusPill";
+import { DIAS_SEMANA } from "../../lib/dias";
 
-/** Gestão de professores do Point (pedido do usuário, 2026-08-25: "seguindo
- * o mesmo padrão" — virou aba própria). Vínculos e convite. O cancelamento
- * de aula por força maior saiu daqui (pedido do usuário, 2026-08-28: "esse
- * botão sai da tela do professor e fica tb na agenda") — agora é o check
- * "gerar crédito" na remoção de ocorrência da Agenda.
- *
- * Pedido do usuário, 2026-08-30: "essa lista de professores leva pro
- * início da tela, depois embaixo deixa um botão para convidar professor
- * que abre uma nova tela no padrão de convidar alunos" — o formulário de
- * convite saiu daqui e virou tela própria (ConvidarProfessor.tsx), igual
- * ConvidarAluno.tsx já funciona pro aluno. */
-type Aba = "professores" | "convites";
+/** Professores do Point no layout do kit de design
+ * (design/telas/Professores.dc.html; pedido do usuário, 2026-10-01) — um
+ * card por professor com turmas, alunos, ocupação e dias com aula, e os
+ * convites pendentes no mesmo grid. O formulário de convite continua em
+ * tela própria (ConvidarProfessor.tsx). Remuneração e "também dá aula em"
+ * do protótipo ficaram de fora: o sistema não tem esses dados. */
+
+type Resumo = {
+  turmas: number;
+  alunos: number;
+  // null = sem vaga cadastrada (sem turma ativa).
+  ocupacao: number | null;
+  modalidades: string[];
+  dias: Set<string>;
+};
+
+function resumoDoVinculo(vinculoId: number, turmas: TurmaResumo[], matriculas: Matricula[]): Resumo {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const ativas = turmas.filter(
+    (t) => t.vinculo_id === vinculoId && (t.periodo_fim === null || t.periodo_fim >= hoje),
+  );
+  const ids = new Set(ativas.map((t) => t.id));
+  const doProfessor = matriculas.filter((m) => m.status === "ativa" && ids.has(m.turma_id));
+  const mensais = doProfessor.filter((m) => m.tipo === "mensal").length;
+  const vagas = ativas.reduce((soma, t) => soma + t.capacidade, 0);
+  return {
+    turmas: ativas.length,
+    alunos: new Set(doProfessor.map((m) => m.aluno_id)).size,
+    ocupacao: vagas > 0 ? Math.round((mensais / vagas) * 100) : null,
+    modalidades: Array.from(new Set(ativas.map((t) => t.modalidade.nome))).sort(),
+    dias: new Set(ativas.flatMap((t) => t.dias_semana)),
+  };
+}
 
 export default function AdminPointProfessor() {
+  const { user } = useAuth();
   const location = useLocation();
   const convidado = (location.state as { convidado?: string } | null)?.convidado;
   const [vinculos, setVinculos] = useState<Vinculo[]>([]);
-  const [convitesVinculo, setConvitesVinculo] = useState<ConviteVinculo[]>([]);
-  // Recém-convidado abre direto em "Convites", onde o convite novo aparece.
-  const [aba, setAba] = useState<Aba>(convidado ? "convites" : "professores");
+  const [convites, setConvites] = useState<ConviteVinculo[]>([]);
+  const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
+  const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setErro(null);
     try {
-      const [vinculosRes, convitesVinculoRes] = await Promise.all([
+      const [vinculosRes, convitesRes, turmasRes, matriculasRes] = await Promise.all([
         api.get<Vinculo[]>("/vinculos"),
         api.get<ConviteVinculo[]>("/convites-vinculo"),
+        user?.point_id ? api.get<TurmaResumo[]>(`/turmas?point_id=${user.point_id}`) : Promise.resolve([]),
+        api.get<Matricula[]>("/matriculas"),
       ]);
       setVinculos(vinculosRes);
-      setConvitesVinculo(convitesVinculoRes);
+      setConvites(convitesRes);
+      setTurmas(turmasRes);
+      setMatriculas(matriculasRes);
       setPronto(true);
     } catch {
-      setErro("Não foi possível carregar os dados dos professores. Tente novamente.");
+      setErro("Não foi possível carregar os professores. Tente novamente.");
     }
-  }, []);
+  }, [user?.point_id]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
 
-  const convitesVinculoPendentes = convitesVinculo.filter((c) => c.status === "pendente");
+  const pendentes = convites.filter((c) => c.status === "pendente");
+  const ordenados = useMemo(
+    () => [...vinculos].sort((a, b) => a.professor.nome.localeCompare(b.professor.nome)),
+    [vinculos],
+  );
 
   return (
     <Layout>
-      <h1>Professores</h1>
+      <div className="alunos-topo">
+        <div>
+          <div className="alunos-contexto">
+            Cadastros · {vinculos.length} {vinculos.length === 1 ? "professor" : "professores"}
+            {pendentes.length > 0 &&
+              ` · ${pendentes.length} ${pendentes.length === 1 ? "convite pendente" : "convites pendentes"}`}
+          </div>
+          <h1>Professores</h1>
+        </div>
+        <Link to="/admin-point/professor/convidar" className="botao-link">
+          + Convidar professor
+        </Link>
+      </div>
 
       {convidado && <p className="form-success">Convite enviado pra {convidado}.</p>}
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
+      {pronto && ordenados.length === 0 && pendentes.length === 0 && (
+        <p className="empty-state">Nenhum professor ainda — convide o primeiro.</p>
+      )}
+
       {pronto && (
-        <>
-          <AbasPilula
-            ativa={aba}
-            onMudar={setAba}
-            abas={[
-              {
-                valor: "professores",
-                rotulo: "Professores",
-                icone: "user-check",
-                contagem: vinculos.length,
-              },
-              {
-                valor: "convites",
-                rotulo: "Convites pendentes",
-                icone: "mail",
-                contagem: convitesVinculoPendentes.length,
-              },
-            ]}
-          />
-
-          {aba === "professores" && (
-            <section className="section">
-              {vinculos.length === 0 ? (
-                <p className="empty-state">Nenhum vínculo por aqui ainda — convide um professor.</p>
-              ) : (
-                <div className="card-list">
-                  {vinculos.map((v) => (
-                    <Link
-                      to={`/admin-point/professor/${v.professor.id}/agenda`}
-                      className="item-card item-card-clickable"
-                      key={v.id}
-                    >
-                      <Avatar nome={v.professor.nome} foto={v.professor.foto} tamanho={42} />
-                      <div className="item-card-info" style={{ flex: 1 }}>
-                        <span className="item-card-title">{v.professor.nome}</span>
-                      </div>
-                      <div className="item-card-actions">
-                        <StatusPill status={v.status} />
-                        <span aria-hidden="true">
-                          <Icon name="chevron-right" />
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          <BotaoFlutuante to="/admin-point/professor/convidar" rotulo="Convidar professor" />
-
-          {aba === "convites" && (
-            <section className="section">
-              {convitesVinculoPendentes.length === 0 ? (
-                <p className="empty-state">Nenhum convite aguardando aceite.</p>
-              ) : (
-                <div className="card-list">
-                  {convitesVinculoPendentes.map((c) => (
-                    <ConviteVinculoPendenteRow key={c.id} convite={c} onMudanca={carregar} />
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-        </>
+        <div className="prof-grid">
+          {ordenados.map((v) => (
+            <CardProfessor key={v.id} vinculo={v} resumo={resumoDoVinculo(v.id, turmas, matriculas)} />
+          ))}
+          {pendentes.map((c) => (
+            <CardConvite key={`c-${c.id}`} convite={c} onMudanca={carregar} />
+          ))}
+        </div>
       )}
     </Layout>
   );
 }
 
-function ConviteVinculoPendenteRow({
-  convite,
-  onMudanca,
-}: {
-  convite: ConviteVinculo;
-  onMudanca: () => void;
-}) {
+function CardProfessor({ vinculo, resumo }: { vinculo: Vinculo; resumo: Resumo }) {
+  const navigate = useNavigate();
+  const destino = `/admin-point/agenda?professor=${vinculo.professor.id}`;
+  const p = vinculo.professor;
+
+  return (
+    <article
+      className="prof-card prof-card-clicavel"
+      role="link"
+      tabIndex={0}
+      onClick={() => navigate(destino)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") navigate(destino);
+      }}
+    >
+      <div className="prof-topo">
+        <Avatar nome={p.nome} foto={p.foto} tamanho={56} />
+        <div className="prof-identidade">
+          <h2>{p.nome}</h2>
+          <span className="alunos-sub">{p.contato || p.email}</span>
+        </div>
+        <StatusPill status={vinculo.status} />
+      </div>
+
+      {resumo.modalidades.length > 0 && (
+        <div className="prof-chips">
+          {resumo.modalidades.map((m) => (
+            <span key={m} className="prof-chip">
+              {m}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="prof-stats">
+        <div className="prof-stat">
+          <span className="prof-stat-valor">{resumo.turmas}</span>
+          <span className="prof-stat-rotulo">turmas</span>
+        </div>
+        <div className="prof-stat">
+          <span className="prof-stat-valor">{resumo.alunos}</span>
+          <span className="prof-stat-rotulo">alunos</span>
+        </div>
+        <div className="prof-stat" title="Alunos mensais ativos / vagas das turmas">
+          <span className="prof-stat-valor">{resumo.ocupacao === null ? "—" : `${resumo.ocupacao}%`}</span>
+          <span className="prof-stat-rotulo">ocupação</span>
+        </div>
+      </div>
+
+      <div className="prof-semana-bloco">
+        <span className="prof-rotulo">Dias com aula</span>
+        <div className="prof-semana">
+          {DIAS_SEMANA.map((d) => (
+            <span
+              key={d.value}
+              className={resumo.dias.has(d.value) ? "prof-dia ativo" : "prof-dia"}
+              title={resumo.dias.has(d.value) ? `Dá aula ${d.value}` : `Sem aula ${d.value}`}
+            >
+              {d.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function CardConvite({ convite, onMudanca }: { convite: ConviteVinculo; onMudanca: () => void }) {
   const [cancelando, setCancelando] = useState(false);
   const [copiado, setCopiado] = useState(false);
-  const link = `${window.location.origin}/convite-vinculo/${convite.token}`;
   const { confirmar, modal } = useConfirm();
+  const link = `${window.location.origin}/convite-vinculo/${convite.token}`;
 
   async function cancelar() {
     if (!(await confirmar(`Cancelar o convite de ${convite.nome}?`))) return;
@@ -161,30 +211,35 @@ function ConviteVinculoPendenteRow({
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
-      /* clipboard indisponível — sem problema, o link já foi mandado por e-mail */
+      /* clipboard indisponível — o link já foi por e-mail/WhatsApp */
     }
   }
 
   return (
-    <div className="item-card">
+    <article className="prof-card">
       {modal}
-      <div className="item-card-info">
-        <span className="item-card-title">
-          {convite.nome}
-        </span>
-        <span className="item-card-subtitle">
-          {convite.celular} · {convite.email} · expira em{" "}
-          {new Date(convite.expira_em + "T00:00").toLocaleDateString("pt-BR")}
+      <div className="prof-topo">
+        <Avatar nome={convite.nome} foto={null} tamanho={56} />
+        <div className="prof-identidade">
+          <h2>{convite.nome}</h2>
+          <span className="alunos-sub">{convite.celular || convite.email}</span>
+        </div>
+        <span className={convite.expirado ? "status-pill status-risk" : "status-pill status-warn"}>
+          {convite.expirado ? "Convite expirado" : "Convite enviado"}
         </span>
       </div>
-      <div className="item-card-actions">
-        <button className="secondary" onClick={copiarLink}>
+      <p className="prof-convite-texto">
+        Expira em {new Date(convite.expira_em + "T00:00").toLocaleDateString("pt-BR")}. Assim que o
+        professor aceitar, ele aparece aqui com as turmas.
+      </p>
+      <div className="prof-convite-acoes">
+        <button type="button" className="secondary" onClick={copiarLink}>
           {copiado ? "Copiado!" : "Copiar link"}
         </button>
-        <button className="secondary" disabled={cancelando} onClick={cancelar}>
-          {cancelando ? "Cancelando..." : "Cancelar"}
+        <button type="button" className="secondary" disabled={cancelando} onClick={cancelar}>
+          {cancelando ? "Cancelando..." : "Cancelar convite"}
         </button>
       </div>
-    </div>
+    </article>
   );
 }

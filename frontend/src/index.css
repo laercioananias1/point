@@ -4190,3 +4190,374 @@ button.log-linha:hover:not(:disabled) {
     flex-basis: 56px;
   }
 }
+
+/* Link com cara de botão primário (pílula do kit) — ex.: "+ Convidar aluno". */
+.botao-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.botao-link:hover {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+/* Tela de Alunos (kit de design, design/telas/Alunos.dc.html — pedido do
+   usuário, 2026-10-01): tabela única com alunos e convites pendentes. */
+.alunos-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.alunos-contexto {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.alunos-card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.alunos-filtros {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alunos-busca {
+  flex: 0 1 260px;
+  border-radius: 999px;
+  border-width: 2px;
+  padding: 9px 16px;
+  font-size: 15px;
+}
+
+.alunos-tabela {
+  display: flex;
+  flex-direction: column;
+}
+
+.alunos-linha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1.2fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px 4px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.alunos-cabecalho {
+  border-top: none;
+  padding-block: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.alunos-linha-clicavel {
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background-color 120ms ease;
+}
+
+.alunos-linha-clicavel:hover,
+.alunos-linha-clicavel:focus-visible {
+  background: var(--bg);
+}
+
+.alunos-pessoa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.alunos-pessoa-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.alunos-nome {
+  font-weight: 700;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.alunos-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.alunos-celula-acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.alunos-acoes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Ação em texto sublinhado, como o "Reenviar convite" do kit. */
+.alunos-acao {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 2px 0;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.alunos-acao:hover:not(:disabled) {
+  background: none;
+  color: var(--accent-strong);
+}
+
+.alunos-vazio {
+  margin: 0;
+  padding: 32px 4px;
+  text-align: center;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--line);
+}
+
+/* Plano (cores do kit). */
+.status-pill.plano-mensal {
+  background: var(--navy);
+  color: var(--navy-text);
+}
+
+.status-pill.plano-wellhub {
+  background: #3F6E86;
+  color: #F6F1E7;
+}
+
+.status-pill.plano-totalpass {
+  background: #9DB4C0;
+  color: #0B2A3C;
+}
+
+.status-pill.plano-avulso {
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+/* Celular: cada linha vira um card empilhado, com o nome do campo antes
+   do valor. */
+@media (max-width: 760px) {
+  .alunos-card {
+    padding: 16px;
+  }
+
+  .alunos-busca {
+    flex-basis: 100%;
+  }
+
+  .alunos-cabecalho {
+    display: none;
+  }
+
+  .alunos-linha {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+    padding: 14px 4px;
+  }
+
+  .alunos-pessoa,
+  .alunos-linha > [data-rotulo="Turmas"],
+  .alunos-linha > [data-rotulo="Acesso ao app"] {
+    grid-column: 1 / -1;
+  }
+
+  .alunos-linha > span[data-rotulo]:not(.alunos-celula-acoes) {
+    display: block;
+  }
+
+  .alunos-linha [data-rotulo]::before {
+    content: attr(data-rotulo);
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-muted);
+    margin-bottom: 2px;
+  }
+}
+
+/* Tela de Professores (kit de design, design/telas/Professores.dc.html —
+   pedido do usuário, 2026-10-01): um card por professor/convite. */
+.prof-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.prof-card {
+  flex: 1 1 300px;
+  min-width: 0;
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 2px solid transparent;
+}
+
+.prof-card-clicavel {
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.prof-card-clicavel:hover,
+.prof-card-clicavel:focus-visible {
+  border-color: var(--accent);
+}
+
+.prof-topo {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.prof-topo > .status-pill {
+  align-self: flex-start;
+  white-space: nowrap;
+}
+
+.prof-identidade {
+  min-width: 0;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.prof-identidade h2 {
+  font-size: 22px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.prof-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.prof-chip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--surface-sunk);
+}
+
+.prof-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  text-align: center;
+}
+
+.prof-stat {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.prof-stat-valor {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.prof-stat-rotulo {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.prof-semana-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prof-rotulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.prof-semana {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.prof-dia {
+  height: 32px;
+  border-radius: 8px;
+  background: var(--line);
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prof-dia.ativo {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.prof-convite-texto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.prof-convite-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
