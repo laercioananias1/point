@@ -1,67 +1,55 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
-import { api, ApiError } from "../api/client";
-import { PointBrand } from "../components/PointBrand";
-import { CategoriaBadge } from "../components/CategoriaBadge";
+import { api, ApiError, urlArquivo } from "../api/client";
 import { Icon } from "../components/Layout";
-import { diaSemanaDeData, inicioDaSemana, somarDias, toISODate } from "../components/Calendar";
-import { DIAS_SEMANA } from "../lib/dias";
-import type { Categoria, PointResumo, Quadra, TurmaExperimentalAgenda } from "../api/types";
-import { aplicarCorDestaque } from "../lib/cor";
+import type { PointResumo, TurmaExperimentalAgenda } from "../api/types";
 import { formatarCelular } from "../lib/formato";
 
 // Janela da página pública (pedido do usuário, 2026-09-14: "mostre
-// somente 15 dias pra frente") — menor que o padrão do backend (21), que
-// continua servindo outros usos da mesma agenda. A grade de semana
-// (pedido do usuário, 2026-09-29: "faca o calendario de aula experimental
-// nesse padrao", seguindo o mesmo layout por quadra/dia/hora da tela de
-// Ocupação de quadra) navega só dentro dessa janela já carregada.
+// somente 15 dias pra frente") — menor que o padrão do backend (21).
 const DIAS_JANELA = 15;
 
-// Abreviação sem ponto (pedido do usuário, 2026-09-14: "os dias da semana
-// não precisa desse seg., ter. — tira esse pontinho") — o formatador do
-// Intl em pt-BR sempre inclui o ponto ("seg."), por isso a lista própria
-// em vez de toLocaleDateString com weekday: "short".
-const DIAS_ABREV = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+// Abreviação sem ponto (pedido do usuário, 2026-09-14) — o Intl em pt-BR
+// sempre põe "seg.", por isso a lista própria.
+const DIAS_ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-function rotuloDataCurta(iso: string): string {
-  const data = new Date(iso + "T00:00");
-  return `${DIAS_ABREV[data.getDay()]} ${String(data.getDate()).padStart(2, "0")}`;
+type Horario = { turma: TurmaExperimentalAgenda; data: string; disponivel: boolean };
+type Etapa = "escolha" | "dados" | "enviado";
+
+function dataLocal(iso: string): Date {
+  return new Date(iso + "T00:00");
 }
 
-function rotuloHorarioTurma(horario: string): string {
-  return horario.endsWith(":00") ? `${Number(horario.slice(0, 2))}h` : horario;
+/** "quarta, 7/10" */
+function rotuloDiaCompleto(iso: string): string {
+  const d = dataLocal(iso);
+  const semana = d.toLocaleDateString("pt-BR", { weekday: "long" }).replace("-feira", "");
+  return `${semana}, ${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-/** "#rrggbb" -> "r, g, b" (mesmo helper de GraficoOcupacao.tsx), pra pintar
- * a célula com a cor da categoria variando a opacidade em rgba(). */
-function hexParaRgb(hex: string): string {
-  const limpo = hex.replace("#", "");
-  const r = parseInt(limpo.slice(0, 2), 16);
-  const g = parseInt(limpo.slice(2, 4), 16);
-  const b = parseInt(limpo.slice(4, 6), 16);
-  return `${r}, ${g}, ${b}`;
+function resumo(h: Horario): string {
+  const t = h.turma;
+  return `${rotuloDiaCompleto(h.data)} às ${t.horario} · ${t.modalidade.nome} (${t.categoria.nome}) · ${t.quadra.nome} · com ${t.professor_nome}`;
 }
-
-type Selecionado = { turmaId: number; data: string; rotulo: string } | null;
 
 /** Página pública (sem login) de aula experimental — pedido do usuário,
- * 2026-09-14: "criar uma pagina publica... poder solicitar uma aula
- * experimental. Ele conseguir ver agenda que tem aula esperimental livre
- * e fazer uma solicitacao". O professor divulga o link no WhatsApp/
- * Instagram; qualquer um abre, escolhe turma+data com vaga e manda os
- * próprios dados — vira uma SolicitacaoExperimental pendente, que o
- * professor/admin aprova depois (ver SolicitacoesExperimentais.tsx). */
+ * 2026-09-14: o visitante vê os horários com vaga e pede a aula; vira uma
+ * SolicitacaoExperimental pendente que o professor/admin aprova depois.
+ * Visual e fluxo em 3 passos (dia → horário → dados) do kit de design
+ * (design/telas/Main.dc.html, seção "experimental"; pedido do usuário,
+ * 2026-10-01). Nunca mostra número de ocupação — só tem vaga ou lotado. */
 export default function ExperimentalPublico() {
-  // Token opaco, não o id do Point (pedido do usuário, 2026-09-14: "nao
-  // identificar o id na url") — ver Point.link_experimental no backend.
+  // Token opaco, não o id do Point (pedido do usuário, 2026-09-14).
   const { link } = useParams<{ link: string }>();
   const [point, setPoint] = useState<PointResumo | null>(null);
   const [turmas, setTurmas] = useState<TurmaExperimentalAgenda[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erroCarregar, setErroCarregar] = useState<string | null>(null);
-  const [selecionado, setSelecionado] = useState<Selecionado>(null);
-  const [enviado, setEnviado] = useState(false);
+
+  const [dia, setDia] = useState<string | null>(null);
+  const [escolhido, setEscolhido] = useState<Horario | null>(null);
+  const [etapa, setEtapa] = useState<Etapa>("escolha");
+  const [enviadoPara, setEnviadoPara] = useState<{ nome: string; celular: string } | null>(null);
 
   useEffect(() => {
     if (!link) return;
@@ -72,277 +60,215 @@ export default function ExperimentalPublico() {
       .then(([p, t]) => {
         setPoint(p);
         setTurmas(t);
-        aplicarCorDestaque(p.cor_destaque);
       })
       .catch(() => setErroCarregar("Não foi possível carregar essa página — confira o link."))
       .finally(() => setCarregando(false));
-    return () => aplicarCorDestaque(null);
   }, [link]);
 
-  function aoConfirmar() {
-    setEnviado(true);
-    setSelecionado(null);
-    // Tira a data escolhida da lista sem precisar recarregar tudo — a
-    // solicitação pendente já ocupa a vaga (ver vagas_ocupadas_em).
+  const horariosPorDia = useMemo(() => {
+    const mapa = new Map<string, Horario[]>();
+    for (const turma of turmas) {
+      for (const d of turma.proximas_datas) {
+        const lista = mapa.get(d.data) ?? [];
+        lista.push({ turma, data: d.data, disponivel: d.disponivel });
+        mapa.set(d.data, lista);
+      }
+    }
+    for (const lista of mapa.values()) lista.sort((a, b) => a.turma.horario.localeCompare(b.turma.horario));
+    return mapa;
+  }, [turmas]);
+
+  const dias = useMemo(() => Array.from(horariosPorDia.keys()).sort(), [horariosPorDia]);
+  // Abre no primeiro dia que tem alguma vaga.
+  const diaAtual =
+    dia ?? dias.find((d) => horariosPorDia.get(d)?.some((h) => h.disponivel)) ?? dias[0] ?? null;
+  const horariosDoDia = diaAtual ? (horariosPorDia.get(diaAtual) ?? []) : [];
+
+  function escolherDia(d: string) {
+    setDia(d);
+    setEscolhido(null);
+  }
+
+  function aoEnviar(nome: string, celular: string) {
+    if (!escolhido) return;
+    setEnviadoPara({ nome, celular });
+    setEtapa("enviado");
+    // A solicitação pendente já ocupa a vaga (ver vagas_ocupadas_em) — tira
+    // da lista sem recarregar.
     setTurmas((atual) =>
       atual.map((t) =>
-        t.id !== selecionado?.turmaId
+        t.id !== escolhido.turma.id
           ? t
           : {
               ...t,
               proximas_datas: t.proximas_datas.map((d) =>
-                d.data === selecionado.data ? { ...d, disponivel: false } : d,
+                d.data === escolhido.data ? { ...d, disponivel: false } : d,
               ),
             },
       ),
     );
   }
 
-  return (
-    <div className="auth-screen">
-      <div style={{ width: "100%", maxWidth: 480, margin: "0 auto" }}>
-        <PointBrand point={point} />
-
-        {carregando && <p className="auth-card">Carregando...</p>}
-        {!carregando && erroCarregar && <p className="auth-card auth-error">{erroCarregar}</p>}
-
-        {!carregando && !erroCarregar && point && (
-          <>
-            <div className="auth-card">
-              <h1>{point.nome}</h1>
-              <p className="auth-subtitle" style={{ marginBottom: 4 }}>
-                {point.endereco}
-              </p>
-              <p style={{ fontSize: 14, margin: 0 }}>
-                Escolha um horário abaixo e peça uma aula experimental — sem compromisso, sem
-                cadastro. O professor confirma com você por WhatsApp ou e-mail.
-              </p>
-            </div>
-
-            {enviado && (
-              <p className="auth-card form-success">
-                Pedido enviado! O professor ou o Point vai confirmar com você em breve.
-              </p>
-            )}
-
-            {turmas.length === 0 ? (
-              <p className="auth-card empty-state">
-                Nenhum horário de aula experimental disponível agora — volte mais tarde.
-              </p>
-            ) : (
-              <div className="auth-card">
-                <AgendaExperimentalGrade
-                  turmas={turmas}
-                  selecionado={selecionado}
-                  onSelecionar={(turmaId, data, rotulo) => setSelecionado({ turmaId, data, rotulo })}
-                />
-              </div>
-            )}
-
-            {selecionado && (
-              <FormularioSolicitacao selecionado={selecionado} onConfirmar={aoConfirmar} onCancelar={() => setSelecionado(null)} />
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** Grade por quadra/dia/hora, mesmo padrão visual da tela "Ocupação de
- * quadra" (pedido do usuário, 2026-09-29: "faca o calendario de aula
- * experimental nesse padrao") — mas sem número real de ocupação: o
- * visitante sem login continua só vendo ✓ vaga / ✕ lotado (mesma regra já
- * usada no modo "disponibilidade" do GraficoOcupacao), só o layout muda de
- * lista de chips por turma pra grade única por quadra. Navega em semanas,
- * mas só dentro da janela de dias já carregada (DIAS_JANELA) — pedir uma
- * janela maior ao backend não faz sentido pra uma agenda pública. */
-function AgendaExperimentalGrade({
-  turmas,
-  selecionado,
-  onSelecionar,
-}: {
-  turmas: TurmaExperimentalAgenda[];
-  selecionado: Selecionado;
-  onSelecionar: (turmaId: number, data: string, rotulo: string) => void;
-}) {
-  const [referencia, setReferencia] = useState(new Date());
-  const hoje = new Date();
-  const inicioSemana = inicioDaSemana(referencia);
-  const diasDaSemana = Array.from({ length: 7 }, (_, i) => somarDias(inicioSemana, i));
-  const hojeIso = toISODate(hoje);
-
-  const inicioSemanaAtual = inicioDaSemana(hoje);
-  const maxData = somarDias(hoje, DIAS_JANELA);
-  const podeVoltar = inicioSemana > inicioSemanaAtual;
-  const podeAvancar = somarDias(inicioSemana, 7) <= maxData;
-
-  function tituloSemana(): string {
-    const fim = diasDaSemana[6];
-    const dia = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit" });
-    const mes = (d: Date) => d.toLocaleDateString("pt-BR", { month: "short" });
-    return inicioSemana.getMonth() === fim.getMonth()
-      ? `${dia(inicioSemana)}–${dia(fim)} de ${mes(fim)}`
-      : `${dia(inicioSemana)} de ${mes(inicioSemana)} – ${dia(fim)} de ${mes(fim)}`;
+  function recomecar() {
+    setEscolhido(null);
+    setEnviadoPara(null);
+    setEtapa("escolha");
   }
 
-  const quadras = Array.from(new Map(turmas.map((t) => [t.quadra.id, t.quadra])).values());
-  const categorias: Categoria[] = Array.from(
-    new Map(turmas.map((t) => [t.categoria.id, t.categoria])).values(),
-  ).sort((a, b) => a.nome.localeCompare(b.nome));
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div className="calendar-nav">
-        <button className="secondary" type="button" disabled={!podeVoltar} onClick={() => setReferencia((r) => somarDias(r, -7))}>
-          ‹
-        </button>
-        <button className="secondary" type="button" onClick={() => setReferencia(new Date())}>
-          Hoje
-        </button>
-        <button className="secondary" type="button" disabled={!podeAvancar} onClick={() => setReferencia((r) => somarDias(r, 7))}>
-          ›
-        </button>
-        <span className="calendar-title">{tituloSemana()}</span>
-      </div>
-
-      {categorias.length > 0 && (
-        <div className="ocupacao-legenda-categorias">
-          {categorias.map((c) => (
-            <CategoriaBadge key={c.id} nome={c.nome} cor={c.cor} />
-          ))}
+    <div className="exp-pagina">
+      <div className="exp-conteudo">
+        <div className="exp-intro">
+          {point?.logo && <img src={urlArquivo(point.logo)} alt="" className="exp-logo" />}
+          <span className="exp-tag">Aula experimental</span>
+          <h1>{point?.nome ?? (carregando ? "Carregando..." : "Aula experimental")}</h1>
+          {point?.endereco && (
+            <span className="exp-endereco">
+              <Icon name="pin" size={16} /> {point.endereco}
+            </span>
+          )}
+          <p>
+            Escolha o dia e o horário com vaga, informe seus dados e envie o pedido — sem
+            compromisso e sem cadastro. O professor confirma a aula com você.
+          </p>
+          <ul className="exp-checks">
+            <li>
+              <Icon name="check-circle" size={18} /> Só aparecem horários com vaga de verdade
+            </li>
+            <li>
+              <Icon name="check-circle" size={18} /> O professor confirma pelo WhatsApp
+            </li>
+          </ul>
         </div>
-      )}
 
-      {quadras.map((quadra: Quadra) => {
-        const turmasDaQuadra = turmas.filter((t) => t.quadra.id === quadra.id);
-        const horasEmUso = Array.from(
-          new Set(turmasDaQuadra.map((t) => Number(t.horario.split(":")[0]))),
-        ).sort((a, b) => a - b);
+        <div className="exp-card">
+          {carregando && <p className="empty-state">Carregando horários...</p>}
+          {!carregando && erroCarregar && <p className="form-error">{erroCarregar}</p>}
+          {!carregando && !erroCarregar && dias.length === 0 && (
+            <p className="empty-state">
+              Nenhum horário de aula experimental disponível agora — volte mais tarde.
+            </p>
+          )}
 
-        const celulas = [
-          <div className="ocupacao-cell ocupacao-corner" key="corner" />,
-          ...diasDaSemana.map((data) => {
-            const iso = toISODate(data);
-            return (
-              <div
-                className={iso === hojeIso ? "ocupacao-cell ocupacao-header hoje" : "ocupacao-cell ocupacao-header"}
-                key={`cabecalho-${iso}`}
-              >
-                {DIAS_SEMANA[(data.getDay() + 6) % 7].label} {data.getDate()}
-              </div>
-            );
-          }),
-          ...horasEmUso.flatMap((hora) => [
-            <div className="ocupacao-cell ocupacao-hour-label" key={`hora-${hora}`}>
-              {hora}h
-            </div>,
-            ...diasDaSemana.map((data) => {
-              const iso = toISODate(data);
-              const dia = diaSemanaDeData(data);
-              const candidatas = turmasDaQuadra
-                .filter((t) => Number(t.horario.split(":")[0]) === hora && t.dias_semana.includes(dia))
-                .flatMap((t) => {
-                  const disp = t.proximas_datas.find((d) => d.data === iso);
-                  return disp ? [{ turma: t, disponivel: disp.disponivel }] : [];
-                });
-
-              if (candidatas.length === 0) {
-                return <div className="ocupacao-cell ocupacao-slot ocupacao-slot-vazio" key={`${iso}-${hora}`} />;
-              }
-
-              const disponivel = candidatas.find((c) => c.disponivel);
-              const escolha = disponivel ?? candidatas[0];
-              const corBase = hexParaRgb(escolha.turma.categoria.cor);
-              const lotado = !disponivel;
-              const dataFormatada = new Date(iso + "T00:00").toLocaleDateString("pt-BR");
-              const ativa = selecionado?.turmaId === escolha.turma.id && selecionado.data === iso;
-
-              return (
-                <div
-                  className={
-                    disponivel
-                      ? "ocupacao-cell ocupacao-slot ocupacao-slot-ocupado ocupacao-slot-clicavel"
-                      : "ocupacao-cell ocupacao-slot ocupacao-slot-ocupado"
-                  }
-                  key={`${iso}-${hora}`}
-                  role={disponivel ? "button" : undefined}
-                  tabIndex={disponivel ? 0 : undefined}
-                  style={{
-                    background: lotado ? "var(--risk-soft)" : `rgba(${corBase}, 0.35)`,
-                    borderLeft: `3px solid ${lotado ? "var(--risk)" : `rgb(${corBase})`}`,
-                    color: lotado ? "var(--risk)" : "var(--good)",
-                    outline: ativa ? "2px solid var(--accent)" : undefined,
-                  }}
-                  title={`${quadra.nome} · ${dataFormatada} ${rotuloHorarioTurma(escolha.turma.horario)} — ${escolha.turma.modalidade.nome} (${escolha.turma.categoria.nome}) — ${lotado ? "sem vaga" : "vaga disponível"}`}
-                  onClick={
-                    disponivel
-                      ? () =>
-                          onSelecionar(
-                            escolha.turma.id,
-                            iso,
-                            `${escolha.turma.modalidade.nome} · ${rotuloDataCurta(iso)} · ${escolha.turma.horario}`,
-                          )
-                      : undefined
-                  }
-                  onKeyDown={
-                    disponivel
-                      ? (e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            onSelecionar(
-                              escolha.turma.id,
-                              iso,
-                              `${escolha.turma.modalidade.nome} · ${rotuloDataCurta(iso)} · ${escolha.turma.horario}`,
-                            );
-                          }
-                        }
-                      : undefined
-                  }
-                >
-                  <Icon name={lotado ? "x-circle" : "check-circle"} size={14} />
+          {!carregando && !erroCarregar && dias.length > 0 && (
+            <>
+              {etapa !== "enviado" && (
+                <div className="exp-card-topo">
+                  <span className="exp-card-sub">Sem compromisso · gratuita</span>
+                  <span className="exp-card-titulo">Agende sua aula experimental</span>
                 </div>
-              );
-            }),
-          ]),
-        ];
+              )}
 
-        return (
-          <div key={quadra.id}>
-            <div className="ocupacao-quadra-header">
-              <h3>{quadra.nome}</h3>
-            </div>
-            <div className="ocupacao-wrap">
-              <div
-                className="ocupacao-grid"
-                style={{ gridTemplateColumns: `36px repeat(7, minmax(34px, 1fr))` }}
-              >
-                {celulas}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+              {etapa === "escolha" && (
+                <>
+                  <div className="exp-passo">
+                    <span className="exp-passo-rotulo">1. Escolha o dia</span>
+                    <div className="exp-dias">
+                      {dias.map((d) => {
+                        const data = dataLocal(d);
+                        const temVaga = horariosPorDia.get(d)?.some((h) => h.disponivel);
+                        return (
+                          <button
+                            key={d}
+                            type="button"
+                            className={d === diaAtual ? "exp-dia ativo" : "exp-dia"}
+                            onClick={() => escolherDia(d)}
+                            title={temVaga ? undefined : "Todos os horários desse dia estão lotados"}
+                          >
+                            <span className="exp-dia-semana">{DIAS_ABREV[data.getDay()]}</span>
+                            <span className="exp-dia-numero">{data.getDate()}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-      <div className="ocupacao-legenda">
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--good)" }}>
-          <Icon name="check-circle" size={14} /> Tem vaga — clique pra pedir
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--risk)" }}>
-          <Icon name="x-circle" size={14} /> Sem vaga
-        </span>
+                  <div className="exp-passo">
+                    <span className="exp-passo-rotulo">2. Escolha o horário</span>
+                    <div className="exp-horarios">
+                      {horariosDoDia.map((h) => {
+                        const ativo = escolhido?.turma.id === h.turma.id && escolhido.data === h.data;
+                        return (
+                          <button
+                            key={`${h.turma.id}-${h.data}`}
+                            type="button"
+                            disabled={!h.disponivel}
+                            className={ativo ? "exp-horario ativo" : "exp-horario"}
+                            onClick={() => setEscolhido(h)}
+                            title={`${h.turma.modalidade.nome} · ${h.turma.quadra.nome} · com ${h.turma.professor_nome}`}
+                          >
+                            <span>{h.turma.horario}</span>
+                            <span className="exp-horario-sub">{h.turma.categoria.nome}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <span className="exp-dica">Horários riscados já estão lotados.</span>
+                  </div>
+
+                  {escolhido && (
+                    <div className="exp-resumo">
+                      <Icon name="calendar" size={22} />
+                      <span>Aula experimental: {resumo(escolhido)}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className="exp-cta"
+                    disabled={!escolhido}
+                    onClick={() => setEtapa("dados")}
+                  >
+                    Continuar
+                  </button>
+                </>
+              )}
+
+              {etapa === "dados" && escolhido && (
+                <FormularioSolicitacao
+                  horario={escolhido}
+                  onTrocar={() => setEtapa("escolha")}
+                  onEnviado={aoEnviar}
+                />
+              )}
+
+              {etapa === "enviado" && escolhido && enviadoPara && (
+                <div className="exp-feito">
+                  <span className="exp-feito-icone">
+                    <Icon name="check-circle" size={36} />
+                  </span>
+                  <span className="exp-feito-titulo">
+                    Pedido enviado, {enviadoPara.nome.trim().split(" ")[0]}!
+                  </span>
+                  <p>Aula experimental: {resumo(escolhido)}</p>
+                  <div className="exp-resumo">
+                    <Icon name="clock" size={22} />
+                    <span>
+                      Aguardando confirmação do professor. Você vai receber a resposta no WhatsApp{" "}
+                      {enviadoPara.celular}.
+                    </span>
+                  </div>
+                  <button type="button" className="secondary" onClick={recomecar}>
+                    Solicitar outro horário
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 function FormularioSolicitacao({
-  selecionado,
-  onConfirmar,
-  onCancelar,
+  horario,
+  onTrocar,
+  onEnviado,
 }: {
-  selecionado: { turmaId: number; data: string; rotulo: string };
-  onConfirmar: () => void;
-  onCancelar: () => void;
+  horario: Horario;
+  onTrocar: () => void;
+  onEnviado: (nome: string, celular: string) => void;
 }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -351,21 +277,23 @@ function FormularioSolicitacao({
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  const completo = Boolean(nome.trim() && email.trim() && celular.trim() && temRaquete !== null);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (temRaquete === null) return;
+    if (!completo) return;
     setEnviando(true);
     setErro(null);
     try {
       await api.post("/experimental/solicitar", {
-        turma_id: selecionado.turmaId,
-        data: selecionado.data,
+        turma_id: horario.turma.id,
+        data: horario.data,
         nome,
         email,
         celular: celular.trim(),
         tem_raquete: temRaquete,
       });
-      onConfirmar();
+      onEnviado(nome, celular.trim());
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Não foi possível enviar. Tente de novo.");
     } finally {
@@ -374,25 +302,32 @@ function FormularioSolicitacao({
   }
 
   return (
-    <form className="auth-card" onSubmit={handleSubmit}>
-      <h2 style={{ marginBottom: 4 }}>Pedir aula experimental</h2>
-      <p className="auth-subtitle">{selecionado.rotulo}</p>
+    <form className="exp-form" onSubmit={handleSubmit}>
+      <div className="exp-resumo exp-resumo-trocar">
+        <span>Aula experimental: {resumo(horario)}</span>
+        <button type="button" className="link-btn" onClick={onTrocar}>
+          Trocar horário
+        </button>
+      </div>
 
-      <label htmlFor="nome">Nome</label>
-      <input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
+      <span className="exp-passo-rotulo">3. Seus dados</span>
 
-      <label htmlFor="email">E-mail</label>
-      <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      <label htmlFor="exp-nome">Nome</label>
+      <input id="exp-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome completo" required />
 
-      <label htmlFor="celular">Celular</label>
+      <label htmlFor="exp-whats">WhatsApp</label>
       <input
-        id="celular"
+        id="exp-whats"
         type="tel"
         placeholder="(11) 91234-5678"
         value={celular}
         onChange={(e) => setCelular(formatarCelular(e.target.value))}
         required
       />
+      <span className="exp-dica">O professor vai confirmar a aula por este número.</span>
+
+      <label htmlFor="exp-email">E-mail</label>
+      <input id="exp-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" required />
 
       <label>Já tem raquete própria?</label>
       <div className="toggle-grid">
@@ -412,13 +347,10 @@ function FormularioSolicitacao({
         </button>
       </div>
 
-      {erro && <p className="auth-error">{erro}</p>}
+      {erro && <p className="form-error">{erro}</p>}
 
-      <button type="submit" disabled={enviando || temRaquete === null || !nome || !email || !celular}>
-        {enviando ? "Enviando..." : "Pedir aula experimental"}
-      </button>
-      <button type="button" className="secondary" onClick={onCancelar} disabled={enviando}>
-        Cancelar
+      <button type="submit" className="exp-cta exp-cta-destaque" disabled={enviando || !completo}>
+        {enviando ? "Enviando..." : "Solicitar aula experimental"}
       </button>
     </form>
   );

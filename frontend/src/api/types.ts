@@ -23,8 +23,9 @@ export interface PointResumo {
   anuncios: string | null;
   banners: string[];
   logo: string | null;
-  // Cor de destaque do Point (pedido do usuário, 2026-09-14) — nula = usa
-  // a cor padrão do sistema. Ver lib/cor.ts.
+  // Cor de destaque escolhida pelo Point (pedido do usuário, 2026-09-14).
+  // Desde o kit de design (2026-10-01) não pinta mais o app — a marca usa
+  // o limão fixo pra todos.
   cor_destaque: string | null;
   // Token do link público de aula experimental (pedido do usuário,
   // 2026-09-14: "nao identificar o id na url") — usa isso em vez do id

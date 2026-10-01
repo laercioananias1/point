@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError, urlArquivo } from "../../api/client";
 import type { Point } from "../../api/types";
 import { Icon, Layout } from "../../components/Layout";
-import { aplicarCorDestaque } from "../../lib/cor";
 
 const MAX_FOTOS = 5;
 const MAX_BANNERS = 5;
@@ -323,9 +322,6 @@ function PerfilForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point) => v
         cor_destaque: corDestaque.trim() || null,
       });
       onSalvo(atualizado);
-      // A cor pode ter mudado agora mesmo — reflete na hora, sem esperar
-      // reabrir a tela (mesma função que o Layout usa no login).
-      aplicarCorDestaque(atualizado.cor_destaque);
       setSucesso(true);
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Não foi possível salvar. Tente de novo.");

@@ -5,7 +5,6 @@ import { useAuth, type User } from "../auth/AuthContext";
 import { PointBrand } from "../components/PointBrand";
 import type { Convite } from "../api/types";
 import { rotuloTurma } from "../lib/dias";
-import { aplicarCorDestaque } from "../lib/cor";
 import { formatarCelular, formatarReais, rotuloPagamentoMeio } from "../lib/formato";
 
 /** Tela pública (sem login) que a pessoa abre a partir do link do e-mail
@@ -27,14 +26,9 @@ export default function ConviteAceite() {
       .get<Convite>(`/convites/${token}`)
       .then((res) => {
         setConvite(res);
-        // Cor do Point nessa tela (pedido do usuário, 2026-09-14: "dar
-        // destaque para o logo de cada point... as cores do portal") —
-        // reforça a marca desde o convite, antes até de logar.
-        aplicarCorDestaque(res.point.cor_destaque);
       })
       .catch(() => setErroCarregar("Convite não encontrado — confira o link."))
       .finally(() => setCarregando(false));
-    return () => aplicarCorDestaque(null);
   }, [token]);
 
   return (

@@ -4,7 +4,6 @@ import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
 import { PointBrand } from "../components/PointBrand";
 import type { ConviteVinculo } from "../api/types";
-import { aplicarCorDestaque } from "../lib/cor";
 
 /** Tela pública (sem login) que o professor abre a partir do link do
  * e-mail de convite de vínculo (pedido do usuário, 2026-08-21 — mesmo
@@ -26,11 +25,9 @@ export default function ConviteVinculoAceite() {
       .get<ConviteVinculo>(`/convites-vinculo/${token}`)
       .then((res) => {
         setConvite(res);
-        aplicarCorDestaque(res.point.cor_destaque);
       })
       .catch(() => setErroCarregar("Convite não encontrado — confira o link."))
       .finally(() => setCarregando(false));
-    return () => aplicarCorDestaque(null);
   }, [token]);
 
   return (

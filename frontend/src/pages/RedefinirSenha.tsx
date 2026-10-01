@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
-import { LogoMark } from "../components/LogoMark";
+import { MarcaOPoint } from "../components/LogoMark";
 
 /** Tela pública (sem login) que abre a partir do link do e-mail de
  * "Esqueci minha senha" (pedido do usuário, 2026-09-01). Não busca nada
@@ -51,8 +51,7 @@ export default function RedefinirSenha() {
     <div className="auth-screen">
       <div>
         <div className="auth-brand">
-          <LogoMark size={28} />
-          <span className="auth-brand-name">OPoint</span>
+          <MarcaOPoint />
         </div>
 
         {sucesso ? (

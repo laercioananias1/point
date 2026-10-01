@@ -1,110 +1,114 @@
+/* Identidade OPoint (design/DESIGN.md, pedido do usuário 2026-10-01):
+   areia + azul + limão. O kit só define o claro; o escuro é derivado
+   das mesmas cores (fundo azul profundo, texto areia, limão como
+   interativo). 3 estados de tema: ver src/theme.ts. */
 :root {
-  /* Aqua & surface (pedido do usuário, 2026-09-30: "nao gosto dessa cor
-     de fundo... sugere uma cor mais alegre, nova, q da mais suavidade" —
-     era um bege areia; trocado por um aqua bem suave, puxando pro mesmo
-     teal do --accent, em vez de competir com ele). */
-  --bg: #eef8f7;
-  --surface: #ffffff;
-  --surface-sunk: #dff1ef;
-  --line: #cde6e3;
+  --bg: #F6F1E7;
+  --surface: #FFFFFF;
+  --surface-sunk: #E9DFCB;
+  --line: #EDE6D8;
+  --borda: #D8CDB6;
 
-  /* Ink */
-  --ink: #12242e;
-  --ink-muted: #5b6b72;
+  --ink: #0B2A3C;
+  --ink-muted: #4F6B7A;
+  --ink-2: #2C4A5A;
 
-  /* Navy — the header/arrival anchor */
-  --navy: #0e3a53;
-  --navy-ink: #0a2a3d;
-  --navy-line: #23516b;
-  --navy-text: #eaf1f4;
-  --navy-text-muted: #9fb9c4;
+  --navy: #0B2A3C;
+  --navy-ink: #071E2B;
+  --navy-line: #23465A;
+  --navy-text: #F6F1E7;
+  --navy-text-muted: #C9D6DD;
 
-  /* Menu lateral (pedido do usuário, 2026-09-20: "em modo claro deixa a
-     lateral clara também") — claro no tema claro, o azul-marinho de sempre
-     no escuro (redefinidos nos blocos dark abaixo). */
-  --side-bg: #ffffff;
-  --side-line: #cde6e3;
-  --side-text: #12242e;
-  --side-muted: #5b6b72;
-  --side-hover: rgba(14, 58, 83, 0.07);
-  --side-sair: rgba(14, 58, 83, 0.06);
-  --side-sair-hover: rgba(14, 58, 83, 0.12);
+  --side-bg: #0B2A3C;
+  --side-line: #23465A;
+  --side-text: #F6F1E7;
+  --side-muted: #C9D6DD;
+  --side-hover: rgba(255, 255, 255, 0.07);
+  --side-active-bg: #123F59;
+  --side-active-text: #F6F1E7;
+  --side-sair: rgba(255, 255, 255, 0.06);
+  --side-sair-hover: rgba(255, 255, 255, 0.12);
 
-  /* Brand accent (interactive) */
-  --accent: #0e9594;
-  --accent-strong: #077372;
-  --accent-soft: #dcefec;
+  /* Interativo (botão primário, link, foco, seleção): azul no claro. */
+  --accent: #0B2A3C;
+  --accent-strong: #123F59;
+  --accent-soft: #E2ECF0;
+  --on-accent: #F6F1E7;
 
-  /* Secondary energy accent — used sparingly (wordmark, atmosphere) */
-  --coral: #f2542d;
+  /* Destaque da marca: CTA, "em dia", seleção. Nunca como texto em fundo claro. */
+  --limao: #D4F04A;
+  --on-limao: #0B2A3C;
 
-  /* Semantic — deliberately apart from the brand hues above */
-  --good: #1f9d5d;
-  --good-soft: #dff3e7;
-  --warn: #c97f12;
-  --warn-soft: #f6e8d0;
-  --risk: #c13b2e;
-  --risk-soft: #f6dfda;
-  /* Séries do gráfico de saldo de check-ins — fixas, não seguem o
-     --accent (que muda por Point). Par validado pra daltonismo. */
+  --coral: #C2552B;
+
+  --good: #2E8B57;
+  --good-soft: #DDEFE3;
+  --warn: #5C4300;
+  --warn-soft: #FFF1C2;
+  /* --risk: barras e marcadores; --risk-ink: texto sobre --risk-soft. */
+  --risk: #C2552B;
+  --risk-ink: #7A2E10;
+  --risk-soft: #F3D9CC;
   --serie-checkin: #0e9594;
   --serie-aula: #4a3aa7;
 
-  --shadow-card: 0 1px 2px rgba(18, 36, 46, 0.04), 0 6px 16px -8px rgba(18, 36, 46, 0.12);
-  --shadow-pop: 0 12px 32px -12px rgba(10, 42, 61, 0.35);
+  /* Kit: cards sem sombra — a separação vem do fundo areia. */
+  --shadow-card: none;
+  --shadow-pop: 0 12px 32px -12px rgba(11, 42, 60, 0.35);
 
   color-scheme: light;
 }
 
-/* Modo escuro (pedido do usuário, 2026-09-01: "já aproveita e faz o modo
-   dark também") — 3 estados possíveis (ver src/theme.ts): "Sistema" (sem
-   atributo, só essa media query decide), "Claro" (`data-theme="light"`,
-   sobrepõe o SO ficando de fora do bloco abaixo) e "Escuro"
-   (`data-theme="dark"`, repete os mesmos tokens fora da media query pra
-   ganhar de um SO em modo claro). --navy* fica quase igual nos dois temas
-   de propósito — o cabeçalho já é o "âncora" escura do app mesmo no claro,
-   não precisa ficar mais escuro ainda; só afunda um pouco pra não virar a
-   superfície mais clara da tela num fundo já escuro. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0a1a22;
-    --surface: #13293a;
-    --surface-sunk: #0e2029;
-    --line: #234253;
+    --bg: #071822;
+    --surface: #0E2533;
+    --surface-sunk: #0A1D29;
+    --line: #1E3D4F;
+    --borda: #2B4A5C;
 
-    --ink: #eaf1f4;
-    --ink-muted: #9fb9c4;
+    --ink: #F6F1E7;
+    --ink-muted: #9DB4C0;
+    --ink-2: #C9D6DD;
 
-    --navy: #081c29;
-    --navy-ink: #051119;
-    --navy-line: #1c3a4d;
-    --navy-text: #eaf1f4;
-    --navy-text-muted: #9fb9c4;
+    --navy: #04121A;
+    --navy-ink: #020B10;
+    --navy-line: #1A3646;
+    --navy-text: #F6F1E7;
+    --navy-text-muted: #9DB4C0;
 
-    --side-bg: #081c29;
-    --side-line: #1c3a4d;
-    --side-text: #ffffff;
-    --side-muted: #9fb9c4;
+    --side-bg: #04121A;
+    --side-line: #1A3646;
+    --side-text: #F6F1E7;
+    --side-muted: #C9D6DD;
     --side-hover: rgba(255, 255, 255, 0.07);
+    --side-active-bg: #123F59;
+    --side-active-text: #F6F1E7;
     --side-sair: rgba(255, 255, 255, 0.06);
     --side-sair-hover: rgba(255, 255, 255, 0.12);
 
-    --accent: #17a8a0;
-    --accent-strong: #5eead4;
-    --accent-soft: #123c3b;
+    /* No escuro o interativo vira o limão (texto azul por cima). */
+    --accent: #D4F04A;
+    --accent-strong: #E4F78A;
+    --accent-soft: #24360F;
+    --on-accent: #0B2A3C;
 
-    --coral: #ff6b45;
+    --limao: #D4F04A;
+    --on-limao: #0B2A3C;
 
-    --good: #34d399;
-    --good-soft: #113828;
-    --warn: #f0a93a;
-    --warn-soft: #3a2c10;
-    --risk: #f0776a;
-    --risk-soft: #3a1712;
+    --coral: #E07A55;
+
+    --good: #5FBF85;
+    --good-soft: #12301F;
+    --warn: #F5D06B;
+    --warn-soft: #3A2E08;
+    --risk: #E07A55;
+    --risk-ink: #F0A487;
+    --risk-soft: #3A1A0E;
     --serie-checkin: #17a8a0;
     --serie-aula: #9085e9;
 
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px -8px rgba(0, 0, 0, 0.45);
+    --shadow-card: none;
     --shadow-pop: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
 
     color-scheme: dark;
@@ -112,44 +116,54 @@
 }
 
 :root[data-theme="dark"] {
-  --side-bg: #081c29;
-  --side-line: #1c3a4d;
-  --side-text: #ffffff;
-  --side-muted: #9fb9c4;
+  --bg: #071822;
+  --surface: #0E2533;
+  --surface-sunk: #0A1D29;
+  --line: #1E3D4F;
+  --borda: #2B4A5C;
+
+  --ink: #F6F1E7;
+  --ink-muted: #9DB4C0;
+  --ink-2: #C9D6DD;
+
+  --navy: #04121A;
+  --navy-ink: #020B10;
+  --navy-line: #1A3646;
+  --navy-text: #F6F1E7;
+  --navy-text-muted: #9DB4C0;
+
+  --side-bg: #04121A;
+  --side-line: #1A3646;
+  --side-text: #F6F1E7;
+  --side-muted: #C9D6DD;
   --side-hover: rgba(255, 255, 255, 0.07);
+  --side-active-bg: #123F59;
+  --side-active-text: #F6F1E7;
   --side-sair: rgba(255, 255, 255, 0.06);
   --side-sair-hover: rgba(255, 255, 255, 0.12);
 
-  --bg: #0a1a22;
-  --surface: #13293a;
-  --surface-sunk: #0e2029;
-  --line: #234253;
+  /* No escuro o interativo vira o limão (texto azul por cima). */
+  --accent: #D4F04A;
+  --accent-strong: #E4F78A;
+  --accent-soft: #24360F;
+  --on-accent: #0B2A3C;
 
-  --ink: #eaf1f4;
-  --ink-muted: #9fb9c4;
+  --limao: #D4F04A;
+  --on-limao: #0B2A3C;
 
-  --navy: #081c29;
-  --navy-ink: #051119;
-  --navy-line: #1c3a4d;
-  --navy-text: #eaf1f4;
-  --navy-text-muted: #9fb9c4;
+  --coral: #E07A55;
 
-  --accent: #17a8a0;
-  --accent-strong: #5eead4;
-  --accent-soft: #123c3b;
-
-  --coral: #ff6b45;
-
-  --good: #34d399;
-  --good-soft: #113828;
-  --warn: #f0a93a;
-  --warn-soft: #3a2c10;
-  --risk: #f0776a;
-  --risk-soft: #3a1712;
+  --good: #5FBF85;
+  --good-soft: #12301F;
+  --warn: #F5D06B;
+  --warn-soft: #3A2E08;
+  --risk: #E07A55;
+  --risk-ink: #F0A487;
+  --risk-soft: #3A1A0E;
   --serie-checkin: #17a8a0;
   --serie-aula: #9085e9;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 16px -8px rgba(0, 0, 0, 0.45);
+  --shadow-card: none;
   --shadow-pop: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
 
   color-scheme: dark;
@@ -163,7 +177,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "Work Sans", -apple-system, "Segoe UI", sans-serif;
+  font-family: "DM Sans", -apple-system, "Segoe UI", sans-serif;
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -176,9 +190,9 @@ body {
 h1,
 h2,
 h3 {
-  font-family: "Archivo", "Work Sans", sans-serif;
+  font-family: "Bricolage Grotesque", "DM Sans", sans-serif;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   text-wrap: balance;
   margin: 0;
 }
@@ -192,6 +206,14 @@ h3 {
    "Olá, nome!" da Início etc.). */
 h1 {
   font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+@media (min-width: 900px) {
+  h1 {
+    font-size: 30px;
+  }
 }
 
 h2 {
@@ -202,6 +224,14 @@ h3 {
   font-size: 14px;
 }
 
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--accent-strong);
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -209,15 +239,16 @@ h3 {
 }
 
 button {
-  font-family: "Work Sans", sans-serif;
+  font-family: "DM Sans", sans-serif;
   cursor: pointer;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  /* Kit: botões em pílula. */
+  border-radius: 999px;
+  padding: 11px 18px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
@@ -234,14 +265,14 @@ input,
 select,
 textarea {
   width: 100%;
-  font-family: "Work Sans", sans-serif;
+  font-family: "DM Sans", sans-serif;
   /* 16px, não 14px: abaixo disso o Safari no iPhone dá zoom automático ao
      focar o campo — quebra a sensação de app (pedido do usuário,
      2026-08-25). */
   font-size: 16px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  padding: 11px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
   background: var(--surface);
   color: var(--ink);
   transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -268,8 +299,8 @@ textarea:focus {
   justify-content: center;
   padding: 20px;
   background: var(--navy);
-  background-image: radial-gradient(circle at 20% 15%, rgba(242, 84, 45, 0.16), transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(14, 149, 148, 0.22), transparent 50%);
+  background-image: radial-gradient(circle at 20% 15%, rgba(212, 240, 74, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(63, 110, 134, 0.3), transparent 50%);
   position: relative;
 }
 
@@ -284,8 +315,20 @@ textarea:focus {
   margin-bottom: 28px;
 }
 
+/* Marca completa: símbolo colado no "Point" (o símbolo é o "O"). */
+.marca-opoint {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #F6F1E7;
+}
+
 .auth-brand-name {
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
   font-size: 22px;
   letter-spacing: -0.01em;
@@ -416,7 +459,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
   font-size: 17px;
   letter-spacing: -0.01em;
@@ -454,7 +497,7 @@ textarea:focus {
 }
 
 .app-nav-link.active {
-  color: #fff;
+  color: var(--on-accent);
   background: var(--accent);
 }
 
@@ -519,7 +562,7 @@ textarea:focus {
 .app-header-icon-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* Botão de avisos/notificações no cabeçalho (pedido do usuário,
@@ -537,7 +580,7 @@ textarea:focus {
   flex-shrink: 0;
   background: var(--accent);
   border: none;
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .app-avisos-btn:hover {
@@ -575,8 +618,8 @@ textarea:focus {
   border-radius: 100px;
   background: var(--accent);
   border: none;
-  color: #fff;
-  font-family: "Archivo", sans-serif;
+  color: var(--on-accent);
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 18px;
   font-weight: 800;
   line-height: 1;
@@ -692,7 +735,7 @@ textarea:focus {
 
 .help-glossary-item b {
   display: block;
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 13.5px;
   margin-bottom: 1px;
 }
@@ -739,7 +782,7 @@ textarea:focus {
 }
 
 .section h2 {
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -758,8 +801,10 @@ textarea:focus {
 
 .item-card {
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  /* Kit: card sem borda nem sombra; borda transparente só pra o hover
+     do card clicável não mexer no tamanho. */
+  border: 1px solid transparent;
+  border-radius: 20px;
   padding: 16px 20px;
   display: flex;
   align-items: center;
@@ -794,7 +839,7 @@ textarea:focus {
 }
 
 .item-card-title {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14.5px;
 }
 
@@ -875,16 +920,16 @@ textarea:focus {
   flex-shrink: 0;
 }
 
+/* Kit: secundário = contorno 2px, fundo transparente. */
 button.secondary {
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--accent);
+  border: 2px solid var(--accent);
 }
 
 button.secondary:hover:not(:disabled) {
-  background: var(--risk-soft);
-  border-color: var(--risk);
-  color: var(--risk);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 button.danger {
@@ -968,7 +1013,7 @@ button.danger:hover:not(:disabled) {
 
 .header-action-btn:hover:not(:disabled) {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* Atalhos da home do aluno, tipo app de academia (pedido do usuário,
@@ -1298,7 +1343,7 @@ button.danger:hover:not(:disabled) {
 .day-pill.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .day-pill.active .day-pill-label {
@@ -1503,19 +1548,19 @@ button.danger:hover:not(:disabled) {
   line-height: 1.4;
 }
 
+/* Kit: selo em pílula 12px 700, sem caixa alta. */
 .status-pill {
   display: inline-block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   padding: 4px 11px;
-  border-radius: 100px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  border-radius: 999px;
 }
 
+/* "Em dia" é o limão da marca. */
 .status-pill.status-good {
-  background: var(--good-soft);
-  color: var(--good);
+  background: var(--limao);
+  color: var(--on-limao);
 }
 
 /* Resumo do dia — % ocupação e qtde de alunos (pedido do usuário,
@@ -1535,7 +1580,7 @@ button.danger:hover:not(:disabled) {
 }
 
 .agenda-stats-numero {
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 22px;
   font-weight: 800;
 }
@@ -1676,14 +1721,14 @@ button.danger:hover:not(:disabled) {
 
 .status-pill.status-risk {
   background: var(--risk-soft);
-  color: var(--risk);
+  color: var(--risk-ink);
 }
 
 /* Neutro/informativo — não é bom nem ruim, só descreve (ex.: "Recorrente"
    vs "Avulsa" na agenda do aluno, pedido do usuário, 2026-08-26). */
 .status-pill.status-info {
   background: var(--accent-soft);
-  color: var(--accent-strong);
+  color: var(--ink);
 }
 
 /* Bolinha da cor da categoria (pedido do usuário, 2026-09-08) — usada em
@@ -1790,27 +1835,26 @@ button.danger:hover:not(:disabled) {
   gap: 12px;
 }
 
+/* Kit: KPI = card com label 14px e número grande. */
 .stat-tile {
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 18px 20px;
+  border-radius: 20px;
+  padding: 20px;
   box-shadow: var(--shadow-card);
 }
 
 .stat-label {
-  font-size: 11.5px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--ink-muted);
   margin-bottom: 8px;
 }
 
 .stat-value {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 24px;
-  font-weight: 500;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -1823,11 +1867,12 @@ button.danger:hover:not(:disabled) {
   margin-top: 2px;
 }
 
+/* Kit: chip em pílula; selecionado = limão com borda azul. */
 .toggle-chip {
   background: var(--surface);
-  color: var(--ink-muted);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  color: var(--ink);
+  border: 1px solid var(--borda);
+  border-radius: 999px;
   padding: 7px 12px;
   font-size: 13px;
   font-weight: 600;
@@ -1835,21 +1880,21 @@ button.danger:hover:not(:disabled) {
 }
 
 .toggle-chip:hover:not(:disabled) {
-  border-color: var(--accent);
+  border-color: var(--ink);
   color: var(--ink);
   background: var(--surface);
 }
 
 .toggle-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--limao);
+  border-color: var(--on-limao);
+  color: var(--on-limao);
 }
 
 .toggle-chip.active:hover:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--limao);
+  border-color: var(--on-limao);
+  color: var(--on-limao);
 }
 
 /* Escolha de turma + dias por aluno (pedido do usuário, 2026-08-21) — cada
@@ -1896,7 +1941,7 @@ button.danger:hover:not(:disabled) {
 .calendar-day-header {
   padding: 10px 6px;
   text-align: center;
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 700;
   font-size: 12.5px;
   letter-spacing: 0.02em;
@@ -1907,7 +1952,7 @@ button.danger:hover:not(:disabled) {
 .calendar-hour-label {
   padding: 4px 6px;
   text-align: right;
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 11px;
   color: var(--ink-muted);
   background: var(--surface-sunk);
@@ -1944,7 +1989,7 @@ button.danger:hover:not(:disabled) {
 .calendar-item-clickable:hover .calendar-item-subtitle,
 .calendar-item-clickable:focus-visible .calendar-item-title,
 .calendar-item-clickable:focus-visible .calendar-item-subtitle {
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .calendar-item-title {
@@ -2025,7 +2070,7 @@ button.danger:hover:not(:disabled) {
 
 .ocupacao-header {
   padding: 8px 4px;
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 700;
   font-size: 12px;
   letter-spacing: 0.02em;
@@ -2039,7 +2084,7 @@ button.danger:hover:not(:disabled) {
 
 .ocupacao-hour-label {
   padding: 4px 6px;
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 11px;
   color: var(--ink-muted);
   background: var(--surface-sunk);
@@ -2060,7 +2105,7 @@ button.danger:hover:not(:disabled) {
 }
 
 .ocupacao-valor {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -2201,7 +2246,7 @@ button.danger:hover:not(:disabled) {
 }
 
 .calendar-title {
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 700;
   font-size: 15px;
   color: var(--ink);
@@ -2235,7 +2280,7 @@ button.danger:hover:not(:disabled) {
 
 .view-switch-btn.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* Visão de mês */
@@ -2248,7 +2293,7 @@ button.danger:hover:not(:disabled) {
 .month-weekday-header {
   padding: 10px 6px;
   text-align: center;
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 700;
   font-size: 12.5px;
   color: var(--ink);
@@ -2279,7 +2324,7 @@ button.danger:hover:not(:disabled) {
 }
 
 .month-day-number {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: var(--ink);
@@ -2310,7 +2355,7 @@ button.danger:hover:not(:disabled) {
 .month-event-clickable:hover,
 .month-event-clickable:focus-visible {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .month-more {
@@ -2453,8 +2498,8 @@ button.danger:hover:not(:disabled) {
   gap: 8px;
   padding: 14px 22px;
   border-radius: 100px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--limao);
+  color: var(--on-limao);
   font-weight: 700;
   font-size: 15px;
   text-decoration: none;
@@ -2575,7 +2620,7 @@ button.danger:hover:not(:disabled) {
 }
 
 .app-sidebar-nome {
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
   font-size: 16px;
   color: var(--side-text);
@@ -2634,9 +2679,10 @@ button.danger:hover:not(:disabled) {
   background: var(--side-hover);
 }
 
+/* Kit: item ativo em --azul-2 com texto areia. */
 .app-sidebar-link.active {
-  color: #fff;
-  background: var(--accent);
+  color: var(--side-active-text);
+  background: var(--side-active-bg);
 }
 
 .app-sidebar-sair {
@@ -2795,7 +2841,7 @@ button.app-tab:hover:not(:disabled) {
 }
 
 .cobranca-valor {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -2904,7 +2950,7 @@ button.app-tab:hover:not(:disabled) {
 .aba-pilula.active:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: var(--shadow-card);
 }
 
@@ -2921,7 +2967,7 @@ button.app-tab:hover:not(:disabled) {
 
 .aba-pilula.active .aba-pilula-selo {
   background: rgba(255, 255, 255, 0.28);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 @media (max-width: 640px) {
@@ -3092,7 +3138,7 @@ button.app-tab:hover:not(:disabled) {
 
 .rel-kpi-valor {
   margin-top: 6px;
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 30px;
   font-weight: 700;
   color: var(--kpi-cor);
@@ -3221,7 +3267,7 @@ button.app-tab:hover:not(:disabled) {
 
 .rel-fin-valor {
   margin-top: 4px;
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 26px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -3257,8 +3303,8 @@ button.app-tab:hover:not(:disabled) {
   overflow: hidden;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
-  font-family: "Archivo", sans-serif;
+  color: var(--on-accent);
+  font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 700;
   line-height: 1;
 }
@@ -3336,7 +3382,7 @@ button.app-tab:hover:not(:disabled) {
 }
 
 .agenda-semana-dia strong {
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 17px;
   color: var(--ink);
 }
@@ -3349,11 +3395,11 @@ button.app-tab:hover:not(:disabled) {
 .agenda-semana-dia.hoje,
 .agenda-semana-dia.hoje:hover:not(:disabled) {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .agenda-semana-dia.hoje strong {
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .agenda-semana-feriado {
@@ -3482,7 +3528,7 @@ button.app-tab:hover:not(:disabled) {
 }
 
 .wellhub-contagem-numero {
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 20px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -3748,7 +3794,7 @@ button.log-linha:hover:not(:disabled) {
   padding: 10px 12px;
   background: var(--surface-sunk);
   border-radius: 8px;
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -3777,7 +3823,7 @@ button.log-linha:hover:not(:disabled) {
   background: var(--accent-soft);
   border: none;
   color: var(--accent-strong);
-  font-family: "Archivo", sans-serif;
+  font-family: "Bricolage Grotesque", sans-serif;
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
@@ -3807,4 +3853,340 @@ button.log-linha:hover:not(:disabled) {
   line-height: 1.4;
   text-transform: none;
   letter-spacing: normal;
+}
+
+/* Página pública de aula experimental (kit de design, pedido do usuário
+   2026-10-01 — ver design/telas/Main.dc.html, seção "experimental"):
+   texto à esquerda, card com os 3 passos (dia → horário → dados) à direita. */
+.exp-pagina {
+  min-height: 100vh;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  padding-block: 56px;
+  padding-inline: 20px;
+}
+
+.exp-conteudo {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+.exp-intro {
+  flex: 1 1 360px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.exp-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.exp-tag {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: var(--navy);
+  color: var(--limao);
+  padding: 8px 14px;
+  border-radius: 999px;
+}
+
+.exp-intro h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+
+.exp-endereco {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+.exp-intro p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+
+.exp-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.exp-checks li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.exp-card {
+  flex: 1 1 420px;
+  min-width: 0;
+  background: var(--surface);
+  border-radius: 28px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.exp-card-topo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exp-card-sub {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.exp-card-titulo {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.exp-passo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exp-passo-rotulo {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.exp-dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exp-dia {
+  flex: 0 0 64px;
+  min-height: 64px;
+  padding: 0;
+  border-radius: 16px;
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.exp-dia:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.exp-dia.ativo,
+.exp-dia.ativo:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.exp-dia-semana {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.exp-dia-numero {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.exp-horarios {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.exp-horario {
+  min-height: 56px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 2px solid var(--borda);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.exp-horario:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--ink);
+}
+
+.exp-horario.ativo,
+.exp-horario.ativo:hover:not(:disabled) {
+  background: var(--limao);
+  border-color: var(--on-limao);
+  color: var(--on-limao);
+}
+
+/* Lotado: riscado, sem parecer só "desabilitado" com opacidade. */
+.exp-horario:disabled {
+  opacity: 1;
+  background: var(--line);
+  border-color: var(--line);
+  color: var(--ink-muted);
+  text-decoration: line-through;
+}
+
+.exp-horario-sub {
+  font-size: 11px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.exp-dica {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.exp-resumo {
+  background: var(--bg);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.exp-resumo svg {
+  flex-shrink: 0;
+}
+
+.exp-resumo-trocar {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.exp-cta {
+  width: 100%;
+  font-size: 17px;
+  padding: 18px;
+}
+
+.exp-cta-destaque {
+  background: var(--limao);
+  color: var(--on-limao);
+}
+
+.exp-cta-destaque:hover:not(:disabled) {
+  background: var(--limao);
+  filter: brightness(0.96);
+}
+
+.exp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.exp-form label {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: -6px;
+}
+
+/* Kit: campos com contorno 2px azul. */
+.exp-form input {
+  padding: 15px 18px;
+  border-radius: 16px;
+  border: 2px solid var(--ink);
+}
+
+.exp-feito {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.exp-feito p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.exp-feito .exp-resumo {
+  text-align: left;
+}
+
+.exp-feito-icone {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--limao);
+  color: var(--on-limao);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exp-feito-titulo {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 520px) {
+  .exp-pagina {
+    padding-block: 28px;
+  }
+
+  .exp-card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .exp-dia {
+    flex-basis: 56px;
+  }
 }

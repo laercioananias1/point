@@ -3,7 +3,6 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api, urlArquivo } from "../api/client";
 import type { PointLogo } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { aplicarCorDestaque } from "../lib/cor";
 import { Avatar } from "./Avatar";
 import { BotaoTema } from "./BotaoTema";
 import { LogoMark } from "./LogoMark";
@@ -483,22 +482,12 @@ export function Layout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) {
       setPointLogo(null);
-      aplicarCorDestaque(null);
       return;
     }
     api
       .get<PointLogo>("/points/meu-logo")
-      .then((res) => {
-        setPointLogo(res);
-        // Cor de destaque do Point (pedido do usuário, 2026-09-14) — mesma
-        // resolução de "qual Point" que já serve o logo, então aplica
-        // junto, sem duplicar a busca.
-        aplicarCorDestaque(res.cor_destaque);
-      })
-      .catch(() => {
-        setPointLogo(null);
-        aplicarCorDestaque(null);
-      });
+      .then(setPointLogo)
+      .catch(() => setPointLogo(null));
   }, [user]);
 
   // Selo de não lidas no sininho (pedido do usuário, 2026-09-11: "esse

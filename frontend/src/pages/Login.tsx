@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { LogoMark } from "../components/LogoMark";
+import { MarcaOPoint } from "../components/LogoMark";
 
 export default function Login() {
   const { login, loading } = useAuth();
@@ -25,8 +25,7 @@ export default function Login() {
     <div className="auth-screen">
       <div>
         <div className="auth-brand">
-          <LogoMark size={28} />
-          <span className="auth-brand-name">OPoint</span>
+          <MarcaOPoint />
         </div>
 
         <form className="auth-card" onSubmit={handleSubmit}>

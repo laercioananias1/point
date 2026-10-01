@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../api/client";
-import { LogoMark } from "../components/LogoMark";
+import { MarcaOPoint } from "../components/LogoMark";
 
 /** Pedir o link de redefinição de senha por e-mail (pedido do usuário,
  * 2026-09-01: "a troca de senha precisa ser por email" — substitui a tela
@@ -37,8 +37,7 @@ export default function EsqueciSenha() {
     <div className="auth-screen">
       <div>
         <div className="auth-brand">
-          <LogoMark size={28} />
-          <span className="auth-brand-name">OPoint</span>
+          <MarcaOPoint />
         </div>
 
         {enviado ? (

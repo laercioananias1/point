@@ -4,7 +4,6 @@ import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
 import { PointBrand } from "../components/PointBrand";
 import type { ConviteAdmin } from "../api/types";
-import { aplicarCorDestaque } from "../lib/cor";
 
 /** Tela pública (sem login) que quem foi convidado abre a partir do link
  * do e-mail de convite de admin (pedido do usuário, 2026-08-26: "não
@@ -27,11 +26,9 @@ export default function ConviteAdminAceite() {
       .get<ConviteAdmin>(`/convites-admin/${token}`)
       .then((res) => {
         setConvite(res);
-        aplicarCorDestaque(res.point.cor_destaque);
       })
       .catch(() => setErroCarregar("Convite não encontrado — confira o link."))
       .finally(() => setCarregando(false));
-    return () => aplicarCorDestaque(null);
   }, [token]);
 
   return (
