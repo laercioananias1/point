@@ -68,3 +68,16 @@ class WellhubReconciliacaoLinha(ORMModel):
 class WellhubReconciliacaoOut(ORMModel):
     mes: str
     linhas: list[WellhubReconciliacaoLinha]
+
+
+class SaldoAlunoOut(ORMModel):
+    """Saldo de check-ins do próprio aluno no mês, por Point e plataforma
+    (pedido do usuário, 2026-10-01: Início do aluno mostrar quantos
+    check-ins faltam). saldo = checkins - aulas; negativo = faltam."""
+
+    point_id: int
+    point_nome: str
+    plataforma: str
+    checkins: int
+    aulas: int
+    saldo: int

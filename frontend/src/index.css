@@ -16,6 +16,7 @@
   --navy: #0B2A3C;
   --navy-ink: #071E2B;
   --navy-line: #23465A;
+  --navy-tile: #123F59;
   --navy-text: #F6F1E7;
   --navy-text-muted: #C9D6DD;
 
@@ -74,6 +75,7 @@
     --navy: #04121A;
     --navy-ink: #020B10;
     --navy-line: #1A3646;
+    --navy-tile: #1D5272;
     --navy-text: #F6F1E7;
     --navy-text-muted: #9DB4C0;
 
@@ -129,6 +131,7 @@
   --navy-ink: #020B10;
   --navy-line: #1A3646;
   --navy-text: #F6F1E7;
+  --navy-tile: #1D5272;
   --navy-text-muted: #9DB4C0;
 
   --side-bg: #04121A;
@@ -4996,7 +4999,590 @@ select.turmas-experimental {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .chk-kpi:last-child {
+  .chk-kpis-5 .chk-kpi:last-child {
     grid-column: 1 / -1;
+  }
+}
+
+/* Link-botão secundário (contorno), par do .botao-link. */
+.botao-link.botao-link-secundario {
+  background: transparent;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  padding: 9px 18px;
+}
+
+.botao-link.botao-link-secundario:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Início do admin do Point (kit de design, design/telas/Dashboard.dc.html —
+   pedido do usuário, 2026-10-01). */
+.inicio-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inicio-pendencias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.inicio-pendencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: var(--risk-soft);
+  color: var(--risk-ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.inicio-pendencia:hover {
+  color: var(--risk-ink);
+  filter: brightness(0.97);
+}
+
+.inicio-pendencia.ok {
+  background: var(--surface);
+  color: var(--ink-muted);
+}
+
+.inicio-aulas {
+  flex: 2 1 560px;
+}
+
+.alunos-linha.inicio-grade {
+  grid-template-columns: 64px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.4fr);
+}
+
+.inicio-hora {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.inicio-segunda-linha {
+  margin-top: 20px;
+  align-items: stretch;
+}
+
+.inicio-grafico-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inicio-grafico {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 200px;
+  margin-top: 8px;
+}
+
+.inicio-grafico-coluna {
+  flex: 1 1 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.inicio-grafico-valor {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.inicio-grafico-barra {
+  width: 100%;
+  max-width: 40px;
+  border-radius: 8px 8px 4px 4px;
+  background: #9DB4C0;
+}
+
+.inicio-grafico-barra.cheia {
+  background: var(--ink);
+}
+
+.inicio-legenda-cor {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: #9DB4C0;
+}
+
+.inicio-legenda-cor.cheia {
+  background: var(--ink);
+}
+
+.inicio-checkins {
+  flex: 1 1 300px;
+  background: var(--destaque-escuro);
+  color: var(--navy-text);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inicio-checkins-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--navy-line);
+  font-size: 15px;
+}
+
+.inicio-checkins-numero {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  color: var(--limao);
+}
+
+.inicio-checkins-link {
+  margin-top: auto;
+  padding-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy-text);
+}
+
+.inicio-checkins-link:hover {
+  color: var(--limao);
+}
+
+.inicio-link-claro,
+.inicio-link-claro:hover {
+  color: var(--accent);
+}
+
+.inicio-exp-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.inicio-exp-explica {
+  margin-bottom: 6px;
+}
+
+.inicio-exp-pedido {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.inicio-exp-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.inicio-exp-quando {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.inicio-exp-botoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.inicio-atalhos {
+  margin-top: 20px;
+}
+
+.inicio-atalho {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.inicio-bloco-point {
+  margin-top: 20px;
+}
+
+.inicio-texto-point {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .alunos-linha.inicio-grade {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .inicio-grade > [data-rotulo] {
+    grid-column: 2;
+  }
+
+  /* Sem rótulo no celular: quadra e barra logo abaixo da turma. */
+  .inicio-grade > [data-rotulo]::before {
+    display: none !important;
+  }
+
+  .alunos-linha.inicio-grade {
+    gap: 4px 12px;
+  }
+
+  .alunos-linha.inicio-grade > span.turmas-vagas {
+    display: flex;
+  }
+
+  .inicio-grafico {
+    height: 160px;
+    gap: 4px;
+  }
+}
+
+/* Início do aluno (kit de design, design/telas/CheckinsAluno.dc.html —
+   pedido do usuário, 2026-10-01). */
+.aluno-hero {
+  background: var(--destaque-escuro);
+  color: var(--navy-text);
+  border-radius: 28px;
+  padding: 24px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.aluno-hero h1 {
+  color: var(--navy-text);
+  margin: 0;
+}
+
+.aluno-hero-topo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aluno-hero-contexto {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--navy-text-muted);
+}
+
+.aluno-saldo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aluno-saldo-grupo {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--navy-text-muted);
+}
+
+.aluno-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.aluno-stat {
+  background: var(--navy-tile);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aluno-stat-rotulo {
+  font-size: 13px;
+  color: var(--navy-text-muted);
+}
+
+.aluno-stat-valor {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.aluno-stat-valor.limao {
+  color: var(--limao);
+}
+
+.aluno-saldo-card {
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--limao);
+  color: var(--on-limao);
+}
+
+.aluno-saldo-card.falta {
+  background: var(--risk);
+  color: #FFFFFF;
+}
+
+.aluno-saldo-card.adiantado {
+  background: var(--navy-text);
+  color: #0B2A3C;
+}
+
+.aluno-saldo-titulo {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.aluno-saldo-sub {
+  font-size: 13px;
+}
+
+.aluno-saldo-numero {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aluno-proxima {
+  background: var(--navy-tile);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aluno-proxima-hora {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1.1;
+  color: var(--limao);
+}
+
+.aluno-proxima-texto {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.aluno-proxima-sub {
+  font-size: 13px;
+  color: var(--navy-text-muted);
+}
+
+.aluno-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aluno-corpo > .inicio-pendencias {
+  margin-bottom: 0;
+}
+
+.aluno-atalhos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.aluno-atalho {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  text-align: left;
+  min-width: 0;
+}
+
+.aluno-atalho.principal {
+  background: var(--limao);
+  border-color: var(--limao);
+  color: var(--on-limao);
+}
+
+.aluno-atalho:hover:not(:disabled) {
+  filter: brightness(0.97);
+}
+
+.aluno-atalho-icone {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.aluno-atalho.principal .aluno-atalho-icone {
+  background: #0B2A3C;
+  color: var(--limao);
+}
+
+.aluno-atalho-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.aluno-atalho-texto strong {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 17px;
+}
+
+.aluno-dica {
+  background: var(--surface);
+  border: 2px solid var(--limao);
+  border-radius: 20px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.aluno-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.aluno-aulas {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.aluno-aula {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.aluno-aula:first-child {
+  border-top: 0;
+}
+
+.aluno-aula-data {
+  flex: none;
+  width: 48px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--surface-sunk);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.aluno-aula:first-child .aluno-aula-data {
+  background: var(--limao);
+  color: var(--on-limao);
+}
+
+.aluno-aula-dia {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.aluno-aula-mes {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.aluno-aula-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aluno-point {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aluno-point-linha {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.aluno-point-linha svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.aluno-point-titulo {
+  font-size: 15px;
+  margin: 4px 0 0;
+}
+
+@media (max-width: 520px) {
+  .aluno-atalhos {
+    grid-template-columns: 1fr;
   }
 }

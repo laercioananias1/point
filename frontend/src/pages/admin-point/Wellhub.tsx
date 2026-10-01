@@ -191,7 +191,7 @@ export default function AdminPointWellhub() {
 
       {erro && <p className="form-error">{erro}</p>}
 
-      <div className="chk-kpis">
+      <div className="chk-kpis chk-kpis-5">
         <div className="chk-kpi">
           <span className="chk-kpi-rotulo">Alunos no mês</span>
           <span className="chk-kpi-valor">{vinculadas.length}</span>

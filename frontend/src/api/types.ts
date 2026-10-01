@@ -335,6 +335,17 @@ export interface WellhubReconciliacaoLinha {
   aulas_no_mes: number;
 }
 
+/** Saldo de check-ins do aluno logado no mês (GET /wellhub/meu-saldo),
+ * por Point e plataforma. saldo = checkins - aulas; negativo = faltam. */
+export interface SaldoCheckinsAluno {
+  point_id: number;
+  point_nome: string;
+  plataforma: string;
+  checkins: number;
+  aulas: number;
+  saldo: number;
+}
+
 export interface WellhubReconciliacao {
   mes: string;
   linhas: WellhubReconciliacaoLinha[];

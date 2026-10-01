@@ -10,8 +10,9 @@ from app.core.database import get_db
 from app.core.deps import require_role
 from app.models.aluno import Aluno
 from app.models.checkin import Checkin
-from app.models.enums import CheckinStatus, PagamentoMeio, Role
+from app.models.enums import CheckinStatus, MatriculaStatus, PagamentoMeio, Role
 from app.models.matricula import Matricula
+from app.models.point import Point
 from app.models.turma import Turma
 from app.models.user import User
 from app.models.vinculo import Vinculo
@@ -20,6 +21,7 @@ from app.schemas.wellhub import (
     WellhubCheckinCreate,
     WellhubCheckinOut,
     CheckinVincular,
+    SaldoAlunoOut,
     WellhubReconciliacaoLinha,
     WellhubReconciliacaoOut,
 )
@@ -324,3 +326,83 @@ def reconciliacao_do_mes(db: DB, admin: Admin, mes: str | None = None) -> Wellhu
 
     linhas.sort(key=lambda linha: (linha.saldo, linha.aluno_nome or linha.gympass_id or ""))
     return WellhubReconciliacaoOut(mes=f"{inicio.year:04d}-{inicio.month:02d}", linhas=linhas)
+
+
+@router.get("/meu-saldo", response_model=list[SaldoAlunoOut])
+def meu_saldo_de_checkins(
+    db: DB,
+    user: Annotated[User, Depends(require_role(Role.ALUNO))],
+    mes: str | None = None,
+) -> list[SaldoAlunoOut]:
+    """Mesma conta do acerto do mês do admin (só quantidade, sem casar data
+    de check-in com data de aula), mas do aluno logado. Inclui matrícula
+    ativa paga por benefício mesmo sem movimento no mês, pra o saldo
+    aparecer zerado desde o dia 1."""
+    inicio, fim = _intervalo_do_mes(mes)
+    inicio_dt = datetime.combine(inicio, datetime.min.time())
+    fim_dt = datetime.combine(fim, datetime.max.time())
+    aluno_id = user.aluno_id
+
+    checkins = dict(
+        (((point_id, plataforma), qtd))
+        for point_id, plataforma, qtd in db.query(
+            WellhubCheckin.point_id, WellhubCheckin.plataforma, func.count(WellhubCheckin.id)
+        )
+        .filter(
+            WellhubCheckin.aluno_id == aluno_id,
+            WellhubCheckin.data >= inicio,
+            WellhubCheckin.data <= fim,
+        )
+        .group_by(WellhubCheckin.point_id, WellhubCheckin.plataforma)
+        .all()
+    )
+
+    aulas = {
+        (point_id, _PLATAFORMA_DO_MEIO[fonte]): qtd
+        for point_id, fonte, qtd in db.query(Vinculo.point_id, Matricula.fonte_pagamento, func.count(Checkin.id))
+        .join(Checkin, Checkin.matricula_id == Matricula.id)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Matricula.aluno_id == aluno_id,
+            Matricula.fonte_pagamento.in_(list(_PLATAFORMA_DO_MEIO)),
+            Checkin.status == CheckinStatus.CONFIRMADO,
+            Checkin.data_hora >= inicio_dt,
+            Checkin.data_hora <= fim_dt,
+        )
+        .group_by(Vinculo.point_id, Matricula.fonte_pagamento)
+        .all()
+    }
+
+    ativas = {
+        (point_id, _PLATAFORMA_DO_MEIO[fonte])
+        for point_id, fonte in db.query(Vinculo.point_id, Matricula.fonte_pagamento)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Matricula.aluno_id == aluno_id,
+            Matricula.status == MatriculaStatus.ATIVA,
+            Matricula.fonte_pagamento.in_(list(_PLATAFORMA_DO_MEIO)),
+        )
+        .distinct()
+        .all()
+    }
+
+    chaves = set(checkins) | set(aulas) | ativas
+    if not chaves:
+        return []
+    nomes = dict(db.query(Point.id, Point.nome).filter(Point.id.in_({p for p, _ in chaves})).all())
+    return sorted(
+        (
+            SaldoAlunoOut(
+                point_id=point_id,
+                point_nome=nomes.get(point_id, ""),
+                plataforma=plataforma,
+                checkins=checkins.get((point_id, plataforma), 0),
+                aulas=aulas.get((point_id, plataforma), 0),
+                saldo=checkins.get((point_id, plataforma), 0) - aulas.get((point_id, plataforma), 0),
+            )
+            for point_id, plataforma in chaves
+        ),
+        key=lambda s: (s.point_nome, s.plataforma),
+    )

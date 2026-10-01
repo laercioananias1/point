@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
-import type { Credito, Matricula } from "../../api/types";
+import type { Credito, Matricula, SaldoCheckinsAluno } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { Icon, Layout } from "../../components/Layout";
 import { proximasOcorrencias, type CalendarItem } from "../../components/Calendar";
@@ -10,29 +10,67 @@ import { faixaHorario, rotuloDias } from "../../lib/dias";
 
 const QUANTIDADE_PROXIMOS = 5;
 
-/** Home do aluno (pedido do usuário, 2026-08-26: "vamos deixar parecida
- * com essa" — referência de app de academia: saudação + Point, 2 atalhos
- * em caixinha, espaço reservado pra banner, próximas aulas embaixo).
- * "Ver agenda completa" continua levando pro calendário de verdade (aba
- * Agenda), que segue com todas as ações (pagar, cancelar, comprar
- * avulsa) — aqui é só visão rápida + atalhos. */
+const NOME_PLATAFORMA: Record<string, string> = { wellhub: "Wellhub", totalpass: "TotalPass" };
+
+function nomePlataforma(plataforma: string) {
+  return NOME_PLATAFORMA[plataforma] ?? plataforma;
+}
+
+function plural(n: number, singular: string, pluralForma: string) {
+  return n === 1 ? singular : pluralForma;
+}
+
+/** Texto do card de saldo — mesma regra da tela do protótipo
+ * (design/telas/CheckinsAluno.dc.html). */
+function textoSaldo(saldo: number) {
+  if (saldo < 0) {
+    const falta = -saldo;
+    return {
+      titulo: `${plural(falta, "Falta", "Faltam")} ${falta} ${plural(falta, "check-in", "check-ins")}`,
+      sub: "para empatar com as aulas que você já fez",
+    };
+  }
+  if (saldo === 0) return { titulo: "Tudo em dia", sub: "Check-ins iguais às aulas até hoje" };
+  return {
+    titulo: "Você está adiantado",
+    sub: `${saldo} ${plural(saldo, "check-in", "check-ins")} a mais que as aulas até hoje`,
+  };
+}
+
+function dataPorExtenso(data: Date) {
+  return data
+    .toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
+
+/** Home do aluno (pedido do usuário, 2026-08-26: saudação + Point, 2
+ * atalhos, espaço de banner, próximas aulas embaixo). Layout do kit de
+ * design (pedido do usuário, 2026-10-01): cabeçalho escuro com a próxima
+ * aula — ou, pra quem paga por Wellhub/TotalPass, o saldo de check-ins do
+ * mês (aulas × check-ins, mesma conta do acerto do admin). "Ver agenda
+ * completa" continua levando pro calendário de verdade (aba Agenda), que
+ * segue com todas as ações (pagar, cancelar, comprar avulsa). */
 export default function AlunoInicio() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [creditos, setCreditos] = useState<Credito[]>([]);
+  const [saldos, setSaldos] = useState<SaldoCheckinsAluno[]>([]);
   const [pronto, setPronto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setErro(null);
     try {
-      const [matriculasRes, creditosRes] = await Promise.all([
+      const [matriculasRes, creditosRes, saldosRes] = await Promise.all([
         api.get<Matricula[]>("/alunos/me/matriculas"),
         api.get<Credito[]>("/alunos/me/creditos"),
+        // Saldo é complemento — se falhar, a home segue sem o card.
+        api.get<SaldoCheckinsAluno[]>("/wellhub/meu-saldo").catch(() => []),
       ]);
       setMatriculas(matriculasRes);
       setCreditos(creditosRes);
+      setSaldos(saldosRes);
       setPronto(true);
     } catch {
       setErro("Não foi possível carregar sua agenda. Tente novamente.");
@@ -48,23 +86,13 @@ export default function AlunoInicio() {
   const creditosDisponiveis = creditos.filter((c) => c.status === "disponivel");
   const emAtraso = mensaisAtivas.filter((m) => m.inadimplente);
   const aguardandoConfirmacao = mensaisAtivas.filter((m) => m.pagamento_pendente_atual);
-  // Point(s) onde o aluno treina, pra mostrar embaixo do nome (pedido do
-  // usuário) — quase sempre só um, mas não trava se algum dia tiver mais.
+  // Point(s) onde o aluno treina — quase sempre só um, mas não trava se
+  // algum dia tiver mais.
   const pointsNomes = Array.from(new Set(ativas.map((m) => m.turma.vinculo.point.nome)));
   // Perfil do Point (pedido do usuário, 2026-08-30) — usa o Point da
-  // primeira matrícula ativa. Anúncios preenche o banner do meio da
-  // página (pedido do usuário, 2026-08-30: "na parte do meio vai colocar
-  // anúncios"); sem anúncio cadastrado, cai no banner-placeholder de
-  // sempre. Endereço/horários/fotos/Sobre/Informações importantes formam
-  // um bloco à parte, no fim da página (depois de "Próximas aulas" —
-  // pedido do usuário, 2026-08-30: "no caso de alunos depois das
-  // próximas aulas" / "mostre o endereço e horários de funcionamento tb
-  // na tela inicial").
+  // primeira matrícula ativa: banners no meio da página, endereço/
+  // horários/fotos/Sobre/Informações importantes no fim.
   const point = ativas[0]?.turma.vinculo.point ?? null;
-  // Anúncios viraram só imagem (pedido do usuário, 2026-08-30: "anúncios
-  // será imagens também, como banners" — depois "retira o texto de
-  // anúncio": o campo de texto saiu do Meu Point, banner em carrossel é
-  // o único jeito de preencher esse espaço agora).
   const temBanners = point !== null && point.banners.length > 0;
 
   const calendarItems: CalendarItem[] = mensaisAtivas.flatMap((m) =>
@@ -81,17 +109,25 @@ export default function AlunoInicio() {
     })),
   );
   const proximos = proximasOcorrencias(calendarItems, new Date(), QUANTIDADE_PROXIMOS);
+  const proxima = proximos[0] ?? null;
 
   const primeiroNome = user?.nome.split(" ")[0] ?? "";
+  const hoje = new Date();
+  const mesAtual = hoje
+    .toLocaleDateString("pt-BR", { month: "long" })
+    .replace(/^\w/, (c) => c.toUpperCase());
+  const fimDoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+  const plataformas = Array.from(new Set(saldos.map((s) => nomePlataforma(s.plataforma))));
+  const variosPoints = new Set(saldos.map((s) => s.point_id)).size > 1;
 
   // "Agendar" é o atalho pra USAR um crédito (pedido do usuário,
   // 2026-08-26: "não precisa listar os créditos, abre automaticamente a
-  // tela e utilize o crédito que tiver mais antigo") — nunca passa pela
-  // lista: some direto pro reagendamento do crédito mais antigo (aula
-  // original mais antiga primeiro, é o que mais perto está de vencer).
-  // Sem nenhum crédito disponível, abre a tela "Novo agendamento" (pedido
-  // do usuário, 2026-08-26: "abre uma tela parecida com essa... se não
-  // tiver crédito deixa um botão de comprar aula avulsa").
+  // tela e utilize o crédito que tiver mais antigo") — some direto pro
+  // reagendamento do crédito mais antigo. Sem crédito disponível, abre a
+  // tela "Novo agendamento" (com o botão de comprar aula avulsa).
   function irParaAgendar() {
     if (creditosDisponiveis.length === 0) {
       navigate("/aluno/agendar");
@@ -105,140 +141,218 @@ export default function AlunoInicio() {
 
   return (
     <Layout>
-      <h1>Olá, {primeiroNome}!</h1>
-      {pointsNomes.length > 0 && (
-        <p className="empty-state" style={{ padding: 0, display: "flex", alignItems: "center", gap: 4 }}>
-          <Icon name="pin" /> {pointsNomes.join(" · ")}
-        </p>
-      )}
+      <section className="aluno-hero">
+        <div className="aluno-hero-topo">
+          {pointsNomes.length > 0 && (
+            <span className="aluno-hero-contexto">
+              <Icon name="pin" size={16} /> {pointsNomes.join(" · ")}
+              {plataformas.length > 0 && ` · ${plataformas.join(" · ")} · ${mesAtual}`}
+            </span>
+          )}
+          <h1>Olá, {primeiroNome}!</h1>
+        </div>
+
+        {pronto && saldos.length > 0 &&
+          saldos.map((s) => {
+            const texto = textoSaldo(s.saldo);
+            const classe = s.saldo < 0 ? "falta" : s.saldo === 0 ? "em-dia" : "adiantado";
+            return (
+              <div className="aluno-saldo" key={`${s.point_id}-${s.plataforma}`}>
+                {(saldos.length > 1 || variosPoints) && (
+                  <span className="aluno-saldo-grupo">
+                    {nomePlataforma(s.plataforma)}
+                    {variosPoints && ` · ${s.point_nome}`}
+                  </span>
+                )}
+                <div className="aluno-stats">
+                  <div className="aluno-stat">
+                    <span className="aluno-stat-rotulo">Aulas no mês</span>
+                    <span className="aluno-stat-valor">{s.aulas}</span>
+                  </div>
+                  <div className="aluno-stat">
+                    <span className="aluno-stat-rotulo">Check-ins no mês</span>
+                    <span className="aluno-stat-valor limao">{s.checkins}</span>
+                  </div>
+                </div>
+                <div className={`aluno-saldo-card ${classe}`}>
+                  <div>
+                    <div className="aluno-saldo-titulo">{texto.titulo}</div>
+                    <div className="aluno-saldo-sub">{texto.sub}</div>
+                  </div>
+                  <span className="aluno-saldo-numero">{s.saldo > 0 ? `+${s.saldo}` : s.saldo}</span>
+                </div>
+              </div>
+            );
+          })}
+
+        {pronto && saldos.length === 0 && (
+          <div className="aluno-proxima">
+            <span className="aluno-stat-rotulo">Próxima aula</span>
+            {proxima ? (
+              <>
+                <span className="aluno-proxima-hora">{proxima.item.horario}</span>
+                <span className="aluno-proxima-texto">
+                  {dataPorExtenso(proxima.data)} · {proxima.item.titulo}
+                </span>
+                <span className="aluno-proxima-sub">{proxima.item.subtitulo}</span>
+              </>
+            ) : (
+              <span className="aluno-proxima-texto">Nenhuma aula agendada por enquanto.</span>
+            )}
+          </div>
+        )}
+      </section>
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}
 
       {pronto && (
-        <>
-          {emAtraso.length > 0 && (
-            <p className="form-error" style={{ marginTop: 4 }}>
-              Você tem {emAtraso.length === 1 ? "uma mensalidade" : `${emAtraso.length} mensalidades`}{" "}
-              em atraso — novas aulas não são geradas até regularizar. Veja em Agenda.
-            </p>
-          )}
-          {aguardandoConfirmacao.length > 0 && (
-            <p className="empty-state" style={{ paddingTop: 4 }}>
-              {aguardandoConfirmacao.length === 1
-                ? "Um pagamento está"
-                : `${aguardandoConfirmacao.length} pagamentos estão`}{" "}
-              aguardando confirmação do Point.
-            </p>
+        <div className="aluno-corpo">
+          {(emAtraso.length > 0 || aguardandoConfirmacao.length > 0) && (
+            <div className="inicio-pendencias">
+              {emAtraso.length > 0 && (
+                <Link to="/aluno/agenda" className="inicio-pendencia">
+                  {emAtraso.length === 1
+                    ? "Uma mensalidade em atraso"
+                    : `${emAtraso.length} mensalidades em atraso`}{" "}
+                  — novas aulas só depois de regularizar
+                  <Icon name="chevron-right" size={16} />
+                </Link>
+              )}
+              {aguardandoConfirmacao.length > 0 && (
+                <span className="inicio-pendencia ok">
+                  <Icon name="clock" size={16} />
+                  {aguardandoConfirmacao.length === 1
+                    ? "Um pagamento aguardando"
+                    : `${aguardandoConfirmacao.length} pagamentos aguardando`}{" "}
+                  confirmação do Point
+                </span>
+              )}
+            </div>
           )}
 
-          <div className="quick-actions" style={{ marginTop: 16 }}>
-            <button type="button" className="quick-action" onClick={irParaAgendar}>
-              <span className="quick-action-icon">
+          <div className="aluno-atalhos">
+            <button type="button" className="aluno-atalho principal" onClick={irParaAgendar}>
+              <span className="aluno-atalho-icone">
                 <Icon name="calendar" />
               </span>
-              <span className="quick-action-label">Agendar</span>
+              <span className="aluno-atalho-texto">
+                <strong>Agendar</strong>
+                <span>
+                  {creditosDisponiveis.length > 0 ? "Usar meu crédito mais antigo" : "Marcar uma aula"}
+                </span>
+              </span>
             </button>
-            <button type="button" className="quick-action" onClick={() => navigate("/aluno/creditos")}>
-              <span className="quick-action-icon">
+            <button type="button" className="aluno-atalho" onClick={() => navigate("/aluno/creditos")}>
+              <span className="aluno-atalho-icone">
                 <Icon name="ticket" />
               </span>
-              <span className="quick-action-label">
-                Meus créditos{creditosDisponiveis.length > 0 ? ` (${creditosDisponiveis.length})` : ""}
+              <span className="aluno-atalho-texto">
+                <strong>Meus créditos</strong>
+                <span>
+                  {creditosDisponiveis.length === 0
+                    ? "Nenhum disponível"
+                    : `${creditosDisponiveis.length} ${plural(creditosDisponiveis.length, "disponível", "disponíveis")}`}
+                </span>
               </span>
             </button>
           </div>
 
-          {point && temBanners ? (
-            <div style={{ marginTop: 16 }}>
-              <Carrossel fotos={point.banners} contido />
+          {saldos.length > 0 && (
+            <div className="aluno-dica">
+              Faça o check-in pelo <strong>{plataformas.join(" ou ")}</strong> sempre que vier ao Point.
+              Não precisa ser no horário da aula: o importante é que, até <strong>{fimDoMes}</strong>, o
+              número de check-ins seja igual ao de aulas.
             </div>
+          )}
+
+          {point && temBanners ? (
+            <Carrossel fotos={point.banners} contido />
           ) : (
-            <div className="banner-placeholder" style={{ marginTop: 16 }}>
+            <div className="banner-placeholder">
               <span className="banner-placeholder-icone">📣</span>
               <span>Espaço reservado pra novidades e eventos do Point.</span>
             </div>
           )}
 
-          <section className="section">
-            <h2>Próximas aulas</h2>
+          <section className="alunos-card aluno-proximas">
+            <div className="inicio-exp-topo">
+              <h2 className="chk-secao-titulo">Próximas aulas</h2>
+              <Link to="/aluno/agenda" className="inicio-link-claro aluno-link">
+                Ver agenda completa <Icon name="chevron-right" size={16} />
+              </Link>
+            </div>
             {mensaisAtivas.length === 0 ? (
-              <p className="empty-state">
+              <p className="alunos-vazio">
                 Nenhum plano mensal ativo ainda — suas próximas aulas aparecem aqui assim que você
                 tiver um.
               </p>
             ) : proximos.length === 0 ? (
-              <p className="empty-state">Nenhuma aula agendada nos próximos meses.</p>
+              <p className="alunos-vazio">Nenhuma aula agendada nos próximos meses.</p>
             ) : (
-              <div className="card-list">
+              <ul className="aluno-aulas">
                 {proximos.map(({ item, data }, i) => (
-                  <div className="item-card" key={`${item.id}-${i}`}>
-                    <div className="item-card-info">
-                      <span className="item-card-title">
+                  <li className="aluno-aula" key={`${item.id}-${i}`}>
+                    <span className="aluno-aula-data">
+                      <span className="aluno-aula-dia">{data.getDate()}</span>
+                      <span className="aluno-aula-mes">
+                        {data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
+                      </span>
+                    </span>
+                    <span className="aluno-aula-info">
+                      <span className="alunos-nome">
                         {data
-                          .toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })
-                          .replace(/^\w/, (c) => c.toUpperCase())}
+                          .toLocaleDateString("pt-BR", { weekday: "long" })
+                          .replace(/^\w/, (c) => c.toUpperCase())}{" "}
+                        · {item.horario}
                       </span>
-                      <span className="item-card-subtitle">
-                        {item.horario} · {item.titulo} · {item.subtitulo}
+                      <span className="alunos-sub">
+                        {item.titulo} · {item.subtitulo}
                       </span>
-                    </div>
-                  </div>
+                    </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-            <button
-              type="button"
-              className="link-btn"
-              style={{ marginTop: 12 }}
-              onClick={() => navigate("/aluno/agenda")}
-            >
-              Ver agenda completa →
-            </button>
           </section>
 
           {point && (
-            <section className="section">
-              <h2>Endereço e horários</h2>
-              <p className="empty-state" style={{ padding: 0, display: "flex", alignItems: "center", gap: 4 }}>
-                <Icon name="pin" /> {point.endereco}
+            <section className="alunos-card aluno-point">
+              <h2 className="chk-secao-titulo">{point.nome}</h2>
+              <p className="aluno-point-linha">
+                <Icon name="pin" size={16} /> {point.endereco}
               </p>
-              <p className="empty-state" style={{ padding: 0, marginTop: 2 }}>
-                {rotuloDias(point.dias_semana_funcionamento)}:{" "}
-                {faixaHorario(point.horarios_semana_funcionamento)}
-                {point.dias_fds_funcionamento.length > 0 && (
-                  <>
-                    {" "}
-                    · {rotuloDias(point.dias_fds_funcionamento)}:{" "}
-                    {faixaHorario(point.horarios_fds_funcionamento)}
-                  </>
-                )}
+              <p className="aluno-point-linha">
+                <Icon name="clock" size={16} />
+                <span>
+                  {rotuloDias(point.dias_semana_funcionamento)}:{" "}
+                  {faixaHorario(point.horarios_semana_funcionamento)}
+                  {point.dias_fds_funcionamento.length > 0 && (
+                    <>
+                      {" "}
+                      · {rotuloDias(point.dias_fds_funcionamento)}:{" "}
+                      {faixaHorario(point.horarios_fds_funcionamento)}
+                    </>
+                  )}
+                </span>
               </p>
 
-              {point.fotos.length > 0 && (
-                <div style={{ marginTop: 14 }}>
-                  <Carrossel fotos={point.fotos} />
-                </div>
-              )}
+              {point.fotos.length > 0 && <Carrossel fotos={point.fotos} />}
               {point.sobre && (
-                <div style={{ marginTop: 14 }}>
-                  <h2>Sobre</h2>
-                  <p className="empty-state" style={{ padding: 0, whiteSpace: "pre-wrap" }}>
-                    {point.sobre}
-                  </p>
+                <div>
+                  <h3 className="aluno-point-titulo">Sobre</h3>
+                  <p className="inicio-texto-point">{point.sobre}</p>
                 </div>
               )}
               {point.informacoes_importantes && (
-                <div style={{ marginTop: 14 }}>
-                  <h2>Informações importantes</h2>
-                  <p className="empty-state" style={{ padding: 0, whiteSpace: "pre-wrap" }}>
-                    {point.informacoes_importantes}
-                  </p>
+                <div>
+                  <h3 className="aluno-point-titulo">Informações importantes</h3>
+                  <p className="inicio-texto-point">{point.informacoes_importantes}</p>
                 </div>
               )}
             </section>
           )}
-        </>
+        </div>
       )}
     </Layout>
   );
