@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Presença e check-ins</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="background: #0B2A3C; color: #F6F1E7; padding: 24px 20px 18px; display: flex; flex-direction: column; gap: 12px; border-radius: 0 0 28px 28px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 13px; color: #C9D6DD">Arena Sol · Quadra 1</span>
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: {{accent}}; color: #0B2A3C">Professor</span>
+</div>
+<div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; line-height: 1.1">Beach tennis técnica</div>
+<div style="font-size: 14px; color: #C9D6DD">Hoje · 09:00 às 10:00 · 6 alunos</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; text-align: center">
+<div style="background: #123F59; border-radius: 14px; padding: 8px 4px">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px">{{presentCount}}</div>
+<div style="font-size: 11px; color: #C9D6DD">presentes</div>
+</div>
+<div style="background: #123F59; border-radius: 14px; padding: 8px 4px">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; color: {{accent}}">{{checkCount}}</div>
+<div style="font-size: 11px; color: #C9D6DD">benefício</div>
+</div>
+<div style="background: {{gapBg}}; border-radius: 14px; padding: 8px 4px">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; color: {{gapFg}}">{{gapCount}}</div>
+<div style="font-size: 11px; color: {{gapFg}}">saldo negativo</div>
+</div>
+</div>
+</div>
+
+<div style="flex-grow: 1; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0 4px; font-size: 13px; line-height: 1.45; color: #4F6B7A">Confirme quem veio à aula. Para alunos Wellhub e TotalPass, cada presença precisa de um check-in no mês. Não importa o dia do check-in, e sim que a quantidade empate no fim do mês.</p>
+
+<sc-if value="{{hasGap}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 10px; align-items: flex-start; background: #F3D9CC; color: #7A2E10; border-radius: 16px; padding: 12px 14px; font-size: 13px; line-height: 1.45">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 20px"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+<span><strong>{{gapNames}}</strong> tem mais aulas do que check-ins neste mês. Aproveite que está na quadra e peça o check-in agora.</span>
+</div>
+</sc-if>
+
+<sc-for list="{{students}}" as="s" hint-placeholder-count="6">
+<div style="background: #FFFFFF; border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; border: 2px solid {{s.cardBorder}}">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: 0 0 36px; height: 36px; border-radius: 50%; background: #E9DFCB; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{s.ini}}</span>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-weight: 700; font-size: 15px">{{s.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{s.plan}}</div>
+</div>
+<button type="button" onClick="{{s.toggle}}" aria-label="{{s.aria}}" style="font-family: inherit; font-size: 12px; font-weight: 700; padding: 8px 12px; min-height: 40px; border-radius: 999px; border: 2px solid {{s.pBorder}}; background: {{s.pBg}}; color: {{s.pFg}}; cursor: pointer; white-space: nowrap">{{s.pLabel}}</button>
+</div>
+<sc-if value="{{s.benefit}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px dashed #EDE6D8">
+<span style="font-size: 12px; color: #4F6B7A">Mês: <strong style="color: #0B2A3C">{{s.month}}</strong></span>
+<span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: {{s.cBg}}; color: {{s.cFg}}">{{s.cLabel}}</span>
+</div>
+</sc-if>
+<sc-if value="{{s.canNudge}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{s.nudge}}" style="font-family: inherit; font-size: 13px; font-weight: 700; min-height: 40px; border-radius: 999px; border: none; background: {{s.nBg}}; color: #0B2A3C; cursor: pointer">{{s.nLabel}}</button>
+</sc-if>
+</div>
+</sc-for>
+
+<button type="button" style="margin-top: 6px; font-family: inherit; font-size: 16px; font-weight: 700; min-height: 52px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">Encerrar chamada</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const pres = st.pres || {};
+    const nudged = st.nudged || {};
+    const arrived = st.arrived || {};
+    // nome, plano, app, aulas no mês antes de hoje, check-ins no mês, presença padrão
+    const base = [
+      ['Camila Duarte', 'Wellhub', 'Wellhub', 4, 5, 'ok'],
+      ['Patrícia Melo', 'Wellhub', 'Wellhub', 5, 4, 'ok'],
+      ['Diego Castro', 'TotalPass', 'TotalPass', 3, 6, 'ok'],
+      ['Mariana Costa', 'Mensalista', null, 0, 0, 'ok'],
+      ['Felipe Rocha', 'Mensalista', null, 0, 0, 'pend'],
+      ['Bruno Teixeira', 'Wellhub', 'Wellhub', 2, 1, 'pend']
+    ];
+    let presentCount = 0, benefitCount = 0, gap = [];
+    const students = base.map((b) => {
+      const name = b[0];
+      const p = pres[name] || b[5];
+      const isPresent = p === 'ok';
+      const benefit = !!b[2];
+      if (isPresent) presentCount++;
+      if (benefit) benefitCount++;
+      const aulas = b[3] + (isPresent ? 1 : 0);
+      const checks = b[4] + (arrived[name] ? 1 : 0);
+      const saldo = checks - aulas;
+      const behind = benefit && saldo < 0;
+      if (behind) gap.push(name.split(' ')[0]);
+      const look = { ok: ['Presente', accent, '#0B2A3C', accent], pend: ['Confirmar presença', '#FFFFFF', '#0B2A3C', '#D8CDB6'], miss: ['Faltou', '#F3D9CC', '#7A2E10', '#F3D9CC'] }[p];
+      const next = p === 'pend' ? 'ok' : (p === 'ok' ? 'miss' : 'pend');
+      const parts = name.split(' ');
+      const n = !!nudged[name];
+      return {
+        name: name, ini: (parts[0][0] + parts[parts.length - 1][0]).toUpperCase(), plan: b[1],
+        pLabel: look[0], pBg: look[1], pFg: look[2], pBorder: look[3], aria: 'Presença de ' + name + ': ' + look[0],
+        toggle: () => { const cur = Object.assign({}, (this.state || {}).pres || {}); cur[name] = next; this.setState({ pres: cur }); },
+        benefit: benefit,
+        month: aulas + ' aulas · ' + checks + ' check-ins',
+        cLabel: saldo < 0 ? 'Falta' + (saldo < -1 ? 'm ' : ' ') + (-saldo) : (saldo === 0 ? 'Em dia' : '+' + saldo + ' adiantado' + (saldo > 1 ? 's' : '')),
+        cBg: saldo < 0 ? '#F3D9CC' : (saldo === 0 ? accent : '#E2ECF0'),
+        cFg: saldo < 0 ? '#7A2E10' : '#0B2A3C',
+        cardBorder: behind ? '#C2552B' : '#FFFFFF',
+        canNudge: behind,
+        nLabel: n ? 'Lembrete enviado · simular check-in recebido' : 'Pedir check-in no ' + b[2],
+        nBg: n ? '#E2ECF0' : accent,
+        nudge: () => {
+          if (!n) { const cur = Object.assign({}, (this.state || {}).nudged || {}); cur[name] = true; this.setState({ nudged: cur }); }
+          else { const cur = Object.assign({}, (this.state || {}).arrived || {}); cur[name] = true; const nd = Object.assign({}, (this.state || {}).nudged || {}); delete nd[name]; this.setState({ arrived: cur, nudged: nd }); }
+        }
+      };
+    });
+    return {
+      accent: accent,
+      students: students,
+      presentCount: presentCount,
+      checkCount: benefitCount,
+      gapCount: gap.length,
+      hasGap: gap.length > 0,
+      gapNames: gap.join(' e '),
+      gapBg: gap.length ? '#C2552B' : '#123F59',
+      gapFg: gap.length ? '#FFFFFF' : '#C9D6DD'
+    };
+  }
+}
+</script>
+</body>
+</html>

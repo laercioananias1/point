@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Agenda do professor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="background: #0B2A3C; color: #F6F1E7; padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 14px; border-radius: 0 0 28px 28px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<button type="button" onClick="{{switchArena}}" style="font-family: inherit; display: flex; align-items: center; gap: 8px; background: #123F59; color: #F6F1E7; border: none; border-radius: 999px; padding: 8px 14px; min-height: 40px; font-size: 14px; font-weight: 700; cursor: pointer">
+<span style="width: 22px; height: 22px; border-radius: 6px; background: {{arena.bg}}; color: {{arena.fg}}; display: flex; align-items: center; justify-content: center; font-size: 10px">{{arena.ini}}</span>
+{{arena.name}}
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: {{accent}}; color: #0B2A3C">Professor</span>
+</div>
+<div>
+<div style="font-size: 14px; color: #C9D6DD">Olá, Ana</div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 1.05">{{headline}}</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+<button type="button" onClick="{{d.pick}}" style="font-family: inherit; min-height: 52px; border-radius: 14px; border: none; background: {{d.bg}}; color: {{d.fg}}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px">
+<span style="font-size: 11px">{{d.wd}}</span>
+<span style="font-weight: 800; font-size: 16px">{{d.n}}</span>
+<span style="width: 5px; height: 5px; border-radius: 50%; background: {{d.dot}}"></span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="flex-grow: 1; overflow-y: auto; padding: 18px 16px 24px; display: flex; flex-direction: column; gap: 12px">
+
+<sc-if value="{{hasRequests}}" hint-placeholder-val="{{ true }}">
+<div style="background: #FFFFFF; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; border: 2px solid {{accent}}">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font-weight: 700; font-size: 15px">Pedidos de aula experimental</span>
+<span style="font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: {{accent}}">{{reqCount}}</span>
+</div>
+<sc-for list="{{requests}}" as="r" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px solid #EDE6D8">
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-weight: 700; font-size: 14px">{{r.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{r.when}}</div>
+</div>
+<sc-if value="{{r.pending}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 6px">
+<button type="button" onClick="{{r.no}}" aria-label="Recusar pedido de {{r.name}}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #D8CDB6; background: #FFFFFF; color: #0B2A3C; cursor: pointer; display: flex; align-items: center; justify-content: center">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+</button>
+<button type="button" onClick="{{r.ok}}" style="font-family: inherit; height: 40px; padding: 0 14px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; font-size: 13px; font-weight: 700; cursor: pointer">Confirmar</button>
+</div>
+</sc-if>
+<sc-if value="{{r.done}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: {{r.tagBg}}">{{r.status}}</span>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<span style="font-size: 12px; font-weight: 700; color: #4F6B7A; text-transform: uppercase; letter-spacing: 1px; padding: 4px 4px 0">Suas aulas · {{dayLabel}}</span>
+<sc-if value="{{noClasses}}" hint-placeholder-val="{{ false }}">
+<div style="background: #FFFFFF; border-radius: 20px; padding: 24px; text-align: center; color: #4F6B7A; font-size: 14px">Nenhuma aula neste dia.</div>
+</sc-if>
+<sc-for list="{{classes}}" as="c" hint-placeholder-count="3">
+<div style="background: #FFFFFF; border-radius: 20px; overflow: hidden; border: 2px solid {{c.border}}">
+<button type="button" onClick="{{c.toggle}}" style="width: 100%; font-family: inherit; text-align: left; background: none; border: none; color: #0B2A3C; padding: 14px; display: flex; gap: 12px; align-items: center; cursor: pointer">
+<div style="width: 54px; text-align: center">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px">{{c.time}}</div>
+<div style="font-size: 11px; color: #4F6B7A">{{c.dur}}</div>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-weight: 700; font-size: 15px">{{c.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{c.court}} · {{c.count}} alunos</div>
+</div>
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: {{c.tagBg}}; color: {{c.tagFg}}">{{c.tag}}</span>
+</button>
+<sc-if value="{{c.open}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 0 14px 14px; display: flex; flex-direction: column">
+<sc-for list="{{c.students}}" as="s" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #EDE6D8">
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-size: 14px; font-weight: 700">{{s.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{s.origin}}</div>
+</div>
+<button type="button" onClick="{{s.toggle}}" aria-label="{{s.aria}}" style="font-family: inherit; font-size: 12px; font-weight: 700; padding: 8px 12px; min-height: 40px; border-radius: 999px; border: 2px solid {{s.border}}; background: {{s.bg}}; color: {{s.fg}}; cursor: pointer">{{s.label}}</button>
+</div>
+</sc-for>
+<button type="button" style="margin-top: 8px; font-family: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 999px; border: 2px solid #0B2A3C; background: none; color: #0B2A3C; cursor: pointer">Avisar a turma no WhatsApp</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const arenas = [
+      { name: 'Arena Sol', ini: 'AS', bg: accent, fg: '#0B2A3C' },
+      { name: 'Beach Club BH', ini: 'BC', bg: '#F6F1E7', fg: '#0B2A3C' }
+    ];
+    const ai = st.arena || 0;
+    const arena = arenas[ai];
+    const day = st.day == null ? 3 : st.day;
+    const wd = [['S', '28'], ['T', '29'], ['Q', '30'], ['Q', '1'], ['S', '2'], ['S', '3'], ['D', '4']];
+    const dayNames = ['segunda', 'terça', 'quarta', 'hoje', 'sexta', 'sábado', 'domingo'];
+    const sched = [
+      [
+        { id: 'a1', time: '07:00', dur: '60 min', name: 'Beach tennis manhã', court: 'Quadra 1', n: 6, cap: 8, days: [0, 2, 4] },
+        { id: 'a2', time: '09:00', dur: '60 min', name: 'Beach tennis técnica', court: 'Quadra 1', n: 5, cap: 8, days: [1, 3] },
+        { id: 'a3', time: '10:00', dur: '60 min', name: 'Experimental · Mariana', court: 'Quadra 1', n: 1, cap: 1, days: [3], exp: true },
+        { id: 'a4', time: '08:00', dur: '90 min', name: 'Beach tennis sábado', court: 'Quadra 1', n: 8, cap: 8, days: [5] }
+      ],
+      [
+        { id: 'b1', time: '17:00', dur: '60 min', name: 'Beach tennis kids', court: 'Quadra 2', n: 6, cap: 8, days: [1, 3] },
+        { id: 'b2', time: '18:00', dur: '60 min', name: 'Beach tennis iniciante', court: 'Quadra 2', n: 8, cap: 8, days: [1, 3] },
+        { id: 'b3', time: '19:00', dur: '60 min', name: 'Beach tennis técnica', court: 'Quadra 3', n: 5, cap: 8, days: [0, 2, 3] }
+      ]
+    ][ai];
+    const pool = ['Mariana Costa', 'Felipe Rocha', 'Camila Duarte', 'Juliana Prado', 'Rodrigo Pires', 'Carla Nunes', 'Gustavo Reis', 'Paulo Henrique'];
+    const origins = ['Mensalista', 'Wellhub · check-in feito', 'Mensalista', 'Pacote', 'Wellhub · check-in feito', 'Avulso'];
+    const pres = st.pres || {};
+    const openId = st.open === undefined ? 'a2' : st.open;
+    const list = sched.filter((c) => c.days.indexOf(day) > -1);
+    const classes = list.map((c, ci) => {
+      const full = c.n >= c.cap;
+      const students = Array.from({ length: Math.min(c.n, 6) }, (_, i) => {
+        const name = c.exp ? 'Mariana Costa' : pool[(i + ci * 3) % pool.length];
+        const key = c.id + ':' + i;
+        const s = pres[key] || (i % 3 === 2 ? 'pend' : 'ok');
+        const look = { ok: ['Presente', accent, '#0B2A3C', accent], pend: ['Marcar', '#FFFFFF', '#0B2A3C', '#D8CDB6'], miss: ['Faltou', '#F3D9CC', '#7A2E10', '#F3D9CC'] }[s];
+        const next = s === 'pend' ? 'ok' : (s === 'ok' ? 'miss' : 'pend');
+        return { name: name, origin: c.exp ? 'Aula experimental' : origins[(i + ci) % origins.length], label: look[0], bg: look[1], fg: look[2], border: look[3], aria: 'Presença de ' + name + ': ' + look[0],
+          toggle: () => { const cur = Object.assign({}, (this.state || {}).pres || {}); cur[key] = next; this.setState({ pres: cur }); } };
+      });
+      return {
+        time: c.time, dur: c.dur, name: c.name, court: c.court, count: c.n + '/' + c.cap,
+        tag: c.exp ? 'Experimental' : (full ? 'Lotada' : (c.cap - c.n) + ' vagas'),
+        tagBg: c.exp ? '#0B2A3C' : (full ? accent : '#E9DFCB'),
+        tagFg: c.exp ? '#F6F1E7' : '#0B2A3C',
+        open: c.id === openId,
+        border: c.id === openId ? '#0B2A3C' : '#FFFFFF',
+        students: students,
+        toggle: () => this.setState({ open: c.id === openId ? null : c.id })
+      };
+    });
+    const reqDecided = st.req || {};
+    const reqDefs = ai === 0 ? [
+      { id: 'q1', name: 'Felipe Souza', when: 'Seg 5/10 · 07:00 · Beach tennis manhã' },
+      { id: 'q2', name: 'Larissa Teixeira', when: 'Qua 7/10 · 07:00 · Beach tennis manhã' }
+    ] : [];
+    const requests = reqDefs.map((r) => {
+      const d = reqDecided[r.id];
+      const set = (v) => { const cur = Object.assign({}, (this.state || {}).req || {}); cur[r.id] = v; this.setState({ req: cur }); };
+      return { name: r.name, when: r.when, pending: !d, done: !!d, status: d === 'ok' ? 'Confirmada' : 'Recusada', tagBg: d === 'ok' ? accent : '#EDE6D8', ok: () => set('ok'), no: () => set('no') };
+    });
+    const pending = requests.filter((r) => r.pending).length;
+    const total = sched.filter((c) => c.days.indexOf(3) > -1).length;
+    return {
+      accent: accent,
+      arena: arena,
+      switchArena: () => this.setState({ arena: ai === 0 ? 1 : 0, open: null, day: 3 }),
+      headline: total === 1 ? 'Você tem 1 aula hoje' : 'Você tem ' + total + ' aulas hoje',
+      days: wd.map((d, i) => {
+        const has = sched.some((c) => c.days.indexOf(i) > -1);
+        return { wd: d[0], n: d[1], bg: i === day ? accent : '#123F59', fg: i === day ? '#0B2A3C' : '#F6F1E7', dot: has ? (i === day ? '#0B2A3C' : accent) : 'transparent', pick: () => this.setState({ day: i, open: null }) };
+      }),
+      dayLabel: dayNames[day],
+      classes: classes,
+      noClasses: classes.length === 0,
+      requests: requests,
+      hasRequests: requests.length > 0,
+      reqCount: pending ? pending + ' novos' : 'Respondidos'
+    };
+  }
+}
+</script>
+</body>
+</html>

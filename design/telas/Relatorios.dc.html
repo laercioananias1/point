@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Relatórios da arena</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; width: 100%; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<aside style="flex: 0 0 240px; background: #0B2A3C; color: #C9D6DD; padding: 24px 16px; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 10px 24px">
+<span style="display: inline-flex; align-items: center; gap: 1px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 25px; letter-spacing: -0.03em; line-height: 1; color: #F6F1E7"><svg width="30" height="30" viewBox="0 0 48 48" role="img" aria-label="O" style="flex: 0 0 30px; display: block"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#F6F1E7" stroke-width="7"></circle><circle cx="34" cy="34" r="10" fill="{{accent}}" stroke="#0B2A3C" stroke-width="3.5"></circle><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#F6F1E7" stroke-width="2.2" stroke-linecap="round"></path></svg><span>Point</span></span>
+</div>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+<a href="{{n.href}}" style="display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 20px; border-radius: 12px; text-decoration: none; font-size: 15px; font-weight: 500; background: {{n.bg}}; color: {{n.fg}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"></path></svg>
+<span style="flex-grow: 1">{{n.label}}</span>
+<sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 12px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 2px 8px; border-radius: 999px">{{n.badge}}</span>
+</sc-if>
+</a>
+</sc-for>
+<div style="margin-top: auto; padding: 16px 12px 0; border-top: 1px solid #23465A; display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: {{accent}}; color: #0B2A3C; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px">AS</span>
+<div>
+<div style="font-size: 14px; font-weight: 700; color: #F6F1E7">Arena Sol</div>
+<div style="font-size: 12px">4 quadras</div>
+</div>
+</div>
+</aside>
+
+<main style="flex: 1 1 600px; padding: 32px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box; min-width: 0">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+<div>
+<div style="font-size: 14px; color: #4F6B7A">{{rangeLabel}}</div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -1px">Relatórios</h1>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+<div style="display: flex; gap: 4px; background: #FFFFFF; padding: 4px; border-radius: 999px">
+<sc-for list="{{periods}}" as="p" hint-placeholder-count="3">
+<button type="button" onClick="{{p.pick}}" style="font-family: inherit; font-size: 14px; font-weight: 700; padding: 10px 16px; min-height: 40px; border-radius: 999px; border: none; background: {{p.bg}}; color: {{p.fg}}; cursor: pointer">{{p.label}}</button>
+</sc-for>
+</div>
+<button type="button" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: 2px solid #0B2A3C; background: none; color: #0B2A3C; cursor: pointer">Baixar PDF</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+<div style="flex: 1 1 180px; background: {{k.bg}}; color: {{k.fg}}; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">{{k.label}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 1">{{k.value}}</span>
+<span style="font-size: 13px; font-weight: 700; color: {{k.trendColor}}">{{k.trend}}</span>
+</div>
+</sc-for>
+</div>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Mapa de ocupação</h2>
+<span style="font-size: 13px; color: #4F6B7A">Média de ocupação por dia e horário, todas as quadras</span>
+</div>
+<div style="overflow-x: auto">
+<div style="min-width: 760px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: grid; grid-template-columns: 48px repeat(12, minmax(0, 1fr)); gap: 4px">
+<span></span>
+<sc-for list="{{hourLabels}}" as="h" hint-placeholder-count="12">
+<span style="font-size: 12px; color: #4F6B7A; text-align: center">{{h}}</span>
+</sc-for>
+</div>
+<sc-for list="{{heat}}" as="row" hint-placeholder-count="7">
+<div style="display: grid; grid-template-columns: 48px repeat(12, minmax(0, 1fr)); gap: 4px">
+<span style="font-size: 13px; font-weight: 700; display: flex; align-items: center">{{row.day}}</span>
+<sc-for list="{{row.cells}}" as="c" hint-placeholder-count="12">
+<span style="height: 40px; border-radius: 8px; background: {{c.bg}}; color: {{c.fg}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{c.v}}</span>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; gap: 8px; align-items: center; font-size: 13px; color: #4F6B7A; flex-wrap: wrap">
+<span>Vazio</span>
+<span style="width: 28px; height: 14px; border-radius: 4px; background: #EDE6D8"></span>
+<span style="width: 28px; height: 14px; border-radius: 4px; background: #C9D6DD"></span>
+<span style="width: 28px; height: 14px; border-radius: 4px; background: #9DB4C0"></span>
+<span style="width: 28px; height: 14px; border-radius: 4px; background: #3F6E86"></span>
+<span style="width: 28px; height: 14px; border-radius: 4px; background: #0B2A3C"></span>
+<span>Lotado</span>
+<span style="margin-left: auto; font-weight: 700; color: #0B2A3C">Sugestão: há espaço para turma nova de manhã entre 10h e 11h.</span>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+
+<section style="flex: 1 1 380px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Receita por origem</h2>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">{{revenueTotal}}</span>
+</div>
+<div style="display: flex; height: 16px; border-radius: 999px; overflow: hidden; gap: 3px">
+<sc-for list="{{revenue}}" as="r" hint-placeholder-count="4">
+<span style="height: 16px; width: {{r.pct}}; background: {{r.color}}"></span>
+</sc-for>
+</div>
+<sc-for list="{{revenue}}" as="r" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #EDE6D8">
+<span style="width: 12px; height: 12px; border-radius: 4px; background: {{r.color}}"></span>
+<span style="flex-grow: 1; font-size: 15px">{{r.label}}</span>
+<span style="font-size: 13px; color: #4F6B7A; width: 44px; text-align: right">{{r.pct}}</span>
+<span style="font-size: 15px; font-weight: 700; width: 110px; text-align: right">{{r.value}}</span>
+</div>
+</sc-for>
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #EDE6D8; color: #6F6656">
+<span style="width: 12px; height: 12px; border-radius: 4px; border: 2px dashed #B5AA93; box-sizing: border-box"></span>
+<span style="flex-grow: 1; font-size: 15px">TotalPass</span>
+<span style="font-size: 11px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 3px 8px; border-radius: 999px">em breve</span>
+</div>
+</section>
+
+<section style="flex: 1 1 380px; background: #0B2A3C; color: #F6F1E7; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+<div>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Funil da aula experimental</h2>
+<div style="font-size: 13px; color: #C9D6DD; margin-top: 4px">Do pedido no site à matrícula</div>
+</div>
+<sc-for list="{{funnel}}" as="f" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-size: 14px">
+<span>{{f.label}}</span>
+<span style="font-weight: 700">{{f.n}} <span style="color: #9DB4C0; font-weight: 500">· {{f.rate}}</span></span>
+</div>
+<div style="height: 28px; border-radius: 8px; background: #123F59; overflow: hidden">
+<div style="height: 28px; border-radius: 8px; width: {{f.pct}}; background: {{f.bg}}"></div>
+</div>
+</div>
+</sc-for>
+<div style="margin-top: auto; background: #123F59; border-radius: 16px; padding: 14px; font-size: 13px; line-height: 1.45">{{funnelNote}}</div>
+</section>
+</div>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Desempenho por professor</h2>
+<div style="overflow-x: auto">
+<div style="min-width: 720px">
+<div style="display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 12px; font-size: 12px; font-weight: 700; color: #4F6B7A; text-transform: uppercase; letter-spacing: 1px; padding: 8px 4px">
+<span>Professor</span><span>Aulas dadas</span><span>Alunos ativos</span><span>Experimentais</span><span>Faltas</span><span>Ocupação média</span>
+</div>
+<sc-for list="{{coaches}}" as="c" hint-placeholder-count="4">
+<div style="display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr)) minmax(0, 1.4fr); gap: 12px; align-items: center; padding: 14px 4px; border-top: 1px solid #EDE6D8; font-size: 15px">
+<div style="display: flex; align-items: center; gap: 10px; min-width: 0">
+<span style="width: 34px; height: 34px; border-radius: 50%; background: #E9DFCB; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{c.ini}}</span>
+<div style="min-width: 0">
+<div style="font-weight: 700">{{c.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{c.sport}}</div>
+</div>
+</div>
+<span>{{c.classes}}</span>
+<span>{{c.students}}</span>
+<span>{{c.trials}}</span>
+<span>{{c.absences}}</span>
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="flex-grow: 1; height: 8px; border-radius: 999px; background: #EDE6D8; overflow: hidden">
+<div style="height: 8px; border-radius: 999px; width: {{c.occ}}; background: {{c.bar}}"></div>
+</div>
+<span style="font-size: 13px; font-weight: 700; width: 38px">{{c.occ}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":1440,"height":1720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const period = st.period || 'mes';
+    const brl = (v) => 'R$ ' + v.toLocaleString('pt-BR');
+
+    const P = {
+      semana: { label: 'Esta semana', range: '28 de setembro a 4 de outubro', m: 0.25,
+        kpis: [['Receita', 'R$ 11.380', '+4% vs. semana anterior', true], ['Ocupação média', '76%', '+2 p.p.', true], ['Alunos ativos', '182', '+3 alunos', true], ['Conversão experimental', '38%', '-5 p.p.', false], ['Taxa de faltas', '9%', 'estável', true]] },
+      mes: { label: 'Este mês', range: 'Setembro de 2026', m: 1,
+        kpis: [['Receita', 'R$ 45.900', '+12% vs. agosto', true], ['Ocupação média', '74%', '+6 p.p.', true], ['Alunos ativos', '182', '+21 alunos', true], ['Conversão experimental', '43%', '+8 p.p.', true], ['Taxa de faltas', '11%', '+1 p.p.', false]] },
+      trimestre: { label: 'Trimestre', range: 'Julho a setembro de 2026', m: 3,
+        kpis: [['Receita', 'R$ 128.400', '+18% vs. trimestre anterior', true], ['Ocupação média', '70%', '+9 p.p.', true], ['Alunos ativos', '182', '+47 alunos', true], ['Conversão experimental', '40%', '+3 p.p.', true], ['Taxa de faltas', '12%', '-2 p.p.', true]] }
+    };
+    const cur = P[period];
+    const m = cur.m;
+
+    const periods = [['semana', 'Semana'], ['mes', 'Mês'], ['trimestre', 'Trimestre']].map((p) => ({
+      label: p[1],
+      bg: p[0] === period ? '#0B2A3C' : 'transparent',
+      fg: p[0] === period ? '#F6F1E7' : '#0B2A3C',
+      pick: () => this.setState({ period: p[0] })
+    }));
+
+    const kpis = cur.kpis.map((k, i) => ({
+      label: k[0], value: k[1], trend: (k[3] ? '▲ ' : '▼ ') + k[2],
+      bg: i === 0 ? '#0B2A3C' : (i === 3 ? accent : '#FFFFFF'),
+      fg: i === 0 ? '#F6F1E7' : '#0B2A3C',
+      trendColor: i === 0 ? (k[3] ? accent : '#FFB38A') : (k[3] ? '#1E6B45' : '#A3401A')
+    }));
+
+    const hoursH = ['06h', '07h', '08h', '09h', '10h', '11h', '16h', '17h', '18h', '19h', '20h', '21h'];
+    const grid = [
+      ['Seg', [52, 94, 88, 46, 24, 18, 38, 74, 98, 100, 90, 58]],
+      ['Ter', [60, 90, 80, 50, 28, 20, 42, 70, 95, 100, 86, 62]],
+      ['Qua', [48, 92, 86, 44, 22, 16, 36, 78, 100, 98, 92, 60]],
+      ['Qui', [58, 88, 82, 52, 30, 22, 40, 72, 94, 100, 88, 56]],
+      ['Sex', [44, 80, 74, 40, 26, 24, 34, 62, 88, 90, 70, 40]],
+      ['Sáb', [30, 70, 96, 100, 98, 86, 60, 52, 48, 40, 30, 18]],
+      ['Dom', [20, 56, 88, 94, 90, 74, 42, 36, 30, 20, 12, 8]]
+    ];
+    const shade = (v) => v >= 90 ? ['#0B2A3C', '#F6F1E7'] : v >= 70 ? ['#3F6E86', '#F6F1E7'] : v >= 45 ? ['#9DB4C0', '#0B2A3C'] : v >= 25 ? ['#C9D6DD', '#0B2A3C'] : ['#EDE6D8', '#5C5547'];
+    const heat = grid.map((r) => ({ day: r[0], cells: r[1].map((v) => { const s = shade(v); return { v: v + '%', bg: s[0], fg: s[1] }; }) }));
+
+    const revBase = [['Mensalidades', 31400, '#0B2A3C'], ['Wellhub', 8200, '#3F6E86'], ['Aulas avulsas', 4100, '#9DB4C0'], ['Aulas experimentais pagas', 2200, '#D8CDB6']];
+    const scale = period === 'semana' ? 0.248 : (period === 'trimestre' ? 2.797 : 1);
+    const revVals = revBase.map((r) => Math.round(r[1] * scale / 10) * 10);
+    const revTotal = revVals.reduce((a, b) => a + b, 0);
+    const revenue = revBase.map((r, i) => ({ label: r[0], color: r[2], value: brl(revVals[i]), pct: Math.round((revVals[i] / revTotal) * 100) + '%' }));
+
+    const fBase = period === 'semana' ? [13, 11, 8, 5] : (period === 'trimestre' ? [148, 126, 98, 59] : [56, 49, 39, 24]);
+    const fLabels = ['Pedidos pelo site', 'Confirmadas pelo professor', 'Compareceram', 'Se matricularam'];
+    const funnel = fBase.map((n, i) => ({
+      label: fLabels[i], n: n,
+      rate: i === 0 ? '100%' : Math.round((n / fBase[0]) * 100) + '%',
+      pct: Math.max(Math.round((n / fBase[0]) * 100), 4) + '%',
+      bg: i === 3 ? accent : '#9DB4C0'
+    }));
+    const noShow = fBase[1] - fBase[2];
+
+    const coachBase = [
+      ['Ana Ribeiro', 'AR', 'Beach tennis', 48, 64, 18, 0.07, 88],
+      ['Rafael Lima', 'RL', 'Vôlei de praia', 40, 52, 14, 0.10, 82],
+      ['Beatriz Melo', 'BM', 'Beach tennis', 36, 41, 15, 0.12, 71],
+      ['Leonardo Dias', 'LD', 'Futevôlei', 28, 25, 9, 0.16, 58]
+    ];
+    const coaches = coachBase.map((c) => ({
+      name: c[0], ini: c[1], sport: c[2],
+      classes: Math.max(Math.round(c[3] * m), 1),
+      students: c[4],
+      trials: Math.max(Math.round(c[5] * m), 1),
+      absences: Math.round(c[6] * 100) + '%',
+      occ: c[7] + '%',
+      bar: c[7] >= 80 ? '#0B2A3C' : (c[7] >= 65 ? '#3F6E86' : '#9DB4C0')
+    }));
+
+    const navDefs = [
+      { label: 'Início', href: 'Dashboard.dc.html', icon: 'M3 11l9-8 9 8M5 10v10h14V10' },
+      { label: 'Agenda', href: 'Agenda.dc.html', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
+      { label: 'Check-ins', href: 'Checkins.dc.html', icon: 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9', badge: 2 },
+      { label: 'Aulas experimentais', href: '#', icon: 'M12 5v14M5 12h14', badge: 4 },
+      { label: 'Turmas', href: 'Turmas.dc.html', icon: 'M4 6h16M4 12h16M4 18h10' },
+      { label: 'Quadras', href: 'Quadras.dc.html', icon: 'M3 4h18v16H3zM12 4v16M3 12h18' },
+      { label: 'Alunos', href: 'Alunos.dc.html', icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
+      { label: 'Professores', href: 'Professores.dc.html', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
+      { label: 'Caixa', href: 'Caixa.dc.html', icon: 'M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5' },
+      { label: 'Cobranças', href: 'Cobrancas.dc.html', icon: 'M3 6h18v12H3zM3 10h18M7 15h3', badge: 4 },
+      { label: 'Relatórios', href: 'Relatorios.dc.html', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' }
+    ];
+    const nav = navDefs.map((n, i) => ({
+      label: n.label, icon: n.icon, href: n.href,
+      hasBadge: !!n.badge, badge: n.badge || '',
+      bg: n.label === 'Relatórios' ? '#123F59' : 'transparent',
+      fg: n.label === 'Relatórios' ? '#F6F1E7' : '#C9D6DD'
+    }));
+
+    return {
+      accent: accent,
+      nav: nav,
+      periods: periods,
+      rangeLabel: cur.range,
+      kpis: kpis,
+      hourLabels: hoursH,
+      heat: heat,
+      revenue: revenue,
+      revenueTotal: brl(revTotal),
+      funnel: funnel,
+      funnelNote: noShow + ' alunos confirmados não compareceram. Um lembrete extra no WhatsApp na véspera pode reduzir essas faltas.',
+      coaches: coaches
+    };
+  }
+}
+</script>
+</body>
+</html>

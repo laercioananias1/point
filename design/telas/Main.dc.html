@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>OPoint · Sua arena no ponto</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; width: 100%; overflow-x: hidden">
+
+<header style="max-width: 1200px; margin: 0 auto; padding: 24px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+<a href="#topo" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #0B2A3C">
+<span style="display: inline-flex; align-items: center; gap: 1px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -0.03em; line-height: 1; color: #0B2A3C"><svg width="36" height="36" viewBox="0 0 48 48" role="img" aria-label="O" style="flex: 0 0 36px; display: block"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#0B2A3C" stroke-width="7"></circle><circle cx="34" cy="34" r="10" fill="{{accent}}" stroke="#F6F1E7" stroke-width="3.5"></circle><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#0B2A3C" stroke-width="2.2" stroke-linecap="round"></path></svg><span>Point</span></span>
+</a>
+<nav style="display: flex; align-items: center; gap: 28px; flex-wrap: wrap; font-size: 15px; font-weight: 500">
+<a href="#recursos" style="text-decoration: none">Recursos</a>
+<a href="#checkins" style="text-decoration: none">Check-ins</a>
+<a href="#visoes" style="text-decoration: none">Para quem</a>
+<a href="#planos" style="text-decoration: none">Planos</a>
+<a href="#duvidas" style="text-decoration: none">Dúvidas</a>
+<a href="#comecar" style="text-decoration: none; background: #0B2A3C; color: #F6F1E7; padding: 12px 20px; border-radius: 999px; min-height: 20px">Começar grátis</a>
+</nav>
+</header>
+
+<section id="topo" style="max-width: 1200px; margin: 0 auto; padding: 48px 24px 96px; display: flex; flex-wrap: wrap; align-items: center; gap: 56px">
+<div style="flex: 1 1 460px; display: flex; flex-direction: column; gap: 28px">
+<span style="align-self: flex-start; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; background: #0B2A3C; color: {{accent}}; padding: 8px 14px; border-radius: 999px">Beach tennis · Vôlei · Futevôlei</span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(44px, 6vw, 80px); line-height: 0.98; letter-spacing: -2px">Sua arena<br>no ponto.</h1>
+<p style="margin: 0; font-size: 19px; line-height: 1.55; max-width: 520px; color: #2C4A5A">Agenda das quadras, chamada pelo professor, cobrança no WhatsApp e, principalmente, a conferência dos check-ins do Wellhub: o OPoint mostra quem está devendo check-in antes do mês fechar. TotalPass chegando em breve.</p>
+<div style="display: flex; gap: 14px; flex-wrap: wrap">
+<a href="#comecar" style="text-decoration: none; background: {{accent}}; color: #0B2A3C; font-weight: 700; font-size: 17px; padding: 16px 28px; border-radius: 999px">Quero testar o OPoint</a>
+<a href="#como-funciona" style="text-decoration: none; border: 2px solid #0B2A3C; font-weight: 700; font-size: 17px; padding: 14px 26px; border-radius: 999px">Ver como funciona</a>
+</div>
+<div style="display: flex; gap: 22px; flex-wrap: wrap; font-size: 14px; color: #2C4A5A">
+<span style="display: flex; align-items: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+Sem cartão para começar</span>
+<span style="display: flex; align-items: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+Feito para professores e arenas</span>
+<span style="display: flex; align-items: center; gap: 8px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+Um login para várias arenas</span>
+</div>
+</div>
+
+<div style="flex: 1 1 380px; display: flex; justify-content: center; position: relative">
+<div style="position: absolute; width: 420px; height: 420px; border-radius: 50%; background: {{accent}}; top: 40px"></div>
+<div style="position: relative; width: 300px; background: #0B2A3C; border-radius: 44px; padding: 12px; box-shadow: 0 30px 60px rgba(11,42,60,0.25)">
+<div style="background: #F6F1E7; border-radius: 34px; padding: 22px 18px; display: flex; flex-direction: column; gap: 14px; min-height: 560px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<div>
+<div style="font-size: 12px; color: #4F6B7A">Quinta, 1 de outubro</div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Aulas de hoje</div>
+</div>
+<span style="width: 38px; height: 38px; border-radius: 50%; background: #0B2A3C; color: {{accent}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">LA</span>
+</div>
+<div style="display: flex; gap: 6px">
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: #0B2A3C; color: #F6F1E7">Todas</span>
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; border: 1px solid #C9BFA9">Beach tennis</span>
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; border: 1px solid #C9BFA9">Vôlei</span>
+</div>
+<sc-for list="{{classes}}" as="c" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border-radius: 18px; padding: 14px; display: flex; gap: 12px; align-items: center">
+<div style="width: 52px; text-align: center">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px">{{c.time}}</div>
+<div style="font-size: 11px; color: #4F6B7A">{{c.dur}}</div>
+</div>
+<div style="flex-grow: 1">
+<div style="font-weight: 700; font-size: 14px">{{c.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{c.coach}}</div>
+</div>
+<span style="font-size: 12px; font-weight: 700; padding: 5px 9px; border-radius: 999px; background: {{c.tagBg}}; color: {{c.tagFg}}">{{c.spots}}</span>
+</div>
+</sc-for>
+<div style="margin-top: auto; background: #0B2A3C; color: #F6F1E7; border-radius: 18px; padding: 14px; display: flex; gap: 10px; align-items: center">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-size: 12px"><span>Check-ins Wellhub · outubro</span><strong style="color: {{accent}}">38 de 41</strong></div>
+<div style="height: 6px; border-radius: 999px; background: #123F59; overflow: hidden"><div style="height: 6px; width: 92%; border-radius: 999px; background: {{accent}}"></div></div>
+<div style="font-size: 11px; color: #C9D6DD">3 alunos com check-in pendente · lembrete enviado</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="background: #0B2A3C; color: #F6F1E7; padding: 28px 24px">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">
+<span>Agenda</span><span style="color: {{accent}}">●</span>
+<span>Chamada</span><span style="color: {{accent}}">●</span>
+<span>Check-ins conciliados</span><span style="color: {{accent}}">●</span>
+<span>TotalPass <span style="font-size: 13px; font-family: 'DM Sans', sans-serif; background: {{accent}}; color: #0B2A3C; padding: 4px 10px; border-radius: 999px; vertical-align: middle">em breve</span></span><span style="color: {{accent}}">●</span>
+<span>Cobrança</span><span style="color: {{accent}}">●</span>
+<span>Multi-arena</span>
+</div>
+</section>
+
+<section id="recursos" style="max-width: 1200px; margin: 0 auto; padding: 112px 24px; display: flex; flex-direction: column; gap: 56px">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 720px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #4F6B7A">Recursos</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 56px); line-height: 1.02; letter-spacing: -1.5px">Menos planilha e grupo de WhatsApp. Mais tempo na quadra.</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<sc-for list="{{features}}" as="f" hint-placeholder-count="6">
+<div style="flex: 1 1 300px; background: #FFFFFF; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+<span style="width: 52px; height: 52px; border-radius: 16px; background: {{f.bg}}; display: flex; align-items: center; justify-content: center">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{f.icon}}"></path></svg>
+</span>
+<h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px">{{f.title}}</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #2C4A5A">{{f.text}}</p>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section id="checkins" style="background: #0B2A3C; color: #F6F1E7; padding: 112px 24px">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 56px; align-items: center">
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 22px">
+<span style="align-self: flex-start; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; background: {{accent}}; color: #0B2A3C; padding: 8px 14px; border-radius: 999px">Wellhub e TotalPass</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 56px); line-height: 1.02; letter-spacing: -1.5px">No fim do mês, aulas e check-ins precisam bater. O OPoint confere por você.</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #C9D6DD">Aluno de benefício que esquece o check-in é aula que a arena não recebe. O OPoint compara a presença confirmada pelo professor com os check-ins que chegam do app do benefício e avisa quem está devendo, ainda dentro do mês.</p>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{concSteps}}" as="c" hint-placeholder-count="3">
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<span style="flex: 0 0 36px; height: 36px; border-radius: 50%; background: #123F59; color: {{accent}}; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800">{{c.n}}</span>
+<div>
+<div style="font-weight: 700; font-size: 17px">{{c.title}}</div>
+<div style="font-size: 15px; line-height: 1.5; color: #C9D6DD">{{c.text}}</div>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="flex: 1 1 460px; background: #F6F1E7; color: #0B2A3C; border-radius: 28px; padding: 28px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+<div>
+<div style="font-size: 13px; color: #4F6B7A">Arena Sol · outubro</div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px">Conferência de check-ins</div>
+</div>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; background: #FFFFFF; padding: 6px 10px; border-radius: 999px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #2E8B57"></span>Recebendo check-ins</span>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 0.7fr)) minmax(0, 1.2fr); gap: 8px; font-size: 11px; font-weight: 700; color: #4F6B7A; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px">
+<span>Aluno</span><span>Aulas</span><span>Check-ins</span><span>Saldo</span>
+</div>
+<sc-for list="{{concRows}}" as="r" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 0.7fr)) minmax(0, 1.2fr); gap: 8px; align-items: center; background: #FFFFFF; border-radius: 14px; padding: 12px; font-size: 14px">
+<div style="min-width: 0">
+<div style="font-weight: 700">{{r.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{r.app}}</div>
+</div>
+<strong>{{r.aulas}}</strong>
+<strong>{{r.checks}}</strong>
+<span style="justify-self: start; font-size: 12px; font-weight: 700; padding: 5px 9px; border-radius: 999px; background: {{r.bg}}; color: {{r.fg}}; white-space: nowrap">{{r.label}}</span>
+</div>
+</sc-for>
+<div style="display: flex; gap: 10px; align-items: center; background: #FFFFFF; border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.45">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 20px"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"></path></svg>
+<span>Quem está com saldo negativo recebe um lembrete no WhatsApp, e o professor vê o aviso na hora da chamada.</span>
+</div>
+</div>
+</div>
+</section>
+
+<section id="experimental" style="background: #E9DFCB; color: #0B2A3C; padding: 112px 24px">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 56px; align-items: center">
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 20px">
+<span style="align-self: flex-start; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; background: #0B2A3C; color: {{accent}}; padding: 8px 14px; border-radius: 999px">Aula experimental</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 56px); line-height: 1.02; letter-spacing: -1.5px">O aluno novo marca a primeira aula sozinho.</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.55; color: #2C4A5A">Ele escolhe o dia e o horário com vaga, informa nome e WhatsApp e envia o pedido. O professor recebe a solicitação e confirma a aula com um toque.</p>
+<div style="display: flex; flex-direction: column; gap: 12px; font-size: 16px">
+<span style="display: flex; gap: 10px; align-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Só aparecem horários com vaga de verdade</span>
+<span style="display: flex; gap: 10px; align-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Professor aprova e o aluno é avisado no WhatsApp</span>
+<span style="display: flex; gap: 10px; align-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Link para colocar no Instagram e no Google</span>
+</div>
+</div>
+
+<div style="flex: 1 1 460px; background: #FFFFFF; color: #0B2A3C; border-radius: 28px; padding: 32px; display: flex; flex-direction: column; gap: 22px; box-sizing: border-box">
+<div>
+<div style="font-size: 13px; color: #4F6B7A">Beach tennis · Iniciante</div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">Agende sua aula experimental</div>
+</div>
+<sc-if value="{{showPick}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 14px; font-weight: 700">1. Escolha o dia</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+<button type="button" onClick="{{d.pick}}" style="font-family: inherit; flex: 1 1 64px; min-height: 64px; border-radius: 16px; border: 2px solid #0B2A3C; background: {{d.bg}}; color: {{d.fg}}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
+<span style="font-size: 12px; font-weight: 500">{{d.wd}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">{{d.n}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 14px; font-weight: 700">2. Escolha o horário</span>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{slots}}" as="s" hint-placeholder-count="6">
+<button type="button" onClick="{{s.pick}}" disabled="{{s.off}}" style="font-family: inherit; min-height: 48px; border-radius: 14px; border: 2px solid {{s.border}}; background: {{s.bg}}; color: {{s.fg}}; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: {{s.deco}}">{{s.t}}</button>
+</sc-for>
+</div>
+<span style="font-size: 12px; color: #4F6B7A">Horários riscados já estão lotados.</span>
+</div>
+<sc-if value="{{hasSlot}}" hint-placeholder-val="{{ false }}">
+<div style="background: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; gap: 12px; align-items: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path></svg>
+<span style="font-size: 15px">{{summary}}</span>
+</div>
+</sc-if>
+<button type="button" onClick="{{toForm}}" disabled="{{noSlot}}" style="font-family: inherit; font-size: 17px; font-weight: 700; padding: 18px; border-radius: 999px; border: none; background: {{ctaBg}}; color: {{ctaFg}}; cursor: pointer">Continuar</button>
+</div>
+</sc-if>
+
+<sc-if value="{{showForm}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="background: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap">
+<span style="font-size: 15px">{{summary}}</span>
+<button type="button" onClick="{{back}}" style="font-family: inherit; font-size: 14px; font-weight: 700; background: none; border: none; color: #0B2A3C; text-decoration: underline; cursor: pointer; min-height: 44px">Trocar horário</button>
+</div>
+<span style="font-size: 14px; font-weight: 700">3. Seus dados</span>
+<label for="exp-nome" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">Nome</label>
+<input id="exp-nome" type="text" value="{{nome}}" onChange="{{setNome}}" placeholder="Seu nome completo" style="font-family: inherit; font-size: 16px; padding: 16px 18px; border-radius: 16px; border: 2px solid #0B2A3C; background: #FFFFFF; color: #0B2A3C">
+<label for="exp-whats" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">WhatsApp</label>
+<input id="exp-whats" type="tel" value="{{whats}}" onChange="{{setWhats}}" placeholder="(31) 9 0000-0000" style="font-family: inherit; font-size: 16px; padding: 16px 18px; border-radius: 16px; border: 2px solid #0B2A3C; background: #FFFFFF; color: #0B2A3C">
+<span style="font-size: 12px; color: #4F6B7A">O professor vai confirmar a aula por este número.</span>
+<button type="button" onClick="{{book}}" disabled="{{noData}}" style="font-family: inherit; font-size: 17px; font-weight: 700; padding: 18px; border-radius: 999px; border: none; background: {{bookBg}}; color: {{bookFg}}; cursor: pointer">Solicitar aula experimental</button>
+</div>
+</sc-if>
+
+<sc-if value="{{showDone}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; padding: 12px 0">
+<span style="width: 72px; height: 72px; border-radius: 50%; background: {{accent}}; display: flex; align-items: center; justify-content: center">
+<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+</span>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px">Pedido enviado, {{firstName}}!</div>
+<p style="margin: 0; font-size: 16px; line-height: 1.5; color: #2C4A5A">{{summary}}</p>
+<div style="background: #FFFFFF; border-radius: 18px; padding: 14px 16px; display: flex; gap: 10px; align-items: center; text-align: left">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"></path></svg>
+<span style="font-size: 14px">Aguardando confirmação do professor. Você vai receber a resposta no WhatsApp {{whats}}.</span>
+</div>
+<button type="button" onClick="{{reset}}" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 14px 24px; border-radius: 999px; border: 2px solid #0B2A3C; background: none; color: #0B2A3C; cursor: pointer">Solicitar outro horário</button>
+</div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<section id="como-funciona" style="background: #F6F1E7; padding: 112px 24px">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 720px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #4F6B7A">Como funciona</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 56px); line-height: 1.02; letter-spacing: -1.5px">Do cadastro à primeira aula em três jogadas.</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px; border-top: 3px solid #0B2A3C; padding-top: 24px">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 64px; line-height: 1">01</span>
+<h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px">Monte suas turmas</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #2C4A5A">Cadastre quadras, professores, horários e limite de alunos por aula.</p>
+</div>
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px; border-top: 3px solid #0B2A3C; padding-top: 24px">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 64px; line-height: 1">02</span>
+<h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px">Convide alunos e professores</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #2C4A5A">Cada um recebe o convite e entra com e-mail e senha. Quem já usa o OPoint em outra arena entra com o mesmo login.</p>
+</div>
+<div style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px; border-top: 3px solid #0B2A3C; padding-top: 24px">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 64px; line-height: 1">03</span>
+<h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px">Deixe o OPoint conferir</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #2C4A5A">O professor faz a chamada, os check-ins chegam sozinhos e o OPoint avisa no WhatsApp quem precisa de check-in ou está com a mensalidade atrasada.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="visoes" style="background: #FFFFFF; padding: 112px 24px">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 760px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #4F6B7A">Para quem</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 56px); line-height: 1.02; letter-spacing: -1.5px">Um app, três visões. Cada um vê o que precisa.</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<sc-for list="{{views}}" as="v" hint-placeholder-count="3">
+<article style="flex: 1 1 320px; background: {{v.bg}}; color: {{v.fg}}; border-radius: 28px; padding: 32px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box">
+<span style="align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 6px 12px; border-radius: 999px; background: {{v.tagBg}}; color: {{v.tagFg}}">{{v.tag}}</span>
+<h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1">{{v.title}}</h3>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{v.items}}" as="it" hint-placeholder-count="4">
+<span style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px; line-height: 1.45">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{v.check}}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 18px; margin-top: 2px"><path d="M20 6 9 17l-5-5"></path></svg>
+{{it}}</span>
+</sc-for>
+</div>
+</article>
+</sc-for>
+</div>
+<div style="display: flex; gap: 14px; align-items: center; background: #F6F1E7; border-radius: 20px; padding: 18px 22px; flex-wrap: wrap">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"></path></svg>
+<span style="flex: 1 1 300px; font-size: 16px; line-height: 1.5"><strong>Várias arenas, um login.</strong> O mesmo aluno ou professor pode estar em mais de uma arena e troca entre elas pelo topo do app. Pode até ser aluno numa e professor em outra.</span>
+</div>
+</div>
+</section>
+
+<section id="planos" style="background: #F6F1E7; padding: 112px 24px">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 720px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #4F6B7A">Planos</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 56px); line-height: 1.02; letter-spacing: -1.5px">Comece pequeno. Cresça junto com a sua turma.</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<div style="flex: 1 1 320px; background: #FFFFFF; border: 2px solid #E2D8C4; border-radius: 28px; padding: 36px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+<h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px">Professor</h3>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px">[SEU PREÇO]<span style="font-size: 16px; font-weight: 500">/mês</span></div>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #2C4A5A">Para quem dá aula sozinho e quer organizar alunos e horários.</p>
+<a href="#comecar" style="margin-top: auto; text-align: center; text-decoration: none; border: 2px solid #0B2A3C; font-weight: 700; padding: 14px; border-radius: 999px">Começar</a>
+</div>
+<div style="flex: 1 1 320px; background: #0B2A3C; color: #F6F1E7; border-radius: 28px; padding: 36px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px">
+<h3 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px">Arena</h3>
+<span style="font-size: 12px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 6px 12px; border-radius: 999px">Mais escolhido</span>
+</div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px">[SEU PREÇO]<span style="font-size: 16px; font-weight: 500">/mês</span></div>
+<p style="margin: 0; font-size: 16px; line-height: 1.55; color: #C9D6DD">Várias quadras e professores, conferência de check-ins Wellhub (TotalPass em breve), cobrança automática no WhatsApp e caixa do dia.</p>
+<a href="#comecar" style="margin-top: auto; text-align: center; text-decoration: none; background: {{accent}}; color: #0B2A3C; font-weight: 700; padding: 16px; border-radius: 999px">Começar</a>
+</div>
+</div>
+</div>
+</section>
+
+<section id="duvidas" style="max-width: 900px; margin: 0 auto; padding: 112px 24px 0; display: flex; flex-direction: column; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<span style="font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #4F6B7A">Dúvidas</span>
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 56px); line-height: 1.02; letter-spacing: -1.5px">Perguntas frequentes</h2>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{faq}}" as="q" hint-placeholder-count="5">
+<div style="background: #FFFFFF; border-radius: 20px; overflow: hidden">
+<button type="button" onClick="{{q.toggle}}" style="width: 100%; font-family: inherit; text-align: left; background: none; border: none; color: #0B2A3C; padding: 20px 22px; min-height: 64px; display: flex; justify-content: space-between; align-items: center; gap: 16px; cursor: pointer; font-size: 17px; font-weight: 700">
+<span>{{q.q}}</span>
+<span style="flex: 0 0 32px; height: 32px; border-radius: 50%; background: {{q.iconBg}}; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1">{{q.sign}}</span>
+</button>
+<sc-if value="{{q.open}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; padding: 0 22px 22px; font-size: 16px; line-height: 1.6; color: #2C4A5A">{{q.a}}</p>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section id="comecar" style="max-width: 1200px; margin: 0 auto; padding: 112px 24px">
+<div style="background: {{accent}}; border-radius: 36px; padding: 64px 40px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: space-between">
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: clamp(36px, 4.5vw, 60px); line-height: 1; letter-spacing: -1.5px">Bora pro ponto?</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; max-width: 460px">Deixe seu WhatsApp e a gente libera seu acesso ao OPoint.</p>
+</div>
+<form style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 12px">
+<label for="nome" style="font-size: 14px; font-weight: 700">Seu nome</label>
+<input id="nome" type="text" placeholder="Como podemos te chamar?" style="font-family: inherit; font-size: 16px; padding: 16px 18px; border-radius: 16px; border: 2px solid #0B2A3C; background: #F6F1E7; color: #0B2A3C">
+<label for="whats" style="font-size: 14px; font-weight: 700">WhatsApp</label>
+<input id="whats" type="tel" placeholder="(31) 9 0000-0000" style="font-family: inherit; font-size: 16px; padding: 16px 18px; border-radius: 16px; border: 2px solid #0B2A3C; background: #F6F1E7; color: #0B2A3C">
+<button type="button" style="margin-top: 8px; font-family: inherit; font-size: 17px; font-weight: 700; padding: 18px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">Quero meu acesso</button>
+</form>
+</div>
+</section>
+
+<footer style="background: #0B2A3C; color: #C9D6DD; padding: 48px 24px">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: center">
+<span style="display: inline-flex; align-items: center; gap: 1px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.03em; line-height: 1; color: #F6F1E7"><svg width="30" height="30" viewBox="0 0 48 48" role="img" aria-label="O" style="flex: 0 0 30px; display: block"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#F6F1E7" stroke-width="7"></circle><circle cx="34" cy="34" r="10" fill="{{accent}}" stroke="#0B2A3C" stroke-width="3.5"></circle><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#F6F1E7" stroke-width="2.2" stroke-linecap="round"></path></svg><span>Point</span></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 16px; color: {{accent}}">Sua arena no ponto.</span>
+<div style="display: flex; gap: 24px; flex-wrap: wrap; font-size: 14px">
+<a href="#" style="color: #C9D6DD; text-decoration: none">Instagram</a>
+<a href="#" style="color: #C9D6DD; text-decoration: none">Contato</a>
+<a href="#" style="color: #C9D6DD; text-decoration: none">Termos de uso</a>
+<a href="#" style="color: #C9D6DD; text-decoration: none">Privacidade</a>
+</div>
+<span style="font-size: 14px">© 2026 OPoint</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":1440,"height":7000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const full = { tagBg: '#0B2A3C', tagFg: '#F6F1E7' };
+    const open = { tagBg: accent, tagFg: '#0B2A3C' };
+    const st = this.state || {};
+    const dayList = [
+      { id: 'seg', wd: 'Seg', n: '5', full: 'segunda, 5/10', times: ['07:00', '08:00', '18:00', '19:00', '20:00', '21:00'], lotado: ['08:00', '19:00'] },
+      { id: 'ter', wd: 'Ter', n: '6', full: 'terça, 6/10', times: ['06:30', '07:30', '17:00', '18:00', '19:30', '20:30'], lotado: ['18:00'] },
+      { id: 'qua', wd: 'Qua', n: '7', full: 'quarta, 7/10', times: ['07:00', '08:00', '18:00', '19:00', '20:00', '21:00'], lotado: ['07:00', '20:00', '21:00'] },
+      { id: 'qui', wd: 'Qui', n: '8', full: 'quinta, 8/10', times: ['06:30', '07:30', '17:00', '18:00', '19:30', '20:30'], lotado: [] },
+      { id: 'sab', wd: 'Sáb', n: '10', full: 'sábado, 10/10', times: ['08:00', '09:00', '10:00', '11:00', '15:00', '16:00'], lotado: ['09:00', '10:00'] }
+    ];
+    const dayId = st.day || 'seg';
+    const day = dayList.find((x) => x.id === dayId) || dayList[0];
+    const slot = st.slot && day.times.indexOf(st.slot) > -1 && day.lotado.indexOf(st.slot) === -1 ? st.slot : null;
+    const openFaq = st.faq === undefined ? 0 : st.faq;
+    const faqDefs = [
+      ['O aluno precisa fazer o check-in em cada aula?', 'Não. O check-in no Wellhub ou no TotalPass pode ser feito em qualquer dia. O que importa é que, no fim do mês, a quantidade de check-ins seja igual à quantidade de aulas confirmadas pelo professor. O OPoint mostra esse saldo para o aluno, o professor e a arena.'],
+      ['Como o OPoint sabe que o aluno fez check-in?', 'O app do benefício avisa o OPoint automaticamente a cada check-in feito na sua arena. Não precisa digitar nada nem conferir planilha.'],
+      ['Quem confirma a presença na aula?', 'O professor, pelo celular, na hora da chamada. Ele também vê quais alunos de benefício estão com check-in pendente.'],
+      ['Como alunos e professores entram no app?', 'A arena envia um convite. A pessoa entra com e-mail e senha e, se já usa o OPoint em outra arena, só vincula a nova arena à mesma conta.'],
+      ['O OPoint funciona com o TotalPass?', 'A integração com o TotalPass está chegando. Hoje o OPoint já recebe e confere os check-ins do Wellhub.']
+    ];
+    return {
+      accent: accent,
+      faq: faqDefs.map((f, i) => ({ q: f[0], a: f[1], open: i === openFaq, sign: i === openFaq ? '−' : '+', iconBg: i === openFaq ? accent : '#F6F1E7', toggle: () => this.setState({ faq: i === openFaq ? -1 : i }) })),
+      concSteps: [
+        { n: '1', title: 'O professor faz a chamada', text: 'Cada presença confirmada vira uma aula no mês do aluno.' },
+        { n: '2', title: 'O aluno faz check-in no app do benefício', text: 'Em qualquer dia. O check-in chega sozinho no OPoint e entra na conta.' },
+        { n: '3', title: 'O OPoint confere o saldo', text: 'Aulas de um lado, check-ins do outro. Faltou check-in? Aluno e professor são avisados antes do mês fechar.' }
+      ],
+      concRows: [
+        ['Camila Duarte', 'Wellhub', 6, 6], ['Rodrigo Pires', 'Wellhub', 6, 4], ['Fernanda Lopes', 'Wellhub', 8, 10], ['Diego Castro', 'TotalPass · em breve', 5, 5], ['Bruno Teixeira', 'Wellhub', 4, 3]
+      ].map((r) => { const sd = r[3] - r[2]; return { name: r[0], app: r[1], aulas: r[2], checks: r[3], label: sd < 0 ? 'Falta' + (sd < -1 ? 'm ' : ' ') + (-sd) : (sd === 0 ? 'Em dia' : '+' + sd + ' adiantados'), bg: sd < 0 ? '#F3D9CC' : (sd === 0 ? accent : '#E2ECF0'), fg: sd < 0 ? '#7A2E10' : '#0B2A3C' }; }),
+      views: [
+        { tag: 'Aluno', title: 'Reserva, check-in e saldo do mês na palma da mão', bg: '#F6F1E7', fg: '#0B2A3C', tagBg: '#0B2A3C', tagFg: '#F6F1E7', check: '#0B2A3C', items: ['Reserva aulas com vaga e entra na fila de espera das lotadas', 'Vê quantas aulas fez e quantos check-ins faltam no mês', 'Recebe lembrete para não esquecer o check-in', 'Agenda a aula experimental sem precisar ligar'] },
+        { tag: 'Professor', title: 'Chamada no celular e turma sempre avisada', bg: '#0B2A3C', fg: '#F6F1E7', tagBg: accent, tagFg: '#0B2A3C', check: accent, items: ['Agenda do dia em todas as arenas onde dá aula', 'Chamada com um toque por aluno', 'Alerta de quem está com check-in pendente', 'Confirma ou recusa pedidos de aula experimental'] },
+        { tag: 'Arena', title: 'Quadras, financeiro e benefícios sob controle', bg: accent, fg: '#0B2A3C', tagBg: '#0B2A3C', tagFg: accent, check: '#0B2A3C', items: ['Agenda por quadra com aulas, locações e manutenção', 'Conferência de check-ins com fechamento mensal', 'Cobrança com régua automática no WhatsApp e caixa do dia', 'Relatórios de ocupação, receita e professores'] }
+      ],
+      days: dayList.map((x) => ({
+        wd: x.wd, n: x.n,
+        bg: x.id === dayId ? '#0B2A3C' : '#FFFFFF',
+        fg: x.id === dayId ? '#F6F1E7' : '#0B2A3C',
+        pick: () => this.setState({ day: x.id, slot: null })
+      })),
+      slots: day.times.map((t) => {
+        const off = day.lotado.indexOf(t) > -1;
+        const sel = t === slot;
+        return {
+          t: t, off: off,
+          bg: sel ? accent : (off ? '#EDE6D8' : '#FFFFFF'),
+          fg: off ? '#8A8272' : '#0B2A3C',
+          border: sel ? '#0B2A3C' : (off ? '#EDE6D8' : '#D8CDB6'),
+          deco: off ? 'line-through' : 'none',
+          pick: () => { if (!off) this.setState({ slot: t }); }
+        };
+      }),
+      hasSlot: !!slot,
+      summary: slot ? 'Aula experimental: ' + day.full + ' às ' + slot + ', Quadra 1 · Prof. Ana' : '',
+      ctaBg: slot ? '#0B2A3C' : '#C9BFA9',
+      ctaFg: slot ? '#F6F1E7' : '#5C5547',
+      noSlot: !slot,
+      showPick: (st.step || 'pick') === 'pick' || !slot,
+      showForm: st.step === 'form' && !!slot,
+      showDone: st.step === 'done' && !!slot,
+      toForm: () => { if (slot) this.setState({ step: 'form' }); },
+      back: () => this.setState({ step: 'pick' }),
+      nome: st.nome || '',
+      whats: st.whats || '',
+      firstName: (st.nome || '').trim().split(' ')[0],
+      setNome: (e) => this.setState({ nome: e.target.value }),
+      setWhats: (e) => this.setState({ whats: e.target.value }),
+      noData: !((st.nome || '').trim() && (st.whats || '').trim()),
+      bookBg: (st.nome || '').trim() && (st.whats || '').trim() ? accent : '#C9BFA9',
+      bookFg: (st.nome || '').trim() && (st.whats || '').trim() ? '#0B2A3C' : '#5C5547',
+      book: () => { if ((this.state.nome || '').trim() && (this.state.whats || '').trim()) this.setState({ step: 'done' }); },
+      reset: () => this.setState({ step: 'pick', slot: null, nome: '', whats: '' }),
+      classes: [
+        Object.assign({ time: '07:00', dur: '60 min', name: 'Beach tennis · Iniciante', coach: 'Quadra 1 · Prof. Ana', spots: '2 vagas' }, open),
+        Object.assign({ time: '08:00', dur: '60 min', name: 'Vôlei de praia', coach: 'Quadra 2 · Prof. Rafa', spots: 'Lotada' }, full),
+        Object.assign({ time: '18:30', dur: '90 min', name: 'Futevôlei · Intermediário', coach: 'Quadra 3 · Prof. Léo', spots: '4 vagas' }, open),
+        Object.assign({ time: '20:00', dur: '60 min', name: 'Beach tennis · Avançado', coach: 'Quadra 1 · Prof. Ana', spots: 'Lotada' }, full)
+      ],
+      features: [
+        { title: 'Agenda por quadra', text: 'Aulas, locações avulsas e manutenção numa grade só, dia a dia, com vagas e lotação de cada turma.', bg: accent, icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
+        { title: 'Chamada pelo professor', text: 'O professor confirma a presença no celular durante a aula. É ela que conta as aulas do mês de cada aluno.', bg: '#E9DFCB', icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17 11l2 2 4-4' },
+        { title: 'Check-ins conferidos', text: 'Os check-ins do Wellhub chegam sozinhos e o OPoint compara com as aulas. Ninguém fecha o mês devendo check-in.', bg: accent, icon: 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9' },
+        { title: 'Cobrança no WhatsApp', text: 'Régua automática antes e depois do vencimento, com link de pagamento Pix e baixa em um toque.', bg: '#E9DFCB', icon: 'M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z' },
+        { title: 'Caixa do dia', text: 'Entradas e saídas por forma de pagamento e fechamento com conferência do dinheiro da gaveta.', bg: '#E9DFCB', icon: 'M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5' },
+        { title: 'Convites e várias arenas', text: 'Alunos e professores entram por convite com e-mail e senha, e usam o mesmo login em todas as arenas.', bg: '#E9DFCB', icon: 'M3 11l9-8 9 8M5 10v10h14V10' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Alunos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; width: 100%; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<aside style="flex: 0 0 240px; background: #0B2A3C; color: #C9D6DD; padding: 24px 16px; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 10px 24px">
+<span style="display: inline-flex; align-items: center; gap: 1px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 25px; letter-spacing: -0.03em; line-height: 1; color: #F6F1E7"><svg width="30" height="30" viewBox="0 0 48 48" role="img" aria-label="O" style="flex: 0 0 30px; display: block"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#F6F1E7" stroke-width="7"></circle><circle cx="34" cy="34" r="10" fill="{{accent}}" stroke="#0B2A3C" stroke-width="3.5"></circle><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#F6F1E7" stroke-width="2.2" stroke-linecap="round"></path></svg><span>Point</span></span>
+</div>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="10">
+<a href="{{n.href}}" style="display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 20px; border-radius: 12px; text-decoration: none; font-size: 15px; font-weight: 500; background: {{n.bg}}; color: {{n.fg}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"></path></svg>
+<span style="flex-grow: 1">{{n.label}}</span>
+<sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 12px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 2px 8px; border-radius: 999px">{{n.badge}}</span>
+</sc-if>
+</a>
+</sc-for>
+<div style="margin-top: auto; padding: 16px 12px 0; border-top: 1px solid #23465A; display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: {{accent}}; color: #0B2A3C; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px">AS</span>
+<div>
+<div style="font-size: 14px; font-weight: 700; color: #F6F1E7">Arena Sol</div>
+<div style="font-size: 12px">4 quadras</div>
+</div>
+</div>
+</aside>
+
+<main style="flex: 1 1 600px; padding: 32px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+<div>
+<div style="font-size: 14px; color: #4F6B7A">Cadastros · {{total}} alunos</div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -1px">Alunos</h1>
+</div>
+<button type="button" onClick="{{openForm}}" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 20px; min-height: 44px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">+ Convidar aluno</button>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section style="flex: 2 1 560px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+<button type="button" onClick="{{f.pick}}" style="font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 14px; min-height: 40px; border-radius: 999px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; cursor: pointer">{{f.label}}</button>
+</sc-for>
+</div>
+<label for="al-busca" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Buscar aluno</label>
+<input id="al-busca" type="search" value="{{q}}" onChange="{{setQ}}" placeholder="Buscar por nome" style="font-family: inherit; font-size: 15px; padding: 10px 16px; border-radius: 999px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF; flex: 0 1 240px">
+</div>
+<div style="overflow-x: auto">
+<div style="min-width: 680px">
+<div style="display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; font-size: 12px; font-weight: 700; color: #4F6B7A; text-transform: uppercase; letter-spacing: 1px; padding: 8px 4px">
+<span>Aluno</span><span>Turmas</span><span>Plano</span><span>Pagamento</span><span>Acesso ao app</span>
+</div>
+<sc-for list="{{rows}}" as="a" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 4px; border-top: 1px solid #EDE6D8; font-size: 14px">
+<div style="display: flex; align-items: center; gap: 10px; min-width: 0">
+<span style="flex: 0 0 36px; height: 36px; border-radius: 50%; background: #E9DFCB; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700">{{a.ini}}</span>
+<div style="min-width: 0">
+<div style="font-weight: 700; font-size: 15px">{{a.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{a.phone}}</div>
+<sc-if value="{{a.multi}}" hint-placeholder-val="{{ false }}">
+<div style="font-size: 12px; font-weight: 700; color: #3F6E86">Também em {{a.others}}</div>
+</sc-if>
+</div>
+</div>
+<span>{{a.classes}}</span>
+<span style="justify-self: start; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: {{a.planBg}}; color: {{a.planFg}}">{{a.plan}}</span>
+<span style="justify-self: start; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: {{a.payBg}}; color: {{a.payFg}}">{{a.pay}}</span>
+<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px">
+<span style="font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: {{a.accBg}}; color: {{a.accFg}}">{{a.accLabel}}</span>
+<sc-if value="{{a.canResend}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{a.resend}}" style="font-family: inherit; font-size: 12px; font-weight: 700; background: none; border: none; padding: 4px 0; color: #0B2A3C; text-decoration: underline; cursor: pointer; min-height: 32px">{{a.resendLabel}}</button>
+</sc-if>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 32px 4px; text-align: center; color: #4F6B7A; font-size: 15px; border-top: 1px solid #EDE6D8">Nenhum aluno encontrado.</div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+<aside style="flex: 1 1 340px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; border: 2px solid #0B2A3C">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px">Convidar aluno</h2>
+<button type="button" onClick="{{closeForm}}" aria-label="Fechar" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #F6F1E7; color: #0B2A3C; cursor: pointer; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+</button>
+</div>
+<p style="margin: -4px 0 0; font-size: 14px; line-height: 1.5; color: #4F6B7A">O aluno recebe um link para entrar no OPoint com e-mail e senha. Se o e-mail já tem conta em outra arena, ele usa o mesmo login e passa a ver a Arena Sol também.</p>
+<label for="al-email" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">E-mail (login do aluno)</label>
+<input id="al-email" type="email" value="{{fEmail}}" onChange="{{setEmail}}" placeholder="aluno@email.com" style="font-family: inherit; font-size: 16px; padding: 14px 16px; border-radius: 14px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF">
+<label for="al-nome" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">Nome completo</label>
+<input id="al-nome" type="text" value="{{fName}}" onChange="{{setName}}" placeholder="Nome do aluno" style="font-family: inherit; font-size: 16px; padding: 14px 16px; border-radius: 14px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF">
+<label for="al-whats" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">WhatsApp</label>
+<input id="al-whats" type="tel" value="{{fPhone}}" onChange="{{setPhone}}" placeholder="(31) 9 0000-0000" style="font-family: inherit; font-size: 16px; padding: 14px 16px; border-radius: 14px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF">
+<sc-if value="{{foundOther}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; gap: 10px; align-items: flex-start; background: #E2ECF0; border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.45">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 20px"><path d="M12 16v-4M12 8h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"></path></svg>
+<span>Este e-mail já tem conta no OPoint (Beach Club BH). O aluno entra com a senha que já usa e a Arena Sol é vinculada à mesma conta.</span>
+</div>
+</sc-if>
+<span style="font-size: 14px; font-weight: 700">Enviar convite por</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{channelOpts}}" as="o" hint-placeholder-count="2">
+<button type="button" onClick="{{o.toggle}}" style="font-family: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 14px; border: 2px solid {{o.border}}; background: {{o.bg}}; color: #0B2A3C; cursor: pointer">{{o.label}}</button>
+</sc-for>
+</div>
+<span style="font-size: 14px; font-weight: 700">Plano</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{planOpts}}" as="o" hint-placeholder-count="4">
+<button type="button" onClick="{{o.pick}}" style="font-family: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 14px; border: 2px solid {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; cursor: pointer">{{o.label}}</button>
+</sc-for>
+</div>
+<span style="font-size: 14px; font-weight: 700">Turmas</span>
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{classOpts}}" as="o" hint-placeholder-count="5">
+<button type="button" onClick="{{o.toggle}}" style="font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 12px; min-height: 40px; border-radius: 999px; border: 2px solid {{o.border}}; background: {{o.bg}}; color: #0B2A3C; cursor: pointer">{{o.label}}</button>
+</sc-for>
+</div>
+<label for="al-obs" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">Observações</label>
+<textarea id="al-obs" rows="3" placeholder="Nível, lesões, preferências de horário…" style="font-family: inherit; font-size: 15px; padding: 12px 16px; border-radius: 14px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF; resize: vertical"></textarea>
+<sc-if value="{{showError}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 13px; font-weight: 700; color: #A3401A">Informe o nome e um e-mail válido do aluno.</span>
+</sc-if>
+<button type="button" onClick="{{save}}" style="font-family: inherit; font-size: 16px; font-weight: 700; padding: 16px; border-radius: 999px; border: none; background: {{accent}}; color: #0B2A3C; cursor: pointer">Enviar convite</button>
+</aside>
+</sc-if>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const filter = st.filter || 'Todos';
+    const q = (st.q || '').toLowerCase();
+    const planStyle = { 'Mensal': ['#0B2A3C', '#F6F1E7'], 'Wellhub': ['#3F6E86', '#F6F1E7'], 'Pacote': ['#E9DFCB', '#0B2A3C'], 'Avulso': ['#F6F1E7', '#0B2A3C'] };
+    const payStyle = { 'Em dia': [accent, '#0B2A3C'], 'Vencida': ['#F3D9CC', '#7A2E10'], '—': ['transparent', '#4F6B7A'] };
+    const base = [
+      { name: 'Mariana Costa', phone: '(31) 9 8812-4410', classes: 'Beach tennis manhã', plan: 'Mensal', pay: 'Em dia', acc: 'ativo', arenas: ['Arena Mar Azul'] },
+      { name: 'Felipe Rocha', phone: '(31) 9 9921-0388', classes: 'Futevôlei iniciante', plan: 'Mensal', pay: 'Em dia', acc: 'ativo', arenas: [] },
+      { name: 'Thiago Alves', phone: '(31) 9 9744-1203', classes: 'Vôlei misto', plan: 'Mensal', pay: 'Vencida', acc: 'ativo', arenas: [] },
+      { name: 'Camila Duarte', phone: '(31) 9 8650-7791', classes: 'Beach tennis técnica', plan: 'Wellhub', pay: '—', acc: 'ativo', arenas: ['Beach Club BH', 'Arena Mar Azul'] },
+      { name: 'Juliana Prado', phone: '(31) 9 9133-5520', classes: 'Beach tennis avançado', plan: 'Pacote', pay: 'Em dia', acc: 'enviado', arenas: [] },
+      { name: 'Rodrigo Pires', phone: '(31) 9 8477-2264', classes: 'Vôlei de praia', plan: 'Wellhub', pay: '—', acc: 'ativo', arenas: ['Beach Club BH'] },
+      { name: 'Carla Nunes', phone: '(31) 9 9310-8842', classes: 'Beach tennis manhã', plan: 'Mensal', pay: 'Vencida', acc: 'expirado', arenas: [] },
+      { name: 'Gustavo Reis', phone: '(31) 9 8203-6617', classes: 'Aula avulsa', plan: 'Avulso', pay: 'Em dia', acc: 'enviado', arenas: [] }
+    ];
+    const resent = st.resent || {};
+    const accStyle = { ativo: ['Ativo no app', '#E2ECF0', '#0B2A3C'], enviado: ['Convite enviado', '#FFF1C2', '#5C4300'], expirado: ['Convite expirado', '#F3D9CC', '#7A2E10'] };
+    const all = (st.added || []).concat(base);
+    const rows = all
+      .filter((a) => filter === 'Todos' || a.plan === filter || (filter === 'Em atraso' && a.pay === 'Vencida'))
+      .filter((a) => !q || a.name.toLowerCase().indexOf(q) > -1)
+      .map((a) => {
+        const p = planStyle[a.plan], y = payStyle[a.pay];
+        const parts = a.name.trim().split(' ');
+        const accKey = resent[a.name] ? 'enviado' : a.acc;
+        const ac = accStyle[accKey];
+        const others = a.arenas || [];
+        return Object.assign({}, a, { ini: (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase(), planBg: p[0], planFg: p[1], payBg: y[0], payFg: y[1],
+          accLabel: ac[0], accBg: ac[1], accFg: ac[2],
+          canResend: a.acc !== 'ativo',
+          resendLabel: resent[a.name] ? 'Reenviado agora' : 'Reenviar convite',
+          resend: () => { const cur = Object.assign({}, (this.state || {}).resent || {}); cur[a.name] = true; this.setState({ resent: cur }); },
+          multi: others.length > 0,
+          others: others.join(' e ') });
+      });
+
+    const fPlan = st.fPlan || 'Mensal';
+    const fClasses = st.fClasses || [];
+    const classList = ['Beach tennis manhã', 'Beach tennis técnica', 'Beach tennis avançado', 'Vôlei de praia', 'Vôlei misto', 'Futevôlei iniciante'];
+
+    const navDefs = [
+      ['Início', 'Dashboard.dc.html', 'M3 11l9-8 9 8M5 10v10h14V10'],
+      ['Agenda', 'Agenda.dc.html', 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'],
+      ['Check-ins', 'Checkins.dc.html', 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9', 2],
+      ['Aulas experimentais', '#', 'M12 5v14M5 12h14', 4],
+      ['Turmas', 'Turmas.dc.html', 'M4 6h16M4 12h16M4 18h10'],
+      ['Quadras', 'Quadras.dc.html', 'M3 4h18v16H3zM12 4v16M3 12h18'],
+      ['Alunos', 'Alunos.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
+      ['Professores', 'Professores.dc.html', 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'],
+      ['Caixa', 'Caixa.dc.html', 'M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5'],
+      ['Cobranças', 'Cobrancas.dc.html', 'M3 6h18v12H3zM3 10h18M7 15h3', 4],
+      ['Relatórios', 'Relatorios.dc.html', 'M4 20V10M10 20V4M16 20v-7M22 20H2']
+    ];
+    const active = 'Alunos';
+    const nav = navDefs.map((n) => ({ label: n[0], href: n[1], icon: n[2], hasBadge: !!n[3], badge: n[3] || '', bg: n[0] === active ? '#123F59' : 'transparent', fg: n[0] === active ? '#F6F1E7' : '#C9D6DD' }));
+
+    return {
+      accent: accent,
+      nav: nav,
+      total: 182 + (st.added || []).length,
+      filters: ['Todos', 'Mensal', 'Wellhub', 'Em atraso'].map((f) => ({ label: f, bg: f === filter ? '#0B2A3C' : '#FFFFFF', fg: f === filter ? '#F6F1E7' : '#0B2A3C', border: f === filter ? '#0B2A3C' : '#D8CDB6', pick: () => this.setState({ filter: f }) })),
+      q: st.q || '',
+      setQ: (e) => this.setState({ q: e.target.value }),
+      rows: rows,
+      empty: rows.length === 0,
+      showForm: st.showForm !== false,
+      openForm: () => this.setState({ showForm: true }),
+      closeForm: () => this.setState({ showForm: false, err: false }),
+      fName: st.fName || '',
+      setName: (e) => this.setState({ fName: e.target.value }),
+      fPhone: st.fPhone || '',
+      setPhone: (e) => this.setState({ fPhone: e.target.value }),
+      fEmail: st.fEmail || '',
+      setEmail: (e) => this.setState({ fEmail: e.target.value }),
+      foundOther: /\S+@\S+\.\S+/.test(st.fEmail || ''),
+      channelOpts: [['wpp', 'WhatsApp'], ['mail', 'E-mail']].map((c) => {
+        const ch = st.channels || { wpp: true, mail: false };
+        const on = !!ch[c[0]];
+        return { label: c[1], bg: on ? accent : '#FFFFFF', border: on ? '#0B2A3C' : '#D8CDB6',
+          toggle: () => { const cur = Object.assign({}, (this.state || {}).channels || { wpp: true, mail: false }); cur[c[0]] = !on; this.setState({ channels: cur }); } };
+      }),
+      planOpts: ['Mensal', 'Wellhub', 'Pacote', 'Avulso'].map((p) => ({ label: p, bg: p === fPlan ? '#0B2A3C' : '#FFFFFF', fg: p === fPlan ? '#F6F1E7' : '#0B2A3C', border: p === fPlan ? '#0B2A3C' : '#D8CDB6', pick: () => this.setState({ fPlan: p }) })),
+      classOpts: classList.map((c) => {
+        const on = fClasses.indexOf(c) > -1;
+        return { label: c, bg: on ? accent : '#FFFFFF', border: on ? '#0B2A3C' : '#D8CDB6',
+          toggle: () => { const cur = (this.state || {}).fClasses || []; this.setState({ fClasses: on ? cur.filter((x) => x !== c) : cur.concat([c]) }); } };
+      }),
+      showError: !!st.err,
+      save: () => {
+        const n = (st.fName || '').trim(), p = (st.fPhone || '').trim(), em = (st.fEmail || '').trim();
+        if (!n || !/\S+@\S+\.\S+/.test(em)) { this.setState({ err: true }); return; }
+        const a = { name: n, phone: p || em, classes: fClasses.length ? fClasses.join(', ') : 'Sem turma', plan: fPlan, pay: fPlan === 'Wellhub' ? '—' : 'Em dia', acc: 'enviado', arenas: ['Beach Club BH'] };
+        this.setState({ added: [a].concat(st.added || []), fName: '', fPhone: '', fEmail: '', fClasses: [], err: false, filter: 'Todos', q: '' });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

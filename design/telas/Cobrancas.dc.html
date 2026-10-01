@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cobranças</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; width: 100%; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<aside style="flex: 0 0 240px; background: #0B2A3C; color: #C9D6DD; padding: 24px 16px; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 10px 24px">
+<span style="display: inline-flex; align-items: center; gap: 1px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 25px; letter-spacing: -0.03em; line-height: 1; color: #F6F1E7"><svg width="30" height="30" viewBox="0 0 48 48" role="img" aria-label="O" style="flex: 0 0 30px; display: block"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#F6F1E7" stroke-width="7"></circle><circle cx="34" cy="34" r="10" fill="{{accent}}" stroke="#0B2A3C" stroke-width="3.5"></circle><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#F6F1E7" stroke-width="2.2" stroke-linecap="round"></path></svg><span>Point</span></span>
+</div>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="10">
+<a href="{{n.href}}" style="display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 20px; border-radius: 12px; text-decoration: none; font-size: 15px; font-weight: 500; background: {{n.bg}}; color: {{n.fg}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"></path></svg>
+<span style="flex-grow: 1">{{n.label}}</span>
+<sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 12px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 2px 8px; border-radius: 999px">{{n.badge}}</span>
+</sc-if>
+</a>
+</sc-for>
+<div style="margin-top: auto; padding: 16px 12px 0; border-top: 1px solid #23465A; display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: {{accent}}; color: #0B2A3C; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px">AS</span>
+<div>
+<div style="font-size: 14px; font-weight: 700; color: #F6F1E7">Arena Sol</div>
+<div style="font-size: 12px">4 quadras</div>
+</div>
+</div>
+</aside>
+
+<main style="flex: 1 1 600px; padding: 32px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+<div>
+<div style="font-size: 14px; color: #4F6B7A">Financeiro · Outubro de 2026</div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -1px">Cobranças</h1>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" onClick="{{remindAll}}" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: 2px solid #0B2A3C; background: none; color: #0B2A3C; cursor: pointer">{{remindAllLabel}}</button>
+<button type="button" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">+ Nova cobrança</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+<div style="flex: 1 1 200px; background: {{k.bg}}; color: {{k.fg}}; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">{{k.label}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 1">{{k.value}}</span>
+<span style="font-size: 13px">{{k.note}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section style="flex: 2 1 600px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+<div style="display: flex; gap: 4px; background: #F6F1E7; padding: 4px; border-radius: 999px; flex-wrap: wrap">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+<button type="button" onClick="{{t.pick}}" style="font-family: inherit; font-size: 14px; font-weight: 700; padding: 10px 14px; min-height: 40px; border-radius: 999px; border: none; background: {{t.bg}}; color: {{t.fg}}; cursor: pointer">{{t.label}} <span style="opacity: 0.7">{{t.count}}</span></button>
+</sc-for>
+</div>
+<label for="cb-busca" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Buscar aluno</label>
+<input id="cb-busca" type="search" value="{{q}}" onChange="{{setQ}}" placeholder="Buscar aluno" style="font-family: inherit; font-size: 15px; padding: 10px 16px; min-height: 24px; border-radius: 999px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF; flex: 0 1 240px">
+</div>
+<div style="overflow-x: auto">
+<div style="min-width: 720px">
+<div style="display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.9fr); gap: 12px; font-size: 12px; font-weight: 700; color: #4F6B7A; text-transform: uppercase; letter-spacing: 1px; padding: 8px 4px">
+<span>Aluno</span><span>Valor</span><span>Vencimento</span><span>Situação</span><span>Ações</span>
+</div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.9fr); gap: 12px; align-items: center; padding: 12px 4px; border-top: 1px solid #EDE6D8; font-size: 14px">
+<div style="min-width: 0">
+<div style="font-weight: 700; font-size: 15px">{{r.name}}</div>
+<div style="font-size: 13px; color: #4F6B7A">{{r.plan}}</div>
+</div>
+<span style="font-weight: 700">{{r.value}}</span>
+<span>{{r.due}}</span>
+<span style="justify-self: start; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: {{r.stBg}}; color: {{r.stFg}}; white-space: nowrap">{{r.status}}</span>
+<div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center">
+<sc-if value="{{r.open}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<button type="button" onClick="{{r.remind}}" style="font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 12px; min-height: 40px; border-radius: 999px; border: 2px solid {{r.remBorder}}; background: {{r.remBg}}; color: #0B2A3C; cursor: pointer; white-space: nowrap">{{r.remLabel}}</button>
+<button type="button" onClick="{{r.pay}}" style="font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 12px; min-height: 40px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer; white-space: nowrap">Marcar paga</button>
+</div>
+</sc-if>
+<sc-if value="{{r.paid}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 13px; color: #4F6B7A">{{r.paidInfo}}</span>
+</sc-if>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 32px 4px; text-align: center; color: #4F6B7A; font-size: 15px; border-top: 1px solid #EDE6D8">Nenhuma cobrança encontrada.</div>
+</sc-if>
+</div>
+</div>
+</section>
+
+<div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 20px">
+<section style="background: #0B2A3C; color: #F6F1E7; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Régua de cobrança</h2>
+<p style="margin: 0; font-size: 14px; color: #C9D6DD">Mensagens automáticas no WhatsApp com link de pagamento Pix.</p>
+<sc-for list="{{rules}}" as="g" hint-placeholder-count="4">
+<button type="button" onClick="{{g.flip}}" style="font-family: inherit; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; min-height: 52px; border-radius: 14px; border: 1px solid #23465A; background: #123F59; color: #F6F1E7; cursor: pointer; text-align: left">
+<span>
+<span style="display: block; font-size: 15px; font-weight: 700">{{g.label}}</span>
+<span style="display: block; font-size: 12px; color: #C9D6DD">{{g.hint}}</span>
+</span>
+<span style="flex: 0 0 48px; height: 28px; border-radius: 999px; background: {{g.track}}; display: flex; align-items: center; padding: 3px; box-sizing: border-box; justify-content: {{g.align}}">
+<span style="width: 22px; height: 22px; border-radius: 50%; background: {{g.knob}}"></span>
+</span>
+</button>
+</sc-for>
+</section>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Prévia da mensagem</h2>
+<div style="background: #E7F3E0; border-radius: 18px 18px 18px 4px; padding: 14px 16px; font-size: 14px; line-height: 1.5">Oi, Thiago! Sua mensalidade de outubro da Arena Sol (R$ 280,00) venceu em 25/09. Para pagar via Pix, é só tocar no link: [LINK DE PAGAMENTO]. Qualquer dúvida, é só responder aqui.</div>
+<span style="font-size: 12px; color: #4F6B7A">Você pode editar o texto de cada etapa da régua.</span>
+</section>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const brl = (v) => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const paid = st.paid || {};
+    const reminded = st.reminded || {};
+    const tab = st.tab || 'todas';
+    const q = (st.q || '').toLowerCase();
+
+    const base = [
+      { id: 'c1', name: 'Thiago Alves', plan: 'Mensal · Vôlei misto', v: 280, due: '25/09', s: 'vencida' },
+      { id: 'c2', name: 'Carla Nunes', plan: 'Mensal · Beach tennis manhã', v: 280, due: '28/09', s: 'vencida' },
+      { id: 'c3', name: 'Pedro Martins', plan: 'Pacote 10 aulas', v: 450, due: '30/09', s: 'vencida' },
+      { id: 'c4', name: 'Mariana Costa', plan: 'Mensal · Beach tennis manhã', v: 280, due: '01/10', s: 'paga', when: 'Pago hoje via Pix' },
+      { id: 'c5', name: 'Felipe Rocha', plan: 'Mensal · Futevôlei', v: 280, due: '01/10', s: 'paga', when: 'Pago hoje no cartão' },
+      { id: 'c6', name: 'Juliana Prado', plan: 'Mensal · Beach tennis avançado', v: 320, due: '05/10', s: 'aberta' },
+      { id: 'c7', name: 'Lucas Ferreira', plan: 'Mensal · Vôlei de praia', v: 280, due: '05/10', s: 'aberta' },
+      { id: 'c8', name: 'Renata Souza', plan: 'Mensal · Beach tennis técnica', v: 280, due: '10/10', s: 'aberta' },
+      { id: 'c9', name: 'André Gomes', plan: 'Plano trimestral', v: 760, due: '10/10', s: 'aberta' },
+      { id: 'c10', name: 'Beatriz Lima', plan: 'Mensal · Futevôlei', v: 280, due: '28/09', s: 'vencida' }
+    ];
+    const all = base.map((c) => Object.assign({}, c, { s: paid[c.id] ? 'paga' : c.s, when: paid[c.id] ? 'Baixa manual agora' : c.when }));
+    const counts = { todas: all.length, aberta: all.filter((c) => c.s === 'aberta').length, vencida: all.filter((c) => c.s === 'vencida').length, paga: all.filter((c) => c.s === 'paga').length };
+    const stStyle = { aberta: ['A vencer', '#E2ECF0', '#0B2A3C'], vencida: ['Vencida', '#F3D9CC', '#7A2E10'], paga: ['Paga', accent, '#0B2A3C'] };
+
+    const rows = all
+      .filter((c) => tab === 'todas' || c.s === tab)
+      .filter((c) => !q || c.name.toLowerCase().indexOf(q) > -1)
+      .map((c) => {
+        const s = stStyle[c.s];
+        const r = !!reminded[c.id];
+        return {
+          name: c.name, plan: c.plan, value: brl(c.v), due: c.due,
+          status: s[0], stBg: s[1], stFg: s[2],
+          open: c.s !== 'paga', paid: c.s === 'paga', paidInfo: c.when || '',
+          remLabel: r ? 'Lembrete enviado' : 'Cobrar no WhatsApp',
+          remBg: r ? accent : '#FFFFFF', remBorder: r ? accent : '#D8CDB6',
+          remind: () => { const cur = Object.assign({}, (this.state || {}).reminded || {}); cur[c.id] = true; this.setState({ reminded: cur }); },
+          pay: () => { const cur = Object.assign({}, (this.state || {}).paid || {}); cur[c.id] = true; this.setState({ paid: cur }); }
+        };
+      });
+
+    const sumOf = (xs) => xs.reduce((s, c) => s + c.v, 0);
+    const total = sumOf(all), received = sumOf(all.filter((c) => c.s === 'paga')), overdue = sumOf(all.filter((c) => c.s === 'vencida'));
+    const overdueIds = all.filter((c) => c.s === 'vencida').map((c) => c.id);
+    const allReminded = overdueIds.length > 0 && overdueIds.every((id) => reminded[id]);
+
+    const rulesState = st.rules || { before: true, due: true, after: true, after7: false };
+    const ruleDefs = [['before', '3 dias antes', 'Lembrete amigável do vencimento'], ['due', 'No dia do vencimento', 'Envia o link de pagamento Pix'], ['after', '3 dias depois', 'Aviso de mensalidade em atraso'], ['after7', '7 dias depois', 'Avisa também o professor da turma']];
+    const rules = ruleDefs.map((r) => {
+      const on = !!rulesState[r[0]];
+      return { label: r[1], hint: r[2], track: on ? accent : '#23465A', knob: on ? '#0B2A3C' : '#6F8C9B', align: on ? 'flex-end' : 'flex-start',
+        flip: () => { const cur = Object.assign({}, (this.state || {}).rules || rulesState); cur[r[0]] = !on; this.setState({ rules: cur }); } };
+    });
+
+    const navDefs = [
+      ['Início', 'Dashboard.dc.html', 'M3 11l9-8 9 8M5 10v10h14V10'],
+      ['Agenda', 'Agenda.dc.html', 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'],
+      ['Check-ins', 'Checkins.dc.html', 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9', 2],
+      ['Aulas experimentais', '#', 'M12 5v14M5 12h14', 4],
+      ['Turmas', 'Turmas.dc.html', 'M4 6h16M4 12h16M4 18h10'],
+      ['Quadras', 'Quadras.dc.html', 'M3 4h18v16H3zM12 4v16M3 12h18'],
+      ['Alunos', 'Alunos.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
+      ['Professores', 'Professores.dc.html', 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'],
+      ['Caixa', 'Caixa.dc.html', 'M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5'],
+      ['Cobranças', 'Cobrancas.dc.html', 'M3 6h18v12H3zM3 10h18M7 15h3', counts.vencida],
+      ['Relatórios', 'Relatorios.dc.html', 'M4 20V10M10 20V4M16 20v-7M22 20H2']
+    ];
+    const active = 'Cobranças';
+    const nav = navDefs.map((n) => ({ label: n[0], href: n[1], icon: n[2], hasBadge: !!n[3], badge: n[3] || '', bg: n[0] === active ? '#123F59' : 'transparent', fg: n[0] === active ? '#F6F1E7' : '#C9D6DD' }));
+
+    const tabDefs = [['todas', 'Todas'], ['aberta', 'A vencer'], ['vencida', 'Vencidas'], ['paga', 'Pagas']];
+
+    return {
+      accent: accent,
+      nav: nav,
+      kpis: [
+        { label: 'A receber no mês', value: brl(total), note: all.length + ' cobranças', bg: '#FFFFFF', fg: '#0B2A3C' },
+        { label: 'Recebido', value: brl(received), note: Math.round((received / total) * 100) + '% do total', bg: '#0B2A3C', fg: '#F6F1E7' },
+        { label: 'Vencido', value: brl(overdue), note: counts.vencida + ' alunos em atraso', bg: '#F3D9CC', fg: '#7A2E10' },
+        { label: 'Inadimplência', value: Math.round((overdue / total) * 100) + '%', note: 'Meta: abaixo de 5%', bg: accent, fg: '#0B2A3C' }
+      ],
+      tabs: tabDefs.map((t) => ({ label: t[1], count: counts[t[0]], bg: t[0] === tab ? '#0B2A3C' : 'transparent', fg: t[0] === tab ? '#F6F1E7' : '#0B2A3C', pick: () => this.setState({ tab: t[0] }) })),
+      q: st.q || '',
+      setQ: (e) => this.setState({ q: e.target.value }),
+      rows: rows,
+      empty: rows.length === 0,
+      rules: rules,
+      remindAllLabel: allReminded ? 'Vencidas já cobradas' : 'Cobrar todas as vencidas',
+      remindAll: () => { const cur = Object.assign({}, (this.state || {}).reminded || {}); overdueIds.forEach((id) => { cur[id] = true; }); this.setState({ reminded: cur }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

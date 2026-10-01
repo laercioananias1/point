@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Dashboard da arena</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; width: 100%; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<aside style="flex: 0 0 240px; background: #0B2A3C; color: #C9D6DD; padding: 24px 16px; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 10px 24px">
+<span style="display: inline-flex; align-items: center; gap: 1px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 25px; letter-spacing: -0.03em; line-height: 1; color: #F6F1E7"><svg width="30" height="30" viewBox="0 0 48 48" role="img" aria-label="O" style="flex: 0 0 30px; display: block"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#F6F1E7" stroke-width="7"></circle><circle cx="34" cy="34" r="10" fill="{{accent}}" stroke="#0B2A3C" stroke-width="3.5"></circle><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#F6F1E7" stroke-width="2.2" stroke-linecap="round"></path></svg><span>Point</span></span>
+</div>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+<a href="{{n.href}}" style="display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 20px; border-radius: 12px; text-decoration: none; font-size: 15px; font-weight: 500; background: {{n.bg}}; color: {{n.fg}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"></path></svg>
+<span style="flex-grow: 1">{{n.label}}</span>
+<sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 12px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 2px 8px; border-radius: 999px">{{n.badge}}</span>
+</sc-if>
+</a>
+</sc-for>
+<div style="margin-top: auto; padding: 16px 12px 0; border-top: 1px solid #23465A; display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: {{accent}}; color: #0B2A3C; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px">AS</span>
+<div>
+<div style="font-size: 14px; font-weight: 700; color: #F6F1E7">Arena Sol</div>
+<div style="font-size: 12px">4 quadras</div>
+</div>
+</div>
+</aside>
+
+<main style="flex: 1 1 600px; padding: 32px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box; min-width: 0">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+<div>
+<div style="font-size: 14px; color: #4F6B7A">Quinta-feira, 1 de outubro</div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -1px">Bom dia, Arena Sol</h1>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: 2px solid #0B2A3C; background: none; color: #0B2A3C; cursor: pointer">Exportar</button>
+<button type="button" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">+ Nova aula</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+<div style="flex: 1 1 200px; background: {{k.bg}}; color: {{k.fg}}; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">{{k.label}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 1">{{k.value}}</span>
+<span style="font-size: 13px">{{k.note}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<section style="flex: 2 1 520px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Aulas de hoje</h2>
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+<button type="button" onClick="{{f.pick}}" style="font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 14px; min-height: 36px; border-radius: 999px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; cursor: pointer">{{f.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: 64px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1.4fr); gap: 12px; font-size: 12px; font-weight: 700; color: #4F6B7A; text-transform: uppercase; letter-spacing: 1px; padding: 0 4px">
+<span>Hora</span><span>Turma</span><span>Quadra</span><span>Ocupação</span>
+</div>
+<sc-for list="{{classes}}" as="c" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 64px minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1.4fr); gap: 12px; align-items: center; padding: 12px 4px; border-top: 1px solid #EDE6D8">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 17px">{{c.time}}</span>
+<div style="min-width: 0">
+<div style="font-weight: 700; font-size: 15px">{{c.name}}</div>
+<div style="font-size: 13px; color: #4F6B7A">{{c.coach}}</div>
+</div>
+<span style="font-size: 14px">{{c.court}}</span>
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="flex-grow: 1; height: 8px; border-radius: 999px; background: #EDE6D8; overflow: hidden">
+<div style="height: 8px; border-radius: 999px; width: {{c.pct}}; background: {{c.bar}}"></div>
+</div>
+<span style="font-size: 13px; font-weight: 700; width: 36px">{{c.count}}</span>
+</div>
+</div>
+</sc-for>
+</section>
+
+<section style="flex: 1 1 320px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Aulas experimentais</h2>
+<span style="font-size: 12px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 4px 10px; border-radius: 999px">{{pendingLabel}}</span>
+</div>
+<p style="margin: 0; font-size: 14px; color: #4F6B7A">Pedidos feitos pelo site. Confirme para avisar o aluno no WhatsApp.</p>
+<sc-for list="{{requests}}" as="r" hint-placeholder-count="4">
+<div style="border: 1px solid #EDE6D8; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; gap: 8px">
+<div>
+<div style="font-weight: 700; font-size: 15px">{{r.name}}</div>
+<div style="font-size: 13px; color: #4F6B7A">{{r.what}}</div>
+</div>
+<span style="font-size: 13px; font-weight: 700; white-space: nowrap">{{r.when}}</span>
+</div>
+<sc-if value="{{r.pending}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 8px">
+<button type="button" onClick="{{r.ok}}" style="flex: 1 1 0; font-family: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">Confirmar</button>
+<button type="button" onClick="{{r.no}}" style="flex: 1 1 0; font-family: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 999px; border: 2px solid #D8CDB6; background: none; color: #0B2A3C; cursor: pointer">Recusar</button>
+</div>
+</sc-if>
+<sc-if value="{{r.done}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<span style="font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: {{r.tagBg}}; color: {{r.tagFg}}">{{r.status}}</span>
+<button type="button" onClick="{{r.undo}}" style="font-family: inherit; font-size: 13px; font-weight: 700; background: none; border: none; color: #0B2A3C; text-decoration: underline; cursor: pointer; min-height: 44px">Desfazer</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</section>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+<section style="flex: 2 1 520px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Ocupação por horário</h2>
+<span style="font-size: 13px; color: #4F6B7A">Média das últimas 4 semanas</span>
+</div>
+<div style="display: flex; align-items: flex-end; gap: 8px; height: 200px">
+<sc-for list="{{hours}}" as="h" hint-placeholder-count="12">
+<div style="flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end">
+<span style="font-size: 11px; font-weight: 700">{{h.label}}</span>
+<div style="width: 100%; max-width: 40px; border-radius: 8px 8px 4px 4px; height: {{h.height}}; background: {{h.bg}}"></div>
+<span style="font-size: 12px; color: #4F6B7A">{{h.hour}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 18px; font-size: 13px; color: #4F6B7A; flex-wrap: wrap">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #0B2A3C"></span>Acima de 80%</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 4px; background: #9DB4C0"></span>Abaixo de 80%: espaço para turma nova</span>
+</div>
+</section>
+
+<section style="flex: 1 1 320px; background: #0B2A3C; color: #F6F1E7; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Check-ins de hoje</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #23465A">
+<span style="font-size: 15px">Mensalistas</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">34</span>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #23465A">
+<span style="font-size: 15px">Wellhub</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; color: {{accent}}">12</span>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #23465A">
+<span style="font-size: 15px; display: flex; align-items: center; gap: 8px">TotalPass <span style="font-size: 11px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 3px 8px; border-radius: 999px">em breve</span></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; color: #6F8C9B">—</span>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0">
+<span style="font-size: 15px">Aulas avulsas</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">5</span>
+</div>
+<div style="margin-top: auto; background: #123F59; border-radius: 16px; padding: 14px; display: flex; gap: 10px; align-items: center">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F6F1E7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"></path></svg>
+<span style="font-size: 13px; line-height: 1.4">38 lembretes das aulas de amanhã serão enviados às 18h</span>
+</div>
+</section>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const filter = st.filter || 'todas';
+    const decided = st.decided || {};
+
+    const allClasses = [
+      { time: '07:00', name: 'Beach tennis · Iniciante', coach: 'Prof. Ana', court: 'Quadra 1', n: 6, cap: 8, sport: 'beach' },
+      { time: '08:00', name: 'Vôlei de praia', coach: 'Prof. Rafa', court: 'Quadra 2', n: 10, cap: 10, sport: 'volei' },
+      { time: '09:00', name: 'Beach tennis · Intermediário', coach: 'Prof. Ana', court: 'Quadra 1', n: 5, cap: 8, sport: 'beach' },
+      { time: '17:00', name: 'Futevôlei · Iniciante', coach: 'Prof. Léo', court: 'Quadra 3', n: 4, cap: 8, sport: 'volei' },
+      { time: '18:30', name: 'Beach tennis · Avançado', coach: 'Prof. Bia', court: 'Quadra 4', n: 8, cap: 8, sport: 'beach' },
+      { time: '19:30', name: 'Vôlei de praia · Misto', coach: 'Prof. Rafa', court: 'Quadra 2', n: 9, cap: 12, sport: 'volei' },
+      { time: '20:30', name: 'Beach tennis · Iniciante', coach: 'Prof. Bia', court: 'Quadra 1', n: 7, cap: 8, sport: 'beach' }
+    ];
+    const classes = allClasses
+      .filter((c) => filter === 'todas' || c.sport === filter)
+      .map((c) => {
+        const p = Math.round((c.n / c.cap) * 100);
+        return Object.assign({}, c, { pct: p + '%', count: c.n + '/' + c.cap, bar: p >= 100 ? '#0B2A3C' : (p >= 75 ? '#3F6E86' : '#9DB4C0') });
+      });
+
+    const filterDefs = [ { id: 'todas', label: 'Todas' }, { id: 'beach', label: 'Beach tennis' }, { id: 'volei', label: 'Vôlei e futevôlei' } ];
+    const filters = filterDefs.map((f) => ({
+      label: f.label,
+      bg: f.id === filter ? '#0B2A3C' : '#FFFFFF',
+      fg: f.id === filter ? '#F6F1E7' : '#0B2A3C',
+      border: f.id === filter ? '#0B2A3C' : '#D8CDB6',
+      pick: () => this.setState({ filter: f.id })
+    }));
+
+    const reqDefs = [
+      { id: 'r1', name: 'Mariana Costa', what: 'Beach tennis · Iniciante · Prof. Ana', when: 'Seg 5/10 · 07:00' },
+      { id: 'r2', name: 'Felipe Rocha', what: 'Futevôlei · Iniciante · Prof. Léo', when: 'Ter 6/10 · 17:00' },
+      { id: 'r3', name: 'Juliana Prado', what: 'Beach tennis · Iniciante · Prof. Bia', when: 'Qua 7/10 · 20:30' },
+      { id: 'r4', name: 'Thiago Alves', what: 'Vôlei de praia · Misto · Prof. Rafa', when: 'Sáb 10/10 · 11:00' }
+    ];
+    const setDecision = (id, v) => {
+      const next = Object.assign({}, (this.state || {}).decided || {});
+      if (v) next[id] = v; else delete next[id];
+      this.setState({ decided: next });
+    };
+    const requests = reqDefs.map((r) => {
+      const d = decided[r.id];
+      return Object.assign({}, r, {
+        pending: !d,
+        done: !!d,
+        status: d === 'ok' ? 'Confirmada · aluno avisado' : 'Recusada',
+        tagBg: d === 'ok' ? accent : '#EDE6D8',
+        tagFg: '#0B2A3C',
+        ok: () => setDecision(r.id, 'ok'),
+        no: () => setDecision(r.id, 'no'),
+        undo: () => setDecision(r.id, null)
+      });
+    });
+    const pending = requests.filter((r) => r.pending).length;
+
+    const hourData = [ ['06h', 55], ['07h', 92], ['08h', 85], ['09h', 48], ['10h', 30], ['11h', 22], ['16h', 40], ['17h', 72], ['18h', 96], ['19h', 100], ['20h', 88], ['21h', 60] ];
+    const hours = hourData.map((h) => ({ hour: h[0], label: h[1] + '%', height: Math.max(h[1] * 1.5, 8) + 'px', bg: h[1] >= 80 ? '#0B2A3C' : '#9DB4C0' }));
+
+    const navDefs = [
+      { label: 'Início', icon: 'M3 11l9-8 9 8M5 10v10h14V10' },
+      { label: 'Agenda', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z' },
+      { label: 'Check-ins', icon: 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9', badge: 2 },
+      { label: 'Aulas experimentais', icon: 'M12 5v14M5 12h14', badge: pending },
+      { label: 'Turmas', icon: 'M4 6h16M4 12h16M4 18h10' },
+      { label: 'Quadras', icon: 'M3 4h18v16H3zM12 4v16M3 12h18' },
+      { label: 'Alunos', icon: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
+      { label: 'Professores', icon: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z' },
+      { label: 'Caixa', icon: 'M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5' },
+      { label: 'Cobranças', icon: 'M3 6h18v12H3zM3 10h18M7 15h3', badge: 4 },
+      { label: 'Relatórios', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' }
+    ];
+    const nav = navDefs.map((n, i) => ({
+      label: n.label, icon: n.icon,
+      href: ({ 'Início': 'Dashboard.dc.html', 'Agenda': 'Agenda.dc.html', 'Check-ins': 'Checkins.dc.html', 'Turmas': 'Turmas.dc.html', 'Quadras': 'Quadras.dc.html', 'Alunos': 'Alunos.dc.html', 'Professores': 'Professores.dc.html', 'Caixa': 'Caixa.dc.html', 'Cobranças': 'Cobrancas.dc.html', 'Relatórios': 'Relatorios.dc.html' })[n.label] || '#',
+      hasBadge: !!n.badge, badge: n.badge || '',
+      bg: i === 0 ? '#123F59' : 'transparent',
+      fg: i === 0 ? '#F6F1E7' : '#C9D6DD'
+    }));
+
+    const totalAlunos = allClasses.reduce((s, c) => s + c.n, 0);
+    const totalCap = allClasses.reduce((s, c) => s + c.cap, 0);
+
+    return {
+      accent: accent,
+      nav: nav,
+      filters: filters,
+      classes: classes,
+      requests: requests,
+      pendingLabel: pending === 1 ? '1 pendente' : pending + ' pendentes',
+      hours: hours,
+      kpis: [
+        { label: 'Aulas hoje', value: String(allClasses.length), note: '4 quadras em uso', bg: '#FFFFFF', fg: '#0B2A3C' },
+        { label: 'Ocupação de hoje', value: Math.round((totalAlunos / totalCap) * 100) + '%', note: totalAlunos + ' de ' + totalCap + ' vagas', bg: '#0B2A3C', fg: '#F6F1E7' },
+        { label: 'Experimentais pendentes', value: String(pending), note: pending ? 'Aguardando sua confirmação' : 'Tudo respondido', bg: accent, fg: '#0B2A3C' },
+        { label: 'Mensalidades em aberto', value: '6', note: 'Vencidas nesta semana', bg: '#FFFFFF', fg: '#0B2A3C' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

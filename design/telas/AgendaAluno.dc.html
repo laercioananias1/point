@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Agenda do aluno</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; display: flex; flex-direction: column; overflow: hidden">
+
+<div style="background: #0B2A3C; color: #F6F1E7; padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 14px; border-radius: 0 0 28px 28px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<button type="button" onClick="{{switchArena}}" style="font-family: inherit; display: flex; align-items: center; gap: 8px; background: #123F59; color: #F6F1E7; border: none; border-radius: 999px; padding: 8px 14px; min-height: 40px; font-size: 14px; font-weight: 700; cursor: pointer">
+<span style="width: 22px; height: 22px; border-radius: 6px; background: {{arena.bg}}; color: {{arena.fg}}; display: flex; align-items: center; justify-content: center; font-size: 10px">{{arena.ini}}</span>
+{{arena.name}}
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<span style="font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: #F6F1E7; color: #0B2A3C">Aluno</span>
+</div>
+
+<sc-if value="{{hasNext}}" hint-placeholder-val="{{ true }}">
+<div style="background: #123F59; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px">
+<div>
+<div style="font-size: 12px; color: #C9D6DD">Próxima aula · {{next.when}}</div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; line-height: 1.1">{{next.name}}</div>
+<div style="font-size: 13px; color: #C9D6DD">{{next.where}}</div>
+</div>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px; color: {{accent}}">{{next.time}}</span>
+</div>
+<button type="button" onClick="{{checkin}}" style="font-family: inherit; font-size: 15px; font-weight: 700; min-height: 48px; border-radius: 999px; border: none; background: {{checkBg}}; color: #0B2A3C; cursor: pointer">{{checkLabel}}</button>
+</div>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #123F59; padding: 4px; border-radius: 999px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+<button type="button" onClick="{{t.pick}}" style="font-family: inherit; font-size: 14px; font-weight: 700; min-height: 40px; border-radius: 999px; border: none; background: {{t.bg}}; color: {{t.fg}}; cursor: pointer">{{t.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="flex-grow: 1; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 12px">
+
+<sc-if value="{{tabBook}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+<button type="button" onClick="{{d.pick}}" style="font-family: inherit; min-height: 52px; border-radius: 14px; border: 2px solid {{d.border}}; background: {{d.bg}}; color: {{d.fg}}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px">
+<span style="font-size: 11px">{{d.wd}}</span>
+<span style="font-weight: 800; font-size: 16px">{{d.n}}</span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; gap: 6px; overflow-x: auto">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+<button type="button" onClick="{{f.pick}}" style="font-family: inherit; flex: 0 0 auto; font-size: 13px; font-weight: 700; padding: 8px 12px; min-height: 36px; border-radius: 999px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; cursor: pointer">{{f.label}}</button>
+</sc-for>
+</div>
+<sc-for list="{{slots}}" as="s" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border-radius: 20px; padding: 14px; display: flex; gap: 12px; align-items: center; border: 2px solid {{s.border}}">
+<div style="width: 52px; text-align: center">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px">{{s.time}}</div>
+<div style="font-size: 11px; color: #4F6B7A">{{s.dur}}</div>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-weight: 700; font-size: 14px">{{s.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{s.coach}} · {{s.spots}}</div>
+</div>
+<button type="button" onClick="{{s.act}}" style="font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 12px; min-height: 40px; border-radius: 999px; border: 2px solid {{s.btnBorder}}; background: {{s.btnBg}}; color: {{s.btnFg}}; cursor: pointer; white-space: nowrap">{{s.btn}}</button>
+</div>
+</sc-for>
+<sc-if value="{{noSlots}}" hint-placeholder-val="{{ false }}">
+<div style="background: #FFFFFF; border-radius: 20px; padding: 24px; text-align: center; color: #4F6B7A; font-size: 14px">Nenhuma aula com esse filtro neste dia.</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{tabMine}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center">
+<div style="background: #FFFFFF; border-radius: 16px; padding: 12px 4px">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">{{mineCount}}</div>
+<div style="font-size: 12px; color: #4F6B7A">reservadas</div>
+</div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 12px 4px">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">12</div>
+<div style="font-size: 12px; color: #4F6B7A">aulas no mês</div>
+</div>
+<div style="background: #FFFFFF; border-radius: 16px; padding: 12px 4px">
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">92%</div>
+<div style="font-size: 12px; color: #4F6B7A">presença</div>
+</div>
+</div>
+<sc-for list="{{mine}}" as="m" hint-placeholder-count="3">
+<div style="background: #FFFFFF; border-radius: 20px; padding: 14px; display: flex; gap: 12px; align-items: center">
+<div style="width: 58px; text-align: center; background: #F6F1E7; border-radius: 14px; padding: 8px 0">
+<div style="font-size: 11px; color: #4F6B7A">{{m.wd}}</div>
+<div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px">{{m.time}}</div>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-weight: 700; font-size: 14px">{{m.name}}</div>
+<div style="font-size: 12px; color: #4F6B7A">{{m.where}}</div>
+</div>
+<button type="button" onClick="{{m.cancel}}" style="font-family: inherit; font-size: 12px; font-weight: 700; padding: 8px 10px; min-height: 40px; border-radius: 999px; border: 2px solid #E3B9A5; background: #FFFFFF; color: #7A2E10; cursor: pointer">Cancelar</button>
+</div>
+</sc-for>
+<p style="margin: 0; font-size: 12px; color: #4F6B7A; text-align: center">Cancelamentos até 2 horas antes liberam a vaga para a fila de espera.</p>
+</div>
+</sc-if>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const arenas = [
+      { name: 'Arena Sol', ini: 'AS', bg: accent, fg: '#0B2A3C' },
+      { name: 'Arena Mar Azul', ini: 'MA', bg: '#9DB4C0', fg: '#0B2A3C' }
+    ];
+    const ai = st.arena || 0;
+    const tab = st.tab || 'book';
+    const day = st.day == null ? 4 : st.day;
+    const filter = st.filter || 'Todas';
+    const wd = [['Seg', '28'], ['Ter', '29'], ['Qua', '30'], ['Qui', '1'], ['Sex', '2'], ['Sáb', '3'], ['Dom', '4']];
+    const catalog = [
+      [
+        { id: 's1', time: '07:00', dur: '60 min', name: 'Beach tennis manhã', sport: 'Beach tennis', coach: 'Prof. Ana', court: 'Quadra 1', n: 6, cap: 8, days: [0, 2, 4] },
+        { id: 's2', time: '09:00', dur: '60 min', name: 'Beach tennis técnica', sport: 'Beach tennis', coach: 'Prof. Ana', court: 'Quadra 1', n: 8, cap: 8, days: [1, 3, 4] },
+        { id: 's3', time: '18:00', dur: '60 min', name: 'Vôlei de praia', sport: 'Vôlei', coach: 'Prof. Rafa', court: 'Quadra 2', n: 7, cap: 10, days: [0, 2, 4] },
+        { id: 's4', time: '20:30', dur: '60 min', name: 'Beach tennis iniciante', sport: 'Beach tennis', coach: 'Prof. Bia', court: 'Quadra 1', n: 7, cap: 8, days: [0, 1, 2, 3, 4] },
+        { id: 's5', time: '09:00', dur: '90 min', name: 'Beach tennis sábado', sport: 'Beach tennis', coach: 'Prof. Ana', court: 'Quadra 1', n: 5, cap: 8, days: [5] },
+        { id: 's6', time: '10:00', dur: '60 min', name: 'Futevôlei aberto', sport: 'Futevôlei', coach: 'Prof. Léo', court: 'Quadra 3', n: 4, cap: 8, days: [5, 6] }
+      ],
+      [
+        { id: 'm1', time: '19:00', dur: '60 min', name: 'Futevôlei intermediário', sport: 'Futevôlei', coach: 'Prof. Caio', court: 'Quadra A', n: 5, cap: 8, days: [0, 2, 4] },
+        { id: 'm2', time: '20:00', dur: '60 min', name: 'Futevôlei aberto', sport: 'Futevôlei', coach: 'Prof. Caio', court: 'Quadra A', n: 8, cap: 8, days: [5] }
+      ]
+    ][ai];
+    const booked = st.booked || { 's1:4': true };
+    const wait = st.wait || {};
+    const slots = catalog.filter((c) => c.days.indexOf(day) > -1 && (filter === 'Todas' || c.sport === filter)).map((c) => {
+      const mine = !!booked[c.id + ':' + day];
+      const queued = !!wait[c.id + ':' + day];
+      const n = c.n + (mine ? 1 : 0);
+      const full = n >= c.cap;
+      const key = c.id + ':' + day;
+      let btn, btnBg, btnFg, btnBorder, act;
+      if (mine) { btn = 'Reservada'; btnBg = accent; btnFg = '#0B2A3C'; btnBorder = accent; act = () => { const cur = Object.assign({}, (this.state || {}).booked || booked); delete cur[key]; this.setState({ booked: cur }); }; }
+      else if (full && queued) { btn = 'Na fila · 1º'; btnBg = '#FFF1C2'; btnFg = '#5C4300'; btnBorder = '#FFF1C2'; act = () => { const cur = Object.assign({}, (this.state || {}).wait || {}); delete cur[key]; this.setState({ wait: cur }); }; }
+      else if (full) { btn = 'Entrar na fila'; btnBg = '#FFFFFF'; btnFg = '#0B2A3C'; btnBorder = '#D8CDB6'; act = () => { const cur = Object.assign({}, (this.state || {}).wait || {}); cur[key] = true; this.setState({ wait: cur }); }; }
+      else { btn = 'Reservar'; btnBg = '#0B2A3C'; btnFg = '#F6F1E7'; btnBorder = '#0B2A3C'; act = () => { const cur = Object.assign({}, (this.state || {}).booked || booked); cur[key] = true; this.setState({ booked: cur }); }; }
+      return { time: c.time, dur: c.dur, name: c.name, coach: c.coach, spots: full ? 'Lotada' : (c.cap - n) + (c.cap - n === 1 ? ' vaga' : ' vagas'), border: mine ? accent : '#FFFFFF', btn: btn, btnBg: btnBg, btnFg: btnFg, btnBorder: btnBorder, act: act };
+    });
+    const mine = Object.keys(booked).map((k) => {
+      const parts = k.split(':'), c = catalog.find((x) => x.id === parts[0]);
+      if (!c) return null;
+      const d = parseInt(parts[1], 10);
+      return { sortKey: d * 100 + parseInt(c.time, 10), wd: wd[d][0] + ' ' + wd[d][1], time: c.time, name: c.name, where: c.court + ' · ' + c.coach,
+        cancel: () => { const cur = Object.assign({}, (this.state || {}).booked || booked); delete cur[k]; this.setState({ booked: cur }); } };
+    }).filter((x) => x).sort((a, b) => a.sortKey - b.sortKey);
+    const sports = ['Todas'].concat(catalog.map((c) => c.sport).filter((s, i, arr) => arr.indexOf(s) === i));
+    const nextItem = mine[0];
+    const checked = !!st.checked;
+    return {
+      accent: accent,
+      arena: arenas[ai],
+      switchArena: () => this.setState({ arena: ai === 0 ? 1 : 0, filter: 'Todas', booked: ai === 0 ? {} : { 's1:4': true }, wait: {}, checked: false }),
+      hasNext: !!nextItem,
+      next: nextItem ? { name: nextItem.name, when: nextItem.wd, where: nextItem.where, time: nextItem.time } : { name: '', when: '', where: '', time: '' },
+      checkin: () => this.setState({ checked: !checked }),
+      checkLabel: checked ? 'Check-in validado pelo Wellhub' : 'Abrir o Wellhub para o check-in',
+      checkBg: checked ? '#F6F1E7' : accent,
+      tabs: [['book', 'Reservar aula'], ['mine', 'Minhas aulas']].map((t) => ({ label: t[1], bg: t[0] === tab ? '#F6F1E7' : 'transparent', fg: t[0] === tab ? '#0B2A3C' : '#F6F1E7', pick: () => this.setState({ tab: t[0] }) })),
+      tabBook: tab === 'book',
+      tabMine: tab === 'mine',
+      days: wd.map((d, i) => ({ wd: d[0], n: d[1], bg: i === day ? '#0B2A3C' : '#FFFFFF', fg: i === day ? '#F6F1E7' : (i < 3 ? '#B5AA93' : '#0B2A3C'), border: i === day ? '#0B2A3C' : '#FFFFFF', pick: () => this.setState({ day: i }) })),
+      filters: sports.map((f) => ({ label: f, bg: f === filter ? '#0B2A3C' : '#FFFFFF', fg: f === filter ? '#F6F1E7' : '#0B2A3C', border: f === filter ? '#0B2A3C' : '#D8CDB6', pick: () => this.setState({ filter: f }) })),
+      slots: slots,
+      noSlots: slots.length === 0,
+      mine: mine,
+      mineCount: mine.length
+    };
+  }
+}
+</script>
+</body>
+</html>

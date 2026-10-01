@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Caixa</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E7}
+a{color:#0B2A3C}a:hover{color:#123F59}
+</style>
+</helmet>
+<div style="font-family: 'DM Sans', system-ui, sans-serif; color: #0B2A3C; background: #F6F1E7; width: 100%; min-height: 100vh; display: flex; flex-wrap: wrap">
+
+<aside style="flex: 0 0 240px; background: #0B2A3C; color: #C9D6DD; padding: 24px 16px; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 10px 24px">
+<span style="display: inline-flex; align-items: center; gap: 1px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 25px; letter-spacing: -0.03em; line-height: 1; color: #F6F1E7"><svg width="30" height="30" viewBox="0 0 48 48" role="img" aria-label="O" style="flex: 0 0 30px; display: block"><circle cx="22" cy="23" r="16.5" fill="none" stroke="#F6F1E7" stroke-width="7"></circle><circle cx="34" cy="34" r="10" fill="{{accent}}" stroke="#0B2A3C" stroke-width="3.5"></circle><path d="M27.2 30.6c3.4-1.9 7.9-.8 10 2.6 1.4 2.3 1.3 5.3-.1 7.3" fill="none" stroke="#F6F1E7" stroke-width="2.2" stroke-linecap="round"></path></svg><span>Point</span></span>
+</div>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="10">
+<a href="{{n.href}}" style="display: flex; align-items: center; gap: 12px; padding: 12px; min-height: 20px; border-radius: 12px; text-decoration: none; font-size: 15px; font-weight: 500; background: {{n.bg}}; color: {{n.fg}}">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{n.icon}}"></path></svg>
+<span style="flex-grow: 1">{{n.label}}</span>
+<sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 12px; font-weight: 700; background: {{accent}}; color: #0B2A3C; padding: 2px 8px; border-radius: 999px">{{n.badge}}</span>
+</sc-if>
+</a>
+</sc-for>
+<div style="margin-top: auto; padding: 16px 12px 0; border-top: 1px solid #23465A; display: flex; align-items: center; gap: 10px">
+<span style="width: 36px; height: 36px; border-radius: 50%; background: {{accent}}; color: #0B2A3C; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px">AS</span>
+<div>
+<div style="font-size: 14px; font-weight: 700; color: #F6F1E7">Arena Sol</div>
+<div style="font-size: 12px">4 quadras</div>
+</div>
+</div>
+</aside>
+
+<main style="flex: 1 1 600px; padding: 32px; display: flex; flex-direction: column; gap: 24px; box-sizing: border-box; min-width: 0">
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+<div>
+<div style="font-size: 14px; color: #4F6B7A">Financeiro · Quinta, 1 de outubro</div>
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; letter-spacing: -1px">Caixa do dia</h1>
+<span style="font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: {{statusBg}}; color: {{statusFg}}">{{statusLabel}}</span>
+</div>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<sc-if value="{{isOpen}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" onClick="{{newIn}}" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: none; background: {{accent}}; color: #0B2A3C; cursor: pointer">+ Entrada</button>
+<button type="button" onClick="{{newOut}}" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: 2px solid #0B2A3C; background: none; color: #0B2A3C; cursor: pointer">− Saída</button>
+<button type="button" onClick="{{startClose}}" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">Fechar caixa</button>
+</div>
+</sc-if>
+<sc-if value="{{isClosed}}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{reopen}}" style="font-family: inherit; font-size: 15px; font-weight: 700; padding: 12px 18px; min-height: 44px; border-radius: 999px; border: 2px solid #0B2A3C; background: none; color: #0B2A3C; cursor: pointer">Reabrir caixa</button>
+</sc-if>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<div style="flex: 1 1 200px; background: #FFFFFF; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">Saldo inicial</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 1">{{opening}}</span>
+<span style="font-size: 13px; color: #4F6B7A">Aberto às 06:00 por Camila</span>
+</div>
+<div style="flex: 1 1 200px; background: #FFFFFF; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">Entradas</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 1; color: #1E6B45">{{totalIn}}</span>
+<span style="font-size: 13px; color: #4F6B7A">{{countIn}} lançamentos</span>
+</div>
+<div style="flex: 1 1 200px; background: #FFFFFF; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">Saídas</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 1; color: #A3401A">{{totalOut}}</span>
+<span style="font-size: 13px; color: #4F6B7A">{{countOut}} lançamentos</span>
+</div>
+<div style="flex: 1 1 200px; background: #0B2A3C; color: #F6F1E7; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 500">Saldo atual</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 1; color: {{accent}}">{{balance}}</span>
+<span style="font-size: 13px; color: #C9D6DD">Em dinheiro na gaveta: {{cash}}</span>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section style="flex: 2 1 520px; background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 4px; min-width: 0; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Movimentações</h2>
+<div style="display: flex; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+<button type="button" onClick="{{f.pick}}" style="font-family: inherit; font-size: 13px; font-weight: 700; padding: 8px 14px; min-height: 40px; border-radius: 999px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; cursor: pointer">{{f.label}}</button>
+</sc-for>
+</div>
+</div>
+<sc-for list="{{moves}}" as="m" hint-placeholder-count="8">
+<div style="display: flex; align-items: center; gap: 14px; padding: 12px 4px; border-top: 1px solid #EDE6D8">
+<span style="flex: 0 0 40px; height: 40px; border-radius: 12px; background: {{m.iconBg}}; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{m.arrow}}"></path></svg>
+</span>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-weight: 700; font-size: 15px">{{m.desc}}</div>
+<div style="font-size: 13px; color: #4F6B7A">{{m.time}} · {{m.cat}}</div>
+</div>
+<span style="font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: #F6F1E7; white-space: nowrap">{{m.method}}</span>
+<span style="font-size: 15px; font-weight: 700; width: 110px; text-align: right; color: {{m.color}}">{{m.amount}}</span>
+</div>
+</sc-for>
+</section>
+
+<div style="flex: 1 1 340px; display: flex; flex-direction: column; gap: 20px">
+
+<sc-if value="{{showEntry}}" hint-placeholder-val="{{ false }}">
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; border: 2px solid #0B2A3C">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Novo lançamento</h2>
+<button type="button" onClick="{{closeEntry}}" aria-label="Fechar" style="width: 44px; height: 44px; border-radius: 50%; border: none; background: #F6F1E7; color: #0B2A3C; cursor: pointer; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{kindOpts}}" as="o" hint-placeholder-count="2">
+<button type="button" onClick="{{o.pick}}" style="font-family: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 14px; border: 2px solid {{o.border}}; background: {{o.bg}}; color: {{o.fg}}; cursor: pointer">{{o.label}}</button>
+</sc-for>
+</div>
+<label for="c-desc" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">Descrição</label>
+<input id="c-desc" type="text" value="{{fDesc}}" onChange="{{setDesc}}" placeholder="Ex.: Aula avulsa · Quadra 2" style="font-family: inherit; font-size: 16px; padding: 14px 16px; border-radius: 14px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF">
+<label for="c-valor" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">Valor (R$)</label>
+<input id="c-valor" type="number" value="{{fVal}}" onChange="{{setVal}}" placeholder="0,00" style="font-family: inherit; font-size: 16px; padding: 14px 16px; border-radius: 14px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF">
+<span style="font-size: 14px; font-weight: 700">Forma de pagamento</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{methodOpts}}" as="o" hint-placeholder-count="4">
+<button type="button" onClick="{{o.pick}}" style="font-family: inherit; font-size: 14px; font-weight: 700; min-height: 44px; border-radius: 14px; border: 2px solid {{o.border}}; background: {{o.bg}}; color: #0B2A3C; cursor: pointer">{{o.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{entryError}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 13px; font-weight: 700; color: #A3401A">Informe a descrição e um valor maior que zero.</span>
+</sc-if>
+<button type="button" onClick="{{saveEntry}}" style="font-family: inherit; font-size: 16px; font-weight: 700; padding: 16px; border-radius: 999px; border: none; background: {{accent}}; color: #0B2A3C; cursor: pointer">Lançar</button>
+</section>
+</sc-if>
+
+<sc-if value="{{showClosing}}" hint-placeholder-val="{{ false }}">
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; border: 2px solid #0B2A3C">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Fechamento do caixa</h2>
+<p style="margin: 0; font-size: 14px; color: #4F6B7A">Conte o dinheiro da gaveta e informe o valor abaixo.</p>
+<div style="display: flex; justify-content: space-between; font-size: 15px; padding: 10px 0; border-bottom: 1px solid #EDE6D8">
+<span>Esperado em dinheiro</span><strong>{{cash}}</strong>
+</div>
+<label for="c-contado" style="font-size: 14px; font-weight: 700; margin-bottom: -8px">Valor contado (R$)</label>
+<input id="c-contado" type="number" value="{{fCount}}" onChange="{{setCount}}" placeholder="0,00" style="font-family: inherit; font-size: 16px; padding: 14px 16px; border-radius: 14px; border: 2px solid #D8CDB6; color: #0B2A3C; background: #FFFFFF">
+<sc-if value="{{hasCount}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 14px; background: {{diffBg}}; font-size: 15px">
+<span>Diferença</span><strong>{{diff}}</strong>
+</div>
+</sc-if>
+<div style="display: flex; gap: 8px">
+<button type="button" onClick="{{cancelClose}}" style="flex: 1 1 0; font-family: inherit; font-size: 15px; font-weight: 700; min-height: 48px; border-radius: 999px; border: 2px solid #D8CDB6; background: none; color: #0B2A3C; cursor: pointer">Cancelar</button>
+<button type="button" onClick="{{confirmClose}}" style="flex: 1 1 0; font-family: inherit; font-size: 15px; font-weight: 700; min-height: 48px; border-radius: 999px; border: none; background: #0B2A3C; color: #F6F1E7; cursor: pointer">Confirmar</button>
+</div>
+</section>
+</sc-if>
+
+<section style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px">Entradas por forma de pagamento</h2>
+<sc-for list="{{byMethod}}" as="b" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-size: 14px">
+<span>{{b.label}}</span><strong>{{b.value}}</strong>
+</div>
+<div style="height: 8px; border-radius: 999px; background: #EDE6D8; overflow: hidden">
+<div style="height: 8px; border-radius: 999px; width: {{b.pct}}; background: {{b.color}}"></div>
+</div>
+</div>
+</sc-for>
+</section>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F04A","options":["#D4F04A","#FF8A3D","#5ED3C6","#FFD23F"]},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4F04A';
+    const st = this.state || {};
+    const brl = (v) => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const opening = 200;
+    const base = [
+      { time: '06:42', desc: 'Mensalidade · Mariana Costa', cat: 'Mensalidade', method: 'Pix', v: 280, in: true },
+      { time: '07:15', desc: 'Aula avulsa · Quadra 1', cat: 'Aula avulsa', method: 'Dinheiro', v: 60, in: true },
+      { time: '08:05', desc: 'Aluguel de quadra · 1h', cat: 'Locação', method: 'Cartão', v: 120, in: true },
+      { time: '09:20', desc: 'Compra de bolinhas', cat: 'Material', method: 'Dinheiro', v: 85, in: false },
+      { time: '10:30', desc: 'Mensalidade · Felipe Rocha', cat: 'Mensalidade', method: 'Cartão', v: 280, in: true },
+      { time: '11:10', desc: 'Venda de água e isotônico', cat: 'Lanchonete', method: 'Dinheiro', v: 46, in: true },
+      { time: '12:00', desc: 'Pagamento de professor · Léo', cat: 'Professores', method: 'Pix', v: 350, in: false },
+      { time: '13:25', desc: 'Pacote 10 aulas · Juliana Prado', cat: 'Pacote', method: 'Pix', v: 450, in: true }
+    ];
+    const all = base.concat(st.added || []);
+    const filter = st.filter || 'Todas';
+    const ins = all.filter((m) => m.in);
+    const outs = all.filter((m) => !m.in);
+    const sum = (xs) => xs.reduce((s, m) => s + m.v, 0);
+    const totalIn = sum(ins), totalOut = sum(outs);
+    const cashVal = opening + sum(ins.filter((m) => m.method === 'Dinheiro')) - sum(outs.filter((m) => m.method === 'Dinheiro'));
+    const moves = all.slice().reverse().filter((m) => filter === 'Todas' || (filter === 'Entradas' ? m.in : !m.in)).map((m) => ({
+      time: m.time, desc: m.desc, cat: m.cat, method: m.method,
+      amount: (m.in ? '+ ' : '− ') + brl(m.v),
+      color: m.in ? '#1E6B45' : '#A3401A',
+      iconBg: m.in ? accent : '#F3D9CC',
+      arrow: m.in ? 'M12 19V5M5 12l7-7 7 7' : 'M12 5v14M19 12l-7 7-7-7'
+    }));
+    const methods = ['Pix', 'Cartão', 'Dinheiro', 'Wellhub'];
+    const mColors = { 'Pix': '#0B2A3C', 'Cartão': '#3F6E86', 'Dinheiro': '#9DB4C0', 'Wellhub': '#D8CDB6' };
+    const byMethod = methods.map((k) => { const v = sum(ins.filter((m) => m.method === k)); return { label: k, value: brl(v), pct: (totalIn ? Math.round((v / totalIn) * 100) : 0) + '%', color: mColors[k] }; });
+
+    const status = st.status || 'open';
+    const entry = st.entry || null;
+    const fKind = st.fKind || 'in';
+    const fMethod = st.fMethod || 'Pix';
+    const counted = parseFloat(st.fCount || '');
+    const diffVal = isNaN(counted) ? 0 : counted - cashVal;
+
+    const navDefs = [
+      ['Início', 'Dashboard.dc.html', 'M3 11l9-8 9 8M5 10v10h14V10'],
+      ['Agenda', 'Agenda.dc.html', 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'],
+      ['Check-ins', 'Checkins.dc.html', 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9', 2],
+      ['Aulas experimentais', '#', 'M12 5v14M5 12h14', 4],
+      ['Turmas', 'Turmas.dc.html', 'M4 6h16M4 12h16M4 18h10'],
+      ['Quadras', 'Quadras.dc.html', 'M3 4h18v16H3zM12 4v16M3 12h18'],
+      ['Alunos', 'Alunos.dc.html', 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
+      ['Professores', 'Professores.dc.html', 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'],
+      ['Caixa', 'Caixa.dc.html', 'M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5'],
+      ['Cobranças', 'Cobrancas.dc.html', 'M3 6h18v12H3zM3 10h18M7 15h3', 4],
+      ['Relatórios', 'Relatorios.dc.html', 'M4 20V10M10 20V4M16 20v-7M22 20H2']
+    ];
+    const active = 'Caixa';
+    const nav = navDefs.map((n) => ({ label: n[0], href: n[1], icon: n[2], hasBadge: !!n[3], badge: n[3] || '', bg: n[0] === active ? '#123F59' : 'transparent', fg: n[0] === active ? '#F6F1E7' : '#C9D6DD' }));
+
+    const now = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+
+    return {
+      accent: accent,
+      nav: nav,
+      opening: brl(opening),
+      totalIn: brl(totalIn), countIn: ins.length,
+      totalOut: brl(totalOut), countOut: outs.length,
+      balance: brl(opening + totalIn - totalOut),
+      cash: brl(cashVal),
+      moves: moves,
+      byMethod: byMethod,
+      filters: ['Todas', 'Entradas', 'Saídas'].map((f) => ({ label: f, bg: f === filter ? '#0B2A3C' : '#FFFFFF', fg: f === filter ? '#F6F1E7' : '#0B2A3C', border: f === filter ? '#0B2A3C' : '#D8CDB6', pick: () => this.setState({ filter: f }) })),
+      isOpen: status !== 'closed',
+      isClosed: status === 'closed',
+      statusLabel: status === 'closed' ? 'Fechado' : 'Aberto',
+      statusBg: status === 'closed' ? '#EDE6D8' : accent,
+      statusFg: '#0B2A3C',
+      newIn: () => this.setState({ entry: true, fKind: 'in', status: 'open', err: false }),
+      newOut: () => this.setState({ entry: true, fKind: 'out', status: 'open', err: false }),
+      showEntry: !!entry && status !== 'closing' && status !== 'closed',
+      closeEntry: () => this.setState({ entry: null }),
+      kindOpts: [['in', 'Entrada'], ['out', 'Saída']].map((k) => ({ label: k[1], bg: k[0] === fKind ? '#0B2A3C' : '#FFFFFF', fg: k[0] === fKind ? '#F6F1E7' : '#0B2A3C', border: k[0] === fKind ? '#0B2A3C' : '#D8CDB6', pick: () => this.setState({ fKind: k[0] }) })),
+      methodOpts: methods.map((k) => ({ label: k, bg: k === fMethod ? accent : '#FFFFFF', border: k === fMethod ? '#0B2A3C' : '#D8CDB6', pick: () => this.setState({ fMethod: k }) })),
+      fDesc: st.fDesc || '',
+      setDesc: (e) => this.setState({ fDesc: e.target.value }),
+      fVal: st.fVal || '',
+      setVal: (e) => this.setState({ fVal: e.target.value }),
+      entryError: !!st.err,
+      saveEntry: () => {
+        const v = parseFloat(st.fVal || '');
+        const d = (st.fDesc || '').trim();
+        if (!d || !(v > 0)) { this.setState({ err: true }); return; }
+        const m = { time: now(), desc: d, cat: fKind === 'in' ? 'Lançamento manual' : 'Despesa', method: fMethod, v: v, in: fKind === 'in' };
+        this.setState({ added: (st.added || []).concat([m]), fDesc: '', fVal: '', err: false, entry: null });
+      },
+      startClose: () => this.setState({ status: 'closing', entry: null }),
+      showClosing: status === 'closing',
+      fCount: st.fCount || '',
+      setCount: (e) => this.setState({ fCount: e.target.value }),
+      hasCount: !isNaN(counted),
+      diff: (diffVal > 0 ? '+ ' : (diffVal < 0 ? '− ' : '')) + brl(Math.abs(diffVal)),
+      diffBg: Math.abs(diffVal) < 0.01 ? accent : '#F3D9CC',
+      cancelClose: () => this.setState({ status: 'open' }),
+      confirmClose: () => this.setState({ status: 'closed' }),
+      reopen: () => this.setState({ status: 'open', fCount: '' })
+    };
+  }
+}
+</script>
+</body>
+</html>
