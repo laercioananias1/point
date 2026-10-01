@@ -279,6 +279,23 @@ export interface Cobranca {
   pago_em: string | null;
   recorrente: boolean;
   turma_ids: number[];
+  // Último lembrete enviado (régua automática ou botão "Lembrar").
+  ultimo_lembrete_em: string | null;
+}
+
+/** Régua de cobrança do Point (pedido do usuário, 2026-10-01) — etapas
+ * fixas em dias em relação ao vencimento (-3, 0, 3, 7). */
+export interface ReguaEtapa {
+  dias: number;
+  titulo: string;
+  descricao: string;
+  ativa: boolean;
+}
+
+export interface ReguaCobranca {
+  etapas: ReguaEtapa[];
+  // Cobranças em aberto que recebem lembrete hoje (às 9h).
+  hoje: number;
 }
 
 export interface CobrancaAluno {

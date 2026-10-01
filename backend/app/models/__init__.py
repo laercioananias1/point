@@ -6,6 +6,7 @@ from app.models.caixa import ContaCaixa, LancamentoCaixa, LancamentoFixo
 from app.models.categoria import Categoria
 from app.models.checkin import Checkin
 from app.models.cobranca import Cobranca
+from app.models.cobranca_lembrete import CobrancaLembrete
 from app.models.convite import Convite
 from app.models.convite_admin import ConviteAdmin
 from app.models.convite_dia_escolhido import ConviteDiaEscolhido

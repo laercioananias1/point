@@ -31,6 +31,8 @@ class CobrancaOut(ORMModel):
     pago_em: date | None
     recorrente: bool
     turma_ids: list[int]
+    # Último lembrete mandado (régua ou botão) — a tela mostra "Lembrado".
+    ultimo_lembrete_em: date | None
 
 
 class CobrancaAlunoOut(ORMModel):
@@ -40,3 +42,22 @@ class CobrancaAlunoOut(ORMModel):
 
 class MensalidadesGeradasOut(ORMModel):
     criadas: int
+
+
+class ReguaEtapaOut(ORMModel):
+    """Uma etapa da régua de cobrança (pedido do usuário, 2026-10-01)."""
+
+    dias: int
+    titulo: str
+    descricao: str
+    ativa: bool
+
+
+class ReguaCobrancaOut(ORMModel):
+    etapas: list[ReguaEtapaOut]
+    # Cobranças em aberto que a régua mandaria hoje (com as etapas ligadas).
+    hoje: int
+
+
+class ReguaCobrancaIn(ORMModel):
+    dias: list[int]

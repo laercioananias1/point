@@ -12,7 +12,7 @@ import type {
   WellhubCheckin,
   WellhubReconciliacao,
 } from "../../api/types";
-import { Carrossel } from "../../components/Carrossel";
+import { AvisosDoPoint, CartaoDoPoint } from "../../components/PointNoInicio";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { diaSemanaDeData, toISODate } from "../../components/Calendar";
 import { Icon, Layout, type IconName } from "../../components/Layout";
@@ -196,14 +196,6 @@ export default function AdminPointInicio() {
             </div>
           )}
         </div>
-        <div className="inicio-acoes">
-          <Link to="/admin-point/agenda" className="botao-link botao-link-secundario">
-            Ver agenda
-          </Link>
-          <Link to="/admin-point/turmas/cadastrar" className="botao-link">
-            + Nova turma
-          </Link>
-        </div>
       </div>
 
       {erro && <p className="form-error">{erro}</p>}
@@ -368,46 +360,42 @@ export default function AdminPointInicio() {
             </section>
           </div>
 
-          <div className="toggle-grid inicio-atalhos" aria-label="Atalhos">
-            {[
-              { para: "/admin-point/aluno", rotulo: "Alunos", icone: "user-check" as IconName },
-              { para: "/admin-point/professor", rotulo: "Professores", icone: "users" as IconName },
-              { para: "/admin-point/turmas", rotulo: "Turmas", icone: "grid" as IconName },
-              { para: "/admin-point/ocupacao", rotulo: "Ocupação de quadra", icone: "chart" as IconName },
-              { para: "/admin-point/wellhub", rotulo: "Checkins", icone: "check-circle" as IconName },
-            ].map((a) => (
-              <Link key={a.para} to={a.para} className="toggle-chip inicio-atalho">
-                <Icon name={a.icone} size={16} /> {a.rotulo}
-              </Link>
-            ))}
-          </div>
-
-          {point && point.banners.length > 0 && (
-            <div className="inicio-bloco-point">
-              <Carrossel fotos={point.banners} contido />
+          {/* Atalhos numa caixa, igual ao Início do professor (pedido do
+              usuário, 2026-10-01: "esses atalhos estão muito escondidos"). */}
+          <section className="alunos-card inicio-atalhos">
+            <h2 className="chk-secao-titulo">Atalhos</h2>
+            <div className="prof-atalhos">
+              {[
+                { para: "/admin-point/aluno", rotulo: "Alunos", icone: "user-check" as IconName },
+                { para: "/admin-point/professor", rotulo: "Professores", icone: "users" as IconName },
+                { para: "/admin-point/turmas", rotulo: "Turmas", icone: "grid" as IconName },
+                { para: "/admin-point/agenda", rotulo: "Agenda", icone: "calendar" as IconName },
+                { para: "/admin-point/ocupacao", rotulo: "Ocupação de quadra", icone: "chart" as IconName },
+                { para: "/admin-point/wellhub", rotulo: "Checkins", icone: "check-circle" as IconName },
+              ].map((a) => (
+                <Link key={a.para} to={a.para} className="prof-atalho">
+                  <span className="aluno-atalho-icone">
+                    <Icon name={a.icone} />
+                  </span>
+                  {a.rotulo}
+                </Link>
+              ))}
             </div>
-          )}
+          </section>
 
-          {point && (point.fotos.length > 0 || point.sobre || point.informacoes_importantes) && (
-            <section className="alunos-card inicio-bloco-point">
-              <h2 className="chk-secao-titulo">Seu Point pros alunos</h2>
-              <span className="alunos-sub">
-                <Icon name="pin" size={14} /> {point.endereco}
-              </span>
-              {point.fotos.length > 0 && <Carrossel fotos={point.fotos} />}
-              {point.sobre && (
-                <div>
-                  <h3>Sobre</h3>
-                  <p className="inicio-texto-point">{point.sobre}</p>
-                </div>
-              )}
-              {point.informacoes_importantes && (
-                <div>
-                  <h3>Informações importantes</h3>
-                  <p className="inicio-texto-point">{point.informacoes_importantes}</p>
-                </div>
-              )}
-            </section>
+          {point && (
+            <div className="inicio-meio inicio-bloco-point">
+              <CartaoDoPoint point={point} titulo="Seu Point pros alunos" />
+              <AvisosDoPoint
+                banners={point.banners}
+                vazio={
+                  <>
+                    Nenhum aviso ainda. Cadastre banners em <Link to="/admin-point/meu-point">Meu Point</Link> —
+                    eles aparecem no Início dos alunos e professores.
+                  </>
+                }
+              />
+            </div>
           )}
         </>
       )}

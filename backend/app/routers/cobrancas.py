@@ -21,10 +21,11 @@ from app.schemas.cobranca import (
     CobrancaOut,
     CobrancaUpdate,
     MensalidadesGeradasOut,
+    ReguaCobrancaIn,
+    ReguaCobrancaOut,
+    ReguaEtapaOut,
 )
 from app.services import cobrancas as servico
-from app.services.email import enviar_cobranca_email
-from app.services.whatsapp import enviar_cobranca_whatsapp
 
 router = APIRouter(prefix="/cobrancas", tags=["cobrancas"])
 
@@ -113,6 +114,34 @@ def criar_cobranca(payload: CobrancaCreate, db: DB, admin: Admin) -> Cobranca:
     return cobranca
 
 
+def _regua_out(db: Session, point: Point) -> ReguaCobrancaOut:
+    ligadas = servico.etapas_ligadas(point)
+    return ReguaCobrancaOut(
+        etapas=[
+            ReguaEtapaOut(dias=dias, titulo=titulo, descricao=descricao, ativa=dias in ligadas)
+            for dias, titulo, descricao in servico.ETAPAS_REGUA
+        ],
+        hoje=len(servico.cobrancas_da_regua_hoje(db, point.id, ligadas, date.today())),
+    )
+
+
+@router.get("/regua", response_model=ReguaCobrancaOut)
+def ver_regua(db: DB, admin: Admin) -> ReguaCobrancaOut:
+    """Régua de cobrança do Point (pedido do usuário, 2026-10-01)."""
+    return _regua_out(db, db.get(Point, admin.point_id))
+
+
+@router.patch("/regua", response_model=ReguaCobrancaOut)
+def salvar_regua(payload: ReguaCobrancaIn, db: DB, admin: Admin) -> ReguaCobrancaOut:
+    invalidas = set(payload.dias) - servico.DIAS_ETAPAS
+    if invalidas:
+        raise HTTPException(422, "Etapa da régua inválida")
+    point = db.get(Point, admin.point_id)
+    point.regua_cobranca = sorted(set(payload.dias))
+    db.commit()
+    return _regua_out(db, point)
+
+
 @router.post("/gerar-mensalidades", response_model=MensalidadesGeradasOut)
 def gerar_mensalidades_agora(db: DB, admin: Admin) -> MensalidadesGeradasOut:
     criadas = servico.gerar_mensalidades(db, point_id=admin.point_id)
@@ -166,27 +195,8 @@ def enviar_lembrete_cobranca(cobranca_id: int, db: DB, admin: Admin) -> None:
     cobranca = _get_cobranca(db, cobranca_id, admin)
     if cobranca.status == CobrancaStatus.PAGA:
         raise HTTPException(422, "Essa cobrança já está paga")
-    aluno = cobranca.aluno
-    point_nome = db.get(Point, admin.point_id).nome
-    vencimento = cobranca.vencimento.strftime("%d/%m")
-    enviar_cobranca_whatsapp(
-        celular=aluno.contato,
-        nome=aluno.nome,
-        point_nome=point_nome,
-        descricao=cobranca.descricao,
-        valor=f"{float(cobranca.valor):.2f}".replace(".", ","),
-        vencimento=vencimento,
-        point_id=admin.point_id,
-    )
-    enviar_cobranca_email(
-        nome=aluno.nome,
-        email=aluno.email,
-        point_nome=point_nome,
-        descricao=cobranca.descricao,
-        valor=float(cobranca.valor),
-        vencimento=vencimento,
-        point_id=admin.point_id,
-    )
+    servico.enviar_lembrete(db, cobranca, origem="manual")
+    db.commit()
 
 
 @router.delete("/{cobranca_id}", status_code=204)

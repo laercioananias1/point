@@ -17,6 +17,7 @@
   --navy-ink: #071E2B;
   --navy-line: #23465A;
   --navy-tile: #123F59;
+  --balao-whats: #E7F3E0;
   --navy-text: #F6F1E7;
   --navy-text-muted: #C9D6DD;
 
@@ -76,6 +77,7 @@
     --navy-ink: #020B10;
     --navy-line: #1A3646;
     --navy-tile: #1D5272;
+    --balao-whats: #1E3A2A;
     --navy-text: #F6F1E7;
     --navy-text-muted: #9DB4C0;
 
@@ -132,6 +134,7 @@
   --navy-line: #1A3646;
   --navy-text: #F6F1E7;
   --navy-tile: #1D5272;
+  --balao-whats: #1E3A2A;
   --navy-text-muted: #9DB4C0;
 
   --side-bg: #04121A;
@@ -1072,28 +1075,6 @@ button.danger:hover:not(:disabled) {
   height: 18px;
 }
 
-/* Placeholder de banner (pedido do usuário, 2026-08-26: "deixa um espaço
-   pra banner, pra colocar alguma propaganda de evento quando houver") —
-   de propósito visualmente "vazio", pra não parecer conteúdo de verdade
-   antes de existir um banner real. */
-.banner-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 28px 16px;
-  border-radius: 16px;
-  border: 1.5px dashed var(--line);
-  color: var(--ink-muted);
-  text-align: center;
-  font-size: 13px;
-}
-
-.banner-placeholder-icone {
-  font-size: 22px;
-}
-
 /* Carrossel de fotos do Point (pedido do usuário, 2026-08-30: "as fotos
    precisa ser um carrossel") — components/Carrossel.tsx. Scroll nativo
    com snap, sem lib externa; setas só aparecem com mais de 1 foto. */
@@ -1830,217 +1811,6 @@ button.danger:hover:not(:disabled) {
 .calendar-day-header.today {
   color: var(--accent-strong);
   background: var(--accent-soft);
-}
-
-/* Mapa de calor de ocupação das quadras (pedido do usuário, 2026-08-26) —
-   cada slot é um card próprio, com espaço entre eles (pedido do usuário,
-   2026-09-09: seguir o layout de referência — cards arredondados soltos
-   numa grade, em vez de uma tabela com linhas de borda). */
-.ocupacao-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-  padding: 8px;
-  /* Scrollbar fina e discreta em vez da barra cinza padrão do sistema
-     (pedido do usuário, 2026-09-29: "nao gostei dessa barra de rolagem")
-     — só aparece de verdade em telas bem estreitas, já que o min-width da
-     grade abaixo foi reduzido pra caber sem rolar na maioria dos celulares. */
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
-}
-
-.ocupacao-wrap::-webkit-scrollbar {
-  height: 6px;
-}
-
-.ocupacao-wrap::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.ocupacao-wrap::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 100px;
-}
-
-.ocupacao-wrap::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-muted);
-}
-
-.ocupacao-grid {
-  display: grid;
-  gap: 6px;
-  min-width: 320px;
-}
-
-.ocupacao-cell {
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-}
-
-.ocupacao-corner {
-  background: transparent;
-}
-
-.ocupacao-header {
-  padding: 8px 4px;
-  font-family: "Bricolage Grotesque", sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  background: var(--surface-sunk);
-}
-
-.ocupacao-header.hoje {
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-}
-
-.ocupacao-hour-label {
-  padding: 4px 6px;
-  font-family: "Bricolage Grotesque", sans-serif;
-  font-size: 11px;
-  color: var(--ink-muted);
-  background: var(--surface-sunk);
-}
-
-/* Slot sem turma — só um espaço reservado discreto, pra grade continuar
-   legível sem linha de borda em toda célula. */
-.ocupacao-slot-vazio {
-  border: 1px dashed var(--line);
-  background: var(--surface);
-}
-
-/* Slot com turma (com ou sem aluno) — card cheio, com uma faixa lateral
-   na cor da categoria (definida inline, ver GraficoOcupacao.tsx) igual a
-   referência de layout de arena que o usuário mandou. */
-.ocupacao-slot-ocupado {
-  border-radius: 8px;
-}
-
-.ocupacao-valor {
-  font-family: "Bricolage Grotesque", sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-strong);
-}
-
-.ocupacao-valor.claro {
-  color: #fff;
-}
-
-/* Célula clicável — abre a lista de alunos daquele dia/horário (pedido do
-   usuário, 2026-08-26). */
-.ocupacao-slot-clicavel {
-  cursor: pointer;
-  transition: box-shadow 120ms ease;
-}
-
-.ocupacao-slot-clicavel:hover,
-.ocupacao-slot-clicavel:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--accent);
-}
-
-/* Cabeçalho de cada quadra com barra de progresso da ocupação (pedido do
-   usuário, 2026-09-09) — no lugar do texto solto "X% de ocupação". */
-.ocupacao-quadra-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.ocupacao-quadra-header h3 {
-  margin: 0;
-  font-size: 15px;
-  white-space: nowrap;
-}
-
-.ocupacao-progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 160px;
-}
-
-.ocupacao-progress-track {
-  flex: 1;
-  max-width: 220px;
-  height: 6px;
-  border-radius: 4px;
-  background: var(--line);
-  overflow: hidden;
-}
-
-.ocupacao-progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 4px;
-  transition: width 200ms ease;
-}
-
-.ocupacao-progress-label {
-  font-size: 12px;
-  color: var(--ink-muted);
-  white-space: nowrap;
-}
-
-.ocupacao-lista-alunos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.ocupacao-lista-alunos li {
-  padding: 8px 10px;
-  background: var(--surface-sunk);
-  border-radius: 8px;
-  font-size: 13.5px;
-}
-
-/* Legenda de intensidade — reaproveita a mesma escala de opacidade das
-   células preenchidas, pra ficar óbvio o que a cor quer dizer. */
-/* Legenda das cores de categoria (pedido do usuário, 2026-09-08: "pinta
-   aqui a célula com a cor da categoria e coloque uma legenda") — uma
-   CategoriaBadge por categoria com turma na semana exibida. */
-.ocupacao-legenda-categorias {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  font-size: 13px;
-}
-
-.ocupacao-legenda {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--ink-muted);
-}
-
-.ocupacao-legenda-escala {
-  display: flex;
-  gap: 2px;
-}
-
-.ocupacao-legenda-escala span {
-  width: 16px;
-  height: 12px;
-  border-radius: 3px;
-  border: 1px solid var(--line);
 }
 
 /* Toolbar: navegação + troca de visão (dia/semana/mês) */
@@ -4836,12 +4606,6 @@ select.turmas-experimental {
 
 /* Início do admin do Point (kit de design, design/telas/Dashboard.dc.html —
    pedido do usuário, 2026-10-01). */
-.inicio-acoes {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .inicio-pendencias {
   display: flex;
   flex-wrap: wrap;
@@ -5037,11 +4801,15 @@ select.turmas-experimental {
   margin-top: 20px;
 }
 
-.inicio-atalho {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
+/* 6 atalhos: 3 + 3 no computador, 2 + 2 + 2 no celular. */
+.inicio-atalhos .prof-atalhos {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .inicio-atalhos .prof-atalhos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .inicio-bloco-point {
@@ -5371,12 +5139,6 @@ select.turmas-experimental {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-}
-
-.aluno-point {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .aluno-point-linha {
@@ -6313,4 +6075,888 @@ select.turmas-experimental {
   background: var(--warn-soft);
   border-color: var(--warn-soft);
   color: var(--warn);
+}
+
+/* Comprar aula avulsa (pedido do usuário, 2026-10-01: "seguir o mesmo
+   padrao de aula experimental") — reaproveita .exp-* dentro do Layout. */
+.avulsa-conteudo {
+  max-width: none;
+  gap: 32px;
+}
+
+.avulsa-titulo {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.avulsa-precos {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 6px 18px;
+}
+
+.avulsa-preco {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.avulsa-preco:first-child {
+  border-top: none;
+}
+
+.avulsa-preco strong {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.avulsa-modalidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avulsa-modalidades .exp-horario {
+  min-height: 44px;
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+
+.avulsa-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 2px solid var(--limao);
+  border-radius: 18px;
+  font-weight: 700;
+}
+
+.avulsa-total strong {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Créditos do aluno (pedido do usuário, 2026-10-01) — números, filtros em
+   pílula e a lista num card, no layout do kit. */
+.creditos-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.creditos-dica {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 2px solid var(--limao);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.creditos-filtros {
+  margin-bottom: 8px;
+}
+
+.creditos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.creditos-linha {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.creditos-linha:first-child {
+  border-top: none;
+}
+
+.creditos-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.creditos-vence {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.creditos-reagendar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .creditos-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .creditos-kpis .chk-kpi.limao {
+    grid-column: 1 / -1;
+  }
+
+  .creditos-linha {
+    flex-wrap: wrap;
+  }
+
+  .creditos-info {
+    flex-basis: calc(100% - 62px);
+  }
+
+  .creditos-reagendar {
+    margin-left: 62px;
+  }
+}
+
+/* Avisos (banners) e dados do Point no Início (pedido do usuário,
+   2026-10-01: banner solto no meio e foto gigante "não tá legal") — avisos
+   num card próprio ao lado do conteúdo do meio, Point em duas colunas com
+   galeria. */
+.inicio-meio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.inicio-meio > :first-child {
+  flex: 2 1 440px;
+  min-width: 0;
+}
+
+.avisos-point {
+  flex: 1 1 300px;
+  min-width: 0;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.avisos-point .carrossel {
+  border-radius: 18px;
+  background: var(--surface-sunk);
+}
+
+.avisos-point .carrossel-item-contido {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avisos-point .carrossel-item-contido img {
+  width: auto;
+  max-width: 100%;
+  max-height: 340px;
+}
+
+.avisos-point-vazio {
+  margin: 0;
+  padding: 18px;
+  border: 1.5px dashed var(--borda);
+  border-radius: 16px;
+  line-height: 1.5;
+}
+
+.cartao-point {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.inicio-meio > .cartao-point {
+  flex: 2 1 520px;
+}
+
+.cartao-point-texto {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cartao-point-importante {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--warn-soft);
+}
+
+.cartao-point-importante .aluno-point-titulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0;
+  color: var(--warn);
+}
+
+.galeria-point {
+  flex: 1 1 320px;
+  min-width: 0;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.galeria-point-principal {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 18px;
+  background: var(--surface-sunk);
+  display: block;
+}
+
+.galeria-point-miniaturas {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.galeria-point-miniatura,
+.galeria-point-miniatura:hover:not(:disabled) {
+  flex: 0 0 64px;
+  height: 48px;
+  padding: 0;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: none;
+  overflow: hidden;
+  opacity: 0.7;
+}
+
+.galeria-point-miniatura.ativa {
+  border-color: var(--ink);
+  opacity: 1;
+}
+
+.galeria-point-miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .avisos-point,
+  .galeria-point {
+    max-width: none;
+  }
+}
+
+/* Ocupação de quadra no layout do kit (pedido do usuário, 2026-10-01: "uma
+   tela q precisa ficar bonita") — cada quadra num card, caixa de cada aula
+   na cor da categoria, mais forte quanto mais cheia (cor inline, ver
+   estiloDaCelula em GraficoOcupacao.tsx). */
+.ocup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ocup .chk-kpis {
+  margin-bottom: 0;
+}
+
+.ocup-quadra {
+  gap: 16px;
+}
+
+.ocup-quadra-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ocup-quadra-barra {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.ocup-quadra-barra .turmas-trilho {
+  width: 160px;
+  flex: none;
+}
+
+.ocup-quadra-preenchido {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.ocup-quadra-barra strong {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 17px;
+}
+
+.ocup-rolagem {
+  overflow-x: auto;
+}
+
+.ocup-grade {
+  display: grid;
+  grid-template-columns: 44px repeat(7, minmax(72px, 1fr));
+  gap: 6px;
+  min-width: 600px;
+}
+
+.ocup-dia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border-radius: 14px;
+  color: var(--ink);
+}
+
+.ocup-dia.hoje {
+  background: var(--destaque-escuro);
+  color: var(--navy-text);
+}
+
+.ocup-dia-semana {
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.75;
+}
+
+.ocup-dia-numero {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.ocup-hora {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+.ocup-celula,
+button.ocup-celula:hover:not(:disabled) {
+  position: relative;
+  min-height: 52px;
+  padding: 0;
+  border-radius: 12px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ocup-celula.sem-aula {
+  border: 1px dashed var(--line);
+}
+
+.ocup-celula.com-cor {
+  border-left: 4px solid;
+  color: var(--ink);
+}
+
+button.ocup-celula {
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+button.ocup-celula:hover:not(:disabled),
+button.ocup-celula:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+/* Só disponibilidade (pedido do usuário, 2026-10-01: o ícone de check
+   "tá muito feio") — vaga: cor da categoria clarinha com pílula "Vaga";
+   lotado: listras diagonais em tom de alerta. */
+.ocup-celula.disp-vaga {
+  color: var(--ink);
+  border-left: 4px solid;
+}
+
+.ocup-celula.disp-lotado {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--risk-soft) 0 8px,
+    var(--surface) 8px 16px
+  );
+  color: var(--risk-ink);
+  border-left: 4px solid;
+}
+
+.ocup-disp-vaga {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ocup-disp-ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.ocup-disp-lotado {
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ocup-pontos {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: flex;
+  gap: 2px;
+}
+
+.ocup-pontos .categoria-dot {
+  width: 7px;
+  height: 7px;
+  box-shadow: 0 0 0 1.5px var(--surface);
+}
+
+.ocup-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.ocup-legenda-dica {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.ocup-legenda-categorias {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-left: auto;
+  color: var(--ink);
+}
+
+.ocup-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ocup-modal .alunos-sub {
+  margin: 0;
+}
+
+.ocup-modal-numeros {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .ocup-quadra-barra {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .ocup-quadra-barra .turmas-trilho {
+    flex: 1;
+    width: auto;
+  }
+
+  .ocup-legenda-categorias {
+    margin-left: 0;
+  }
+}
+
+/* Cobranças no layout do kit (design/telas/Cobrancas.dc.html — pedido do
+   usuário, 2026-10-01). */
+.chk-kpi.cobr-kpi-atraso {
+  background: var(--risk);
+  color: #FFFFFF;
+}
+
+/* Tabela na largura toda; régua, prévia e mensalidade automática numa
+   linha embaixo (do lado, a tabela ficava espremida). */
+.cobr-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cobr-lista {
+  min-width: 0;
+}
+
+.cobr-filtros {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.cobr-contagem {
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+}
+
+.cobr-busca {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1 1 260px;
+  justify-content: flex-end;
+}
+
+input.cobr-busca-campo {
+  flex: 0 1 220px;
+  min-width: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--borda);
+  font-size: 14px;
+}
+
+.cobr-busca .filtro-pilula {
+  max-width: 260px;
+}
+
+.alunos-linha.cobr-grade {
+  grid-template-columns:
+    minmax(0, 1.6fr) minmax(96px, 0.7fr) minmax(96px, 0.6fr) minmax(110px, 0.7fr) minmax(0, 2.1fr);
+}
+
+.cobr-aluno {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cobr-recorrente {
+  display: inline-flex;
+  color: var(--ink-muted);
+}
+
+.cobr-valor {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cobr-acoes {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cobr-btn,
+.cobr-btn:hover:not(:disabled) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  min-height: 36px;
+  border-radius: 999px;
+  border: 2px solid var(--borda);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cobr-btn:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.cobr-btn.cobr-btn-pagar,
+.cobr-btn.cobr-btn-pagar:hover:not(:disabled) {
+  border-color: var(--destaque-escuro);
+  background: var(--destaque-escuro);
+  color: var(--navy-text);
+}
+
+.cobr-icone,
+.cobr-icone:hover:not(:disabled) {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cobr-icone:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+@media (max-width: 1100px) {
+  .cobr-acoes {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .cobr-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .alunos-linha.cobr-grade {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cobr-grade > .alunos-pessoa-texto,
+  .cobr-grade > .cobr-acoes {
+    grid-column: 1 / -1;
+  }
+
+  .cobr-acoes {
+    justify-content: flex-start;
+  }
+
+  .cobr-busca {
+    justify-content: flex-start;
+  }
+
+  input.cobr-busca-campo {
+    flex: 1 1 100%;
+  }
+}
+
+/* Régua de cobrança, prévia e mensalidade automática (pedido do usuário,
+   2026-10-01: "pode fazer a régua de cobrança") — coluna ao lado da
+   tabela de Cobranças, como no protótipo. */
+.cobr-lateral {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.cobr-lateral > * {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.cobr-lateral > .cobr-regua {
+  flex: 1.3 1 320px;
+}
+
+.cobr-grade .status-pill {
+  white-space: nowrap;
+}
+
+.cobr-filtros .agenda-passos {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.cobr-filtros .agenda-passos button {
+  white-space: nowrap;
+}
+
+.cobr-regua {
+  background: var(--destaque-escuro);
+  color: var(--navy-text);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cobr-regua h2 {
+  margin: 0;
+  color: var(--navy-text);
+  font-size: 22px;
+}
+
+.cobr-regua p {
+  margin: 0 0 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--navy-text-muted);
+}
+
+.cobr-etapa,
+.cobr-etapa:hover:not(:disabled) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 56px;
+  border-radius: 14px;
+  border: 1px solid var(--navy-line);
+  background: var(--navy-tile);
+  color: var(--navy-text);
+  text-align: left;
+}
+
+.cobr-etapa:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.cobr-etapa-titulo {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.cobr-etapa-descricao {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--navy-text-muted);
+}
+
+.cobr-chave {
+  flex: 0 0 48px;
+  height: 28px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--navy-line);
+  display: flex;
+  justify-content: flex-start;
+  transition: background 150ms ease;
+}
+
+.cobr-chave span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--navy-text-muted);
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.cobr-etapa.ligada .cobr-chave {
+  background: var(--limao);
+}
+
+.cobr-etapa.ligada .cobr-chave span {
+  transform: translateX(20px);
+  background: #0B2A3C;
+}
+
+.cobr-regua-hoje {
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--limao);
+}
+
+.cobr-previa-balao {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 14px 16px;
+  border-radius: 18px 18px 18px 4px;
+  background: var(--balao-whats);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cobr-auto-topo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cobr-auto-icone {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cobr-auto .alunos-sub {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cobr-auto .alunos-sub strong {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.cobr-auto .secondary {
+  align-self: flex-start;
+}
+
+.cobr-btn.lembrado,
+.cobr-btn.lembrado:hover:not(:disabled) {
+  border-color: var(--good-soft);
+  background: var(--good-soft);
+  color: var(--good);
 }

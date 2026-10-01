@@ -18,11 +18,10 @@ import {
   type Pessoa,
 } from "../../components/AgendaTurmasCalendario";
 import { diaSemanaDeData, inicioDaSemana, somarDias, toISODate } from "../../components/Calendar";
-import { Carrossel } from "../../components/Carrossel";
+import { AvisosDoPoint, CartaoDoPoint } from "../../components/PointNoInicio";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { Icon, Layout, type IconName } from "../../components/Layout";
 import { PedidosExperimentais } from "../../components/PedidosExperimentais";
-import { faixaHorario, rotuloDias } from "../../lib/dias";
 import { buscarFeriadosPorPoint } from "../../lib/feriados";
 
 const LETRA_DIA = ["D", "S", "T", "Q", "Q", "S", "S"];
@@ -271,64 +270,25 @@ export default function ProfessorInicio() {
             <SaldosDosAlunos saldos={saldos} nomes={nomesDosAlunos} fimDoMes={fimDoMes} />
           )}
 
-          <section className="alunos-card">
-            <h2 className="chk-secao-titulo">Atalhos</h2>
-            <div className="prof-atalhos">
-              {atalhos.map((a) => (
-                <Link key={a.to} to={a.to} className="prof-atalho">
-                  <span className="aluno-atalho-icone">
-                    <Icon name={a.icone} />
-                  </span>
-                  {a.rotulo}
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {point && temBanners ? (
-            <Carrossel fotos={point.banners} contido />
-          ) : (
-            <div className="banner-placeholder">
-              <span className="banner-placeholder-icone">📣</span>
-              <span>Espaço reservado pra avisos do Point.</span>
-            </div>
-          )}
-
-          {point && (
-            <section className="alunos-card aluno-point">
-              <h2 className="chk-secao-titulo">{point.nome}</h2>
-              <p className="aluno-point-linha">
-                <Icon name="pin" size={16} /> {point.endereco}
-              </p>
-              <p className="aluno-point-linha">
-                <Icon name="clock" size={16} />
-                <span>
-                  {rotuloDias(point.dias_semana_funcionamento)}:{" "}
-                  {faixaHorario(point.horarios_semana_funcionamento)}
-                  {point.dias_fds_funcionamento.length > 0 && (
-                    <>
-                      {" "}
-                      · {rotuloDias(point.dias_fds_funcionamento)}:{" "}
-                      {faixaHorario(point.horarios_fds_funcionamento)}
-                    </>
-                  )}
-                </span>
-              </p>
-              {point.fotos.length > 0 && <Carrossel fotos={point.fotos} />}
-              {point.sobre && (
-                <div>
-                  <h3 className="aluno-point-titulo">Sobre</h3>
-                  <p className="inicio-texto-point">{point.sobre}</p>
-                </div>
-              )}
-              {point.informacoes_importantes && (
-                <div>
-                  <h3 className="aluno-point-titulo">Informações importantes</h3>
-                  <p className="inicio-texto-point">{point.informacoes_importantes}</p>
-                </div>
-              )}
+          <div className="inicio-meio">
+            <section className="alunos-card prof-atalhos-card">
+              <h2 className="chk-secao-titulo">Atalhos</h2>
+              <div className="prof-atalhos">
+                {atalhos.map((a) => (
+                  <Link key={a.to} to={a.to} className="prof-atalho">
+                    <span className="aluno-atalho-icone">
+                      <Icon name={a.icone} />
+                    </span>
+                    {a.rotulo}
+                  </Link>
+                ))}
+              </div>
             </section>
-          )}
+
+            {temBanners && point && <AvisosDoPoint banners={point.banners} />}
+          </div>
+
+          {point && <CartaoDoPoint point={point} />}
         </div>
       )}
     </Layout>

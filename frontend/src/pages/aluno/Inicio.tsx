@@ -5,8 +5,7 @@ import type { Credito, Matricula, SaldoCheckinsAluno } from "../../api/types";
 import { useAuth } from "../../auth/AuthContext";
 import { Icon, Layout } from "../../components/Layout";
 import { proximasOcorrencias, type CalendarItem } from "../../components/Calendar";
-import { Carrossel } from "../../components/Carrossel";
-import { faixaHorario, rotuloDias } from "../../lib/dias";
+import { AvisosDoPoint, CartaoDoPoint } from "../../components/PointNoInicio";
 
 const QUANTIDADE_PROXIMOS = 5;
 
@@ -266,92 +265,51 @@ export default function AlunoInicio() {
             </div>
           )}
 
-          {point && temBanners ? (
-            <Carrossel fotos={point.banners} contido />
-          ) : (
-            <div className="banner-placeholder">
-              <span className="banner-placeholder-icone">📣</span>
-              <span>Espaço reservado pra novidades e eventos do Point.</span>
-            </div>
-          )}
-
-          <section className="alunos-card aluno-proximas">
-            <div className="inicio-exp-topo">
-              <h2 className="chk-secao-titulo">Próximas aulas</h2>
-              <Link to="/aluno/agenda" className="inicio-link-claro aluno-link">
-                Ver agenda completa <Icon name="chevron-right" size={16} />
-              </Link>
-            </div>
-            {mensaisAtivas.length === 0 ? (
-              <p className="alunos-vazio">
-                Nenhum plano mensal ativo ainda — suas próximas aulas aparecem aqui assim que você
-                tiver um.
-              </p>
-            ) : proximos.length === 0 ? (
-              <p className="alunos-vazio">Nenhuma aula agendada nos próximos meses.</p>
-            ) : (
-              <ul className="aluno-aulas">
-                {proximos.map(({ item, data }, i) => (
-                  <li className="aluno-aula" key={`${item.id}-${i}`}>
-                    <span className="aluno-aula-data">
-                      <span className="aluno-aula-dia">{data.getDate()}</span>
-                      <span className="aluno-aula-mes">
-                        {data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
+          <div className="inicio-meio">
+            <section className="alunos-card aluno-proximas">
+              <div className="inicio-exp-topo">
+                <h2 className="chk-secao-titulo">Próximas aulas</h2>
+                <Link to="/aluno/agenda" className="inicio-link-claro aluno-link">
+                  Ver agenda completa <Icon name="chevron-right" size={16} />
+                </Link>
+              </div>
+              {mensaisAtivas.length === 0 ? (
+                <p className="alunos-vazio">
+                  Nenhum plano mensal ativo ainda — suas próximas aulas aparecem aqui assim que você
+                  tiver um.
+                </p>
+              ) : proximos.length === 0 ? (
+                <p className="alunos-vazio">Nenhuma aula agendada nos próximos meses.</p>
+              ) : (
+                <ul className="aluno-aulas">
+                  {proximos.map(({ item, data }, i) => (
+                    <li className="aluno-aula" key={`${item.id}-${i}`}>
+                      <span className="aluno-aula-data">
+                        <span className="aluno-aula-dia">{data.getDate()}</span>
+                        <span className="aluno-aula-mes">
+                          {data.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")}
+                        </span>
                       </span>
-                    </span>
-                    <span className="aluno-aula-info">
-                      <span className="alunos-nome">
-                        {data
-                          .toLocaleDateString("pt-BR", { weekday: "long" })
-                          .replace(/^\w/, (c) => c.toUpperCase())}{" "}
-                        · {item.horario}
+                      <span className="aluno-aula-info">
+                        <span className="alunos-nome">
+                          {data
+                            .toLocaleDateString("pt-BR", { weekday: "long" })
+                            .replace(/^\w/, (c) => c.toUpperCase())}{" "}
+                          · {item.horario}
+                        </span>
+                        <span className="alunos-sub">
+                          {item.titulo} · {item.subtitulo}
+                        </span>
                       </span>
-                      <span className="alunos-sub">
-                        {item.titulo} · {item.subtitulo}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {point && (
-            <section className="alunos-card aluno-point">
-              <h2 className="chk-secao-titulo">{point.nome}</h2>
-              <p className="aluno-point-linha">
-                <Icon name="pin" size={16} /> {point.endereco}
-              </p>
-              <p className="aluno-point-linha">
-                <Icon name="clock" size={16} />
-                <span>
-                  {rotuloDias(point.dias_semana_funcionamento)}:{" "}
-                  {faixaHorario(point.horarios_semana_funcionamento)}
-                  {point.dias_fds_funcionamento.length > 0 && (
-                    <>
-                      {" "}
-                      · {rotuloDias(point.dias_fds_funcionamento)}:{" "}
-                      {faixaHorario(point.horarios_fds_funcionamento)}
-                    </>
-                  )}
-                </span>
-              </p>
-
-              {point.fotos.length > 0 && <Carrossel fotos={point.fotos} />}
-              {point.sobre && (
-                <div>
-                  <h3 className="aluno-point-titulo">Sobre</h3>
-                  <p className="inicio-texto-point">{point.sobre}</p>
-                </div>
-              )}
-              {point.informacoes_importantes && (
-                <div>
-                  <h3 className="aluno-point-titulo">Informações importantes</h3>
-                  <p className="inicio-texto-point">{point.informacoes_importantes}</p>
-                </div>
+                    </li>
+                  ))}
+                </ul>
               )}
             </section>
-          )}
+            {temBanners && point && <AvisosDoPoint banners={point.banners} />}
+          </div>
+
+          {point && <CartaoDoPoint point={point} />}
         </div>
       )}
     </Layout>

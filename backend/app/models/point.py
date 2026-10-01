@@ -102,6 +102,10 @@ class Point(TimestampMixin, Base):
     # junto do texto.
     anuncios: Mapped[str | None] = mapped_column(Text, nullable=True)
     banners: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # Régua de cobrança (pedido do usuário, 2026-10-01) — etapas ligadas,
+    # em dias em relação ao vencimento (ex.: [-3, 0, 3]); nulo/vazio =
+    # desligada. Ver app.services.cobrancas.ETAPAS_REGUA.
+    regua_cobranca: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     # Logomarca do próprio Point (pedido do usuário, 2026-08-30: "coloque
     # também um ícone (logomarca do point)... precisa também ser mostrado
     # no canto esquerdo") — slot único (não é lista como fotos/banners),

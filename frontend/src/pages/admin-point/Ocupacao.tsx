@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Matricula, TurmaResumo } from "../../api/types";
-import { Icon, Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
+import { Layout } from "../../components/Layout";
 import { GraficoOcupacao } from "../../components/GraficoOcupacao";
 
 /** Pedido do usuário, 2026-08-26: "deixe tb 2 botões (iguais do
@@ -12,7 +12,6 @@ import { GraficoOcupacao } from "../../components/GraficoOcupacao";
  * inteiro (todas as turmas, de todos os professores), não só as próprias. */
 export default function AdminPointOcupacao() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [pronto, setPronto] = useState(false);
@@ -42,17 +41,7 @@ export default function AdminPointOcupacao() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/admin-point")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Ocupação de quadra</h1>
-      </div>
+      <CabecalhoPagina titulo="Ocupação de quadra" contexto="Quadras e aulas" />
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}

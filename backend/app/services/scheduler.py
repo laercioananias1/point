@@ -22,7 +22,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.core.database import SessionLocal
 from app.services.aulas import gerar_aulas_do_mes_em_lote
 from app.services.caixa import gerar_lancamentos_fixos
-from app.services.cobrancas import gerar_mensalidades
+from app.services.cobrancas import gerar_mensalidades, rodar_regua
 
 # print(), não logging — mesmo padrão já usado em app/services/email.py (o
 # projeto não configura handler de logging em lugar nenhum).
@@ -76,6 +76,23 @@ def _rodar_lancamentos_fixos() -> None:
         db.close()
 
 
+def _rodar_regua_de_cobranca() -> None:
+    """Todo dia às 09:00 (pedido do usuário, 2026-10-01: régua de cobrança)
+    — horário comercial, não de madrugada como os outros jobs, porque
+    manda mensagem pro aluno. Cada etapa sai uma vez só por cobrança
+    (registro em cobranca_lembretes)."""
+    db = SessionLocal()
+    try:
+        total = rodar_regua(db)
+        print(f"[scheduler] régua de cobrança: {total} lembrete(s) enviado(s)")
+    except Exception:  # noqa: BLE001 — job de fundo não pode derrubar o processo
+        print("[scheduler] falha na régua de cobrança:")
+        traceback.print_exc()
+        db.rollback()
+    finally:
+        db.close()
+
+
 def iniciar_scheduler() -> BackgroundScheduler:
     """Chamada uma vez, no startup da API (ver app/main.py)."""
     global _scheduler
@@ -107,6 +124,14 @@ def iniciar_scheduler() -> BackgroundScheduler:
         hour=4,
         minute=20,
         id="gerar_lancamentos_fixos_diario",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _rodar_regua_de_cobranca,
+        trigger="cron",
+        hour=9,
+        minute=0,
+        id="regua_cobranca_diaria",
         replace_existing=True,
     )
     scheduler.start()

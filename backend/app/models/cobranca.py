@@ -42,6 +42,17 @@ class Cobranca(TimestampMixin, Base):
 
     aluno: Mapped["Aluno"] = relationship()  # noqa: F821
     assinatura: Mapped["Assinatura | None"] = relationship()  # noqa: F821
+    # Lembretes enviados (régua automática ou botão "Lembrar") — pedido do
+    # usuário, 2026-10-01.
+    lembretes: Mapped[list["CobrancaLembrete"]] = relationship(  # noqa: F821
+        order_by="CobrancaLembrete.created_at",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    @property
+    def ultimo_lembrete_em(self) -> date | None:
+        return self.lembretes[-1].created_at.date() if self.lembretes else None
 
     @property
     def aluno_nome(self) -> str:

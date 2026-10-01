@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Matricula, TurmaResumo } from "../../api/types";
-import { Icon, Layout } from "../../components/Layout";
+import { CabecalhoPagina } from "../../components/CabecalhoPagina";
+import { Layout } from "../../components/Layout";
 import { GraficoOcupacao } from "../../components/GraficoOcupacao";
 
 /** Pedido do usuário, 2026-08-26 (mexendo no layout do professor, mesmo
@@ -11,7 +11,6 @@ import { GraficoOcupacao } from "../../components/GraficoOcupacao";
  * antes ficava embutido direto na Início virou uma tela própria, atrás de
  * um botão, em vez de ocupar espaço fixo na home. */
 export default function ProfessorOcupacao() {
-  const navigate = useNavigate();
   const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
   const [matriculas, setMatriculas] = useState<Matricula[]>([]);
   const [pronto, setPronto] = useState(false);
@@ -38,20 +37,7 @@ export default function ProfessorOcupacao() {
 
   return (
     <Layout>
-      <div className="screen-header">
-        <button
-          type="button"
-          className="close-btn"
-          onClick={() => navigate("/professor")}
-          aria-label="Voltar"
-        >
-          <Icon name="chevron-left" />
-        </button>
-        <h1>Ocupação de quadra</h1>
-      </div>
-      <p className="empty-state" style={{ paddingTop: 0 }}>
-        Alunos matriculados sobre a capacidade, só nas minhas quadras e turmas.
-      </p>
+      <CabecalhoPagina titulo="Ocupação de quadra" contexto="Suas quadras e turmas" />
 
       {erro && <p className="form-error">{erro}</p>}
       {!pronto && !erro && <p className="empty-state">Carregando...</p>}

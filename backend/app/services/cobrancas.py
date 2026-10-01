@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models.assinatura import Assinatura
 from app.models.cobranca import Cobranca
+from app.models.cobranca_lembrete import CobrancaLembrete
 from app.models.enums import (
     CobrancaStatus,
     MatriculaStatus,
@@ -165,3 +166,90 @@ def reabrir(db: Session, cobranca: Cobranca) -> None:
             if p.status == PagamentoStatus.CONFIRMADO and p.mes_referencia == cobranca.mes_referencia:
                 p.status = PagamentoStatus.ESTORNADO
                 remover_entrada_pagamento(db, p)
+
+
+# --- Régua de cobrança (pedido do usuário, 2026-10-01: "pode fazer a régua
+# de cobrança") — lembretes automáticos por WhatsApp + e-mail em etapas
+# fixas em relação ao vencimento. O texto do WhatsApp é o modelo aprovado
+# na Meta (o mesmo do botão "Lembrar"), por isso não é editável aqui.
+
+# (dias em relação ao vencimento, título, descrição) — a ordem é a da tela.
+ETAPAS_REGUA: list[tuple[int, str, str]] = [
+    (-3, "3 dias antes", "Aviso de que a cobrança vence em breve"),
+    (0, "No dia do vencimento", "Lembrete no dia de pagar"),
+    (3, "3 dias depois", "Primeiro aviso de atraso"),
+    (7, "7 dias depois", "Segundo aviso de atraso"),
+]
+DIAS_ETAPAS = {dias for dias, _, _ in ETAPAS_REGUA}
+
+
+def etapas_ligadas(point) -> set[int]:
+    return {d for d in (point.regua_cobranca or []) if d in DIAS_ETAPAS}
+
+
+def enviar_lembrete(db: Session, cobranca: Cobranca, *, origem: str, etapa: int | None = None) -> None:
+    """WhatsApp + e-mail (mesmo par dos convites) e registro do envio —
+    cada canal é fail-soft, então sem credencial configurada só loga (e o
+    registro fica, pra régua não tentar a mesma etapa de novo todo dia)."""
+    from app.models.point import Point
+    from app.services.email import enviar_cobranca_email
+    from app.services.whatsapp import enviar_cobranca_whatsapp
+
+    aluno = cobranca.aluno
+    point_nome = db.get(Point, cobranca.point_id).nome
+    vencimento = cobranca.vencimento.strftime("%d/%m")
+    enviar_cobranca_whatsapp(
+        celular=aluno.contato,
+        nome=aluno.nome,
+        point_nome=point_nome,
+        descricao=cobranca.descricao,
+        valor=f"{float(cobranca.valor):.2f}".replace(".", ","),
+        vencimento=vencimento,
+        point_id=cobranca.point_id,
+    )
+    enviar_cobranca_email(
+        nome=aluno.nome,
+        email=aluno.email,
+        point_nome=point_nome,
+        descricao=cobranca.descricao,
+        valor=float(cobranca.valor),
+        vencimento=vencimento,
+        point_id=cobranca.point_id,
+    )
+    db.add(CobrancaLembrete(cobranca_id=cobranca.id, etapa=etapa, origem=origem))
+
+
+def cobrancas_da_regua_hoje(db: Session, point_id: int, etapas: set[int], hoje: date) -> list[tuple[Cobranca, int]]:
+    """Cobranças em aberto do Point que caem numa etapa ligada hoje e ainda
+    não receberam essa etapa."""
+    if not etapas:
+        return []
+    abertas = (
+        db.query(Cobranca)
+        .filter(Cobranca.point_id == point_id, Cobranca.status == CobrancaStatus.ABERTA)
+        .all()
+    )
+    resultado = []
+    for cobranca in abertas:
+        dias = (hoje - cobranca.vencimento).days
+        if dias not in etapas:
+            continue
+        if any(l.origem == "regua" and l.etapa == dias for l in cobranca.lembretes):
+            continue
+        resultado.append((cobranca, dias))
+    return resultado
+
+
+def rodar_regua(db: Session, hoje: date | None = None) -> int:
+    """Job diário (app/services/scheduler.py) — manda as etapas do dia de
+    todos os Points com a régua ligada. Devolve quantos lembretes saíram."""
+    from app.models.point import Point
+
+    hoje = hoje or date.today()
+    total = 0
+    for point in db.query(Point).filter(Point.regua_cobranca.isnot(None)).all():
+        for cobranca, dias in cobrancas_da_regua_hoje(db, point.id, etapas_ligadas(point), hoje):
+            enviar_lembrete(db, cobranca, origem="regua", etapa=dias)
+            total += 1
+        db.commit()
+    return total

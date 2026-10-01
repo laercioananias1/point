@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { urlArquivo } from "../api/client";
 
 function SetaEsquerda() {
@@ -29,10 +29,36 @@ function SetaDireita() {
  * proporção bem diferente de uma foto comum; nesse modo a altura segue a
  * imagem em vez de forçar 4:3, e o object-fit vira "contain" (mostra
  * inteira, sem cortar). Fotos "normais" continuam no modo padrão
- * (cover, grade uniforme). */
-export function Carrossel({ fotos, contido = false }: { fotos: string[]; contido?: boolean }) {
+ * (cover, grade uniforme).
+ *
+ * `automatico` (ms) — avisos/anúncios do Point "vão rodar" (pedido do
+ * usuário, 2026-10-01): passa sozinho pro próximo e volta pro primeiro no
+ * fim. Mexer à mão reinicia a contagem; quem pediu menos animação no
+ * sistema não tem troca automática. */
+export function Carrossel({
+  fotos,
+  contido = false,
+  automatico,
+}: {
+  fotos: string[];
+  contido?: boolean;
+  automatico?: number;
+}) {
   const trilhoRef = useRef<HTMLDivElement>(null);
   const [indice, setIndice] = useState(0);
+
+  useEffect(() => {
+    if (!automatico || fotos.length < 2) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setTimeout(() => {
+      const trilho = trilhoRef.current;
+      if (!trilho) return;
+      const proximo = (indice + 1) % fotos.length;
+      trilho.scrollTo({ left: trilho.clientWidth * proximo, behavior: "smooth" });
+      setIndice(proximo);
+    }, automatico);
+    return () => window.clearTimeout(timer);
+  }, [automatico, fotos.length, indice]);
 
   if (fotos.length === 0) return null;
 
