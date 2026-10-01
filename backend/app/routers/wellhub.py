@@ -328,81 +328,134 @@ def reconciliacao_do_mes(db: DB, admin: Admin, mes: str | None = None) -> Wellhu
     return WellhubReconciliacaoOut(mes=f"{inicio.year:04d}-{inicio.month:02d}", linhas=linhas)
 
 
+def _saldos_de_checkins(
+    db: Session, *, aluno_ids: set[int], mes: str | None, point_ids: set[int] | None = None
+) -> list[SaldoAlunoOut]:
+    """Mesma conta do acerto do mês do admin (só quantidade, sem casar data
+    de check-in com data de aula), por aluno + Point + plataforma. Inclui
+    matrícula ativa paga por benefício mesmo sem movimento no mês, pra o
+    saldo aparecer zerado desde o dia 1. `point_ids` recorta os Points
+    (professor só vê os Points onde dá aula)."""
+    if not aluno_ids:
+        return []
+    inicio, fim = _intervalo_do_mes(mes)
+    inicio_dt = datetime.combine(inicio, datetime.min.time())
+    fim_dt = datetime.combine(fim, datetime.max.time())
+    beneficio = list(_PLATAFORMA_DO_MEIO)
+
+    q_checkins = db.query(
+        WellhubCheckin.aluno_id, WellhubCheckin.point_id, WellhubCheckin.plataforma, func.count(WellhubCheckin.id)
+    ).filter(
+        WellhubCheckin.aluno_id.in_(aluno_ids),
+        WellhubCheckin.data >= inicio,
+        WellhubCheckin.data <= fim,
+    )
+    q_aulas = (
+        db.query(Matricula.aluno_id, Vinculo.point_id, Matricula.fonte_pagamento, func.count(Checkin.id))
+        .join(Checkin, Checkin.matricula_id == Matricula.id)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Matricula.aluno_id.in_(aluno_ids),
+            Matricula.fonte_pagamento.in_(beneficio),
+            Checkin.status == CheckinStatus.CONFIRMADO,
+            Checkin.data_hora >= inicio_dt,
+            Checkin.data_hora <= fim_dt,
+        )
+    )
+    q_ativas = (
+        db.query(Matricula.aluno_id, Vinculo.point_id, Matricula.fonte_pagamento)
+        .join(Turma, Matricula.turma_id == Turma.id)
+        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
+        .filter(
+            Matricula.aluno_id.in_(aluno_ids),
+            Matricula.status == MatriculaStatus.ATIVA,
+            Matricula.fonte_pagamento.in_(beneficio),
+        )
+    )
+    if point_ids is not None:
+        q_checkins = q_checkins.filter(WellhubCheckin.point_id.in_(point_ids))
+        q_aulas = q_aulas.filter(Vinculo.point_id.in_(point_ids))
+        q_ativas = q_ativas.filter(Vinculo.point_id.in_(point_ids))
+
+    checkins = {
+        (aluno_id, point_id, plataforma): qtd
+        for aluno_id, point_id, plataforma, qtd in q_checkins.group_by(
+            WellhubCheckin.aluno_id, WellhubCheckin.point_id, WellhubCheckin.plataforma
+        ).all()
+    }
+    aulas = {
+        (aluno_id, point_id, _PLATAFORMA_DO_MEIO[fonte]): qtd
+        for aluno_id, point_id, fonte, qtd in q_aulas.group_by(
+            Matricula.aluno_id, Vinculo.point_id, Matricula.fonte_pagamento
+        ).all()
+    }
+    ativas = {
+        (aluno_id, point_id, _PLATAFORMA_DO_MEIO[fonte]) for aluno_id, point_id, fonte in q_ativas.distinct().all()
+    }
+
+    chaves = set(checkins) | set(aulas) | ativas
+    if not chaves:
+        return []
+    nomes = dict(db.query(Point.id, Point.nome).filter(Point.id.in_({p for _, p, _ in chaves})).all())
+    return sorted(
+        (
+            SaldoAlunoOut(
+                aluno_id=aluno_id,
+                point_id=point_id,
+                point_nome=nomes.get(point_id, ""),
+                plataforma=plataforma,
+                checkins=checkins.get(chave, 0),
+                aulas=aulas.get(chave, 0),
+                saldo=checkins.get(chave, 0) - aulas.get(chave, 0),
+            )
+            for chave in chaves
+            for aluno_id, point_id, plataforma in [chave]
+        ),
+        key=lambda s: (s.point_nome, s.plataforma, s.aluno_id),
+    )
+
+
 @router.get("/meu-saldo", response_model=list[SaldoAlunoOut])
 def meu_saldo_de_checkins(
     db: DB,
     user: Annotated[User, Depends(require_role(Role.ALUNO))],
     mes: str | None = None,
 ) -> list[SaldoAlunoOut]:
-    """Mesma conta do acerto do mês do admin (só quantidade, sem casar data
-    de check-in com data de aula), mas do aluno logado. Inclui matrícula
-    ativa paga por benefício mesmo sem movimento no mês, pra o saldo
-    aparecer zerado desde o dia 1."""
-    inicio, fim = _intervalo_do_mes(mes)
-    inicio_dt = datetime.combine(inicio, datetime.min.time())
-    fim_dt = datetime.combine(fim, datetime.max.time())
-    aluno_id = user.aluno_id
+    """Saldo do mês do aluno logado (pedido do usuário, 2026-10-01)."""
+    if user.aluno_id is None:
+        return []
+    return _saldos_de_checkins(db, aluno_ids={user.aluno_id}, mes=mes)
 
-    checkins = dict(
-        (((point_id, plataforma), qtd))
-        for point_id, plataforma, qtd in db.query(
-            WellhubCheckin.point_id, WellhubCheckin.plataforma, func.count(WellhubCheckin.id)
-        )
-        .filter(
-            WellhubCheckin.aluno_id == aluno_id,
-            WellhubCheckin.data >= inicio,
-            WellhubCheckin.data <= fim,
-        )
-        .group_by(WellhubCheckin.point_id, WellhubCheckin.plataforma)
-        .all()
-    )
 
-    aulas = {
-        (point_id, _PLATAFORMA_DO_MEIO[fonte]): qtd
-        for point_id, fonte, qtd in db.query(Vinculo.point_id, Matricula.fonte_pagamento, func.count(Checkin.id))
-        .join(Checkin, Checkin.matricula_id == Matricula.id)
+@router.get("/saldos-dos-meus-alunos", response_model=list[SaldoAlunoOut])
+def saldos_dos_alunos_do_professor(
+    db: DB,
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR))],
+    mes: str | None = None,
+) -> list[SaldoAlunoOut]:
+    """Saldo do mês dos alunos Wellhub/TotalPass das turmas do professor
+    logado (pedido do usuário, 2026-10-01: "professor tb tem q ver a
+    situacao de checkins para orienta-los a fazer"). O saldo é do aluno no
+    Point inteiro (não só nas aulas desse professor) — é isso que fecha no
+    fim do mês — mas só dos Points onde o professor dá aula."""
+    if user.professor_id is None:
+        return []
+    linhas = (
+        db.query(Matricula.aluno_id, Vinculo.point_id)
         .join(Turma, Matricula.turma_id == Turma.id)
         .join(Vinculo, Turma.vinculo_id == Vinculo.id)
         .filter(
-            Matricula.aluno_id == aluno_id,
-            Matricula.fonte_pagamento.in_(list(_PLATAFORMA_DO_MEIO)),
-            Checkin.status == CheckinStatus.CONFIRMADO,
-            Checkin.data_hora >= inicio_dt,
-            Checkin.data_hora <= fim_dt,
-        )
-        .group_by(Vinculo.point_id, Matricula.fonte_pagamento)
-        .all()
-    }
-
-    ativas = {
-        (point_id, _PLATAFORMA_DO_MEIO[fonte])
-        for point_id, fonte in db.query(Vinculo.point_id, Matricula.fonte_pagamento)
-        .join(Turma, Matricula.turma_id == Turma.id)
-        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
-        .filter(
-            Matricula.aluno_id == aluno_id,
+            Vinculo.professor_id == user.professor_id,
             Matricula.status == MatriculaStatus.ATIVA,
             Matricula.fonte_pagamento.in_(list(_PLATAFORMA_DO_MEIO)),
         )
         .distinct()
         .all()
-    }
-
-    chaves = set(checkins) | set(aulas) | ativas
-    if not chaves:
-        return []
-    nomes = dict(db.query(Point.id, Point.nome).filter(Point.id.in_({p for p, _ in chaves})).all())
-    return sorted(
-        (
-            SaldoAlunoOut(
-                point_id=point_id,
-                point_nome=nomes.get(point_id, ""),
-                plataforma=plataforma,
-                checkins=checkins.get((point_id, plataforma), 0),
-                aulas=aulas.get((point_id, plataforma), 0),
-                saldo=checkins.get((point_id, plataforma), 0) - aulas.get((point_id, plataforma), 0),
-            )
-            for point_id, plataforma in chaves
-        ),
-        key=lambda s: (s.point_nome, s.plataforma),
+    )
+    return _saldos_de_checkins(
+        db,
+        aluno_ids={aluno_id for aluno_id, _ in linhas},
+        point_ids={point_id for _, point_id in linhas},
+        mes=mes,
     )

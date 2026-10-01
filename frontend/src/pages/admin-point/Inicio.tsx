@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, ApiError } from "../../api/client";
+import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type {
   Convite,
@@ -16,6 +16,7 @@ import { Carrossel } from "../../components/Carrossel";
 import { CategoriaBadge } from "../../components/CategoriaBadge";
 import { diaSemanaDeData, toISODate } from "../../components/Calendar";
 import { Icon, Layout, type IconName } from "../../components/Layout";
+import { PedidosExperimentais } from "../../components/PedidosExperimentais";
 
 /** Início do admin do Point no layout do kit de design
  * (design/telas/Dashboard.dc.html; pedido do usuário, 2026-10-01) — "o
@@ -310,7 +311,7 @@ export default function AdminPointInicio() {
               )}
             </section>
 
-            <PedidosExperimentais pedidos={experimentais} onMudanca={carregar} />
+            <PedidosExperimentais pedidos={experimentais} onMudanca={carregar} linkTodos="/admin-point/experimental" />
           </div>
 
           <div className="chk-corpo inicio-segunda-linha">
@@ -416,76 +417,3 @@ export default function AdminPointInicio() {
 
 /** Pedidos de aula experimental pendentes, pra responder ali mesmo
  * (kit: "Confirme para avisar o aluno no WhatsApp"). */
-function PedidosExperimentais({
-  pedidos,
-  onMudanca,
-}: {
-  pedidos: SolicitacaoExperimental[];
-  onMudanca: () => void;
-}) {
-  const [processando, setProcessando] = useState<number | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-
-  async function decidir(id: number, acao: "aprovar" | "recusar") {
-    setErro(null);
-    setProcessando(id);
-    try {
-      await api.patch(`/experimental/solicitacoes/${id}/${acao}`, acao === "recusar" ? { motivo_recusa: null } : {});
-      onMudanca();
-    } catch (e) {
-      setErro(e instanceof ApiError ? e.message : "Não foi possível responder. Tente de novo.");
-    } finally {
-      setProcessando(null);
-    }
-  }
-
-  return (
-    <aside className="alunos-card chk-recebidos">
-      <div className="inicio-exp-topo">
-        <h2 className="chk-secao-titulo">Aulas experimentais</h2>
-        {pedidos.length > 0 && (
-          <span className="status-pill status-good">{plural(pedidos.length, "pendente", "pendentes")}</span>
-        )}
-      </div>
-      <p className="alunos-sub inicio-exp-explica">
-        Pedidos feitos pela página pública. Ao confirmar, o visitante é avisado pelo WhatsApp.
-      </p>
-      {erro && <p className="form-error">{erro}</p>}
-      {pedidos.length === 0 && <p className="empty-state">Nenhum pedido aguardando resposta.</p>}
-      {pedidos.slice(0, 4).map((s) => (
-        <div className="inicio-exp-pedido" key={s.id}>
-          <div className="inicio-exp-linha">
-            <div className="alunos-pessoa-texto">
-              <span className="alunos-nome">{s.nome}</span>
-              <span className="alunos-sub">
-                {s.turma.modalidade.nome} · {s.turma.categoria.nome}
-              </span>
-            </div>
-            <span className="inicio-exp-quando">
-              {new Date(s.data + "T00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}{" "}
-              {horaCurta(s.turma.horario)}
-            </span>
-          </div>
-          <div className="inicio-exp-botoes">
-            <button type="button" disabled={processando !== null} onClick={() => decidir(s.id, "aprovar")}>
-              {processando === s.id ? "..." : "Confirmar"}
-            </button>
-            <button
-              type="button"
-              className="secondary"
-              disabled={processando !== null}
-              onClick={() => decidir(s.id, "recusar")}
-            >
-              Recusar
-            </button>
-          </div>
-        </div>
-      ))}
-      {pedidos.length > 4 && (
-        <Link to="/admin-point/experimental" className="inicio-checkins-link inicio-link-claro">
-          Ver todos os {pedidos.length} pedidos <Icon name="chevron-right" size={14} />
-        </Link>
-      )}
-    </aside>
-  );
-}

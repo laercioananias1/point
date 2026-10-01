@@ -7,7 +7,7 @@ import { diaSemanaDeData, inicioDaSemana, somarDias, toISODate } from "./Calenda
 import { horarioFim } from "../lib/dias";
 import { buscarFeriadosPorPoint } from "../lib/feriados";
 
-interface OcorrenciaTurma {
+export interface OcorrenciaTurma {
   turmaId: number;
   data: Date;
   horario: string;
@@ -37,7 +37,7 @@ interface OcorrenciaTurma {
  * (ex.: Natal cai numa sexta, mas nenhuma turma dá aula às sextas) — não
  * dá pra depender só de "essa turma tinha aula aqui e foi cancelada",
  * porque aí um feriado sem turma nenhuma naquele dia simplesmente some. */
-function feriadosNoMapa(
+export function feriadosNoMapa(
   turmas: TurmaResumo[],
   feriadosPorPoint: Record<number, Feriado[]>,
 ): Map<string, string> {
@@ -61,7 +61,7 @@ function feriadosNoMapa(
  * a turma simplesmente não aparece nesse dia (igual sempre fez com
  * exceção sem motivo); o aviso "hoje é feriado" é mostrado à parte, via
  * `feriadosNoMapa` acima, independente de ter turma rodando ou não. */
-function ocorrenciasEmDatas(
+export function ocorrenciasEmDatas(
   turmas: TurmaResumo[],
   datas: Date[],
   feriadosPorData: Map<string, string>,
@@ -138,14 +138,14 @@ function hexParaRgba(hex: string, alpha: number): string {
  * realidade o experimental é quase um aluno, ele só não tem uma senha
  * para entrar") — mesma lista/checklist de presença pros dois, só o
  * `tipo` decide qual endpoint marcar/desmarcar chama. */
-type Pessoa = { id: number; nome: string; tipo: "matricula" | "experimental" };
+export type Pessoa = { id: number; nome: string; tipo: "matricula" | "experimental" };
 
 /** Essa matrícula tem mesmo aula nessa turma nessa data — espelha
  * app.services.aulas::matricula_tem_aula_em (pedido do usuário,
  * 2026-08-26: "mostrar também os alunos e um check pra marcar presença de
  * cada um" — o backend valida de novo, isso só decide quem aparece na
  * lista). */
-function matriculaTemAulaEm(m: Matricula, turmaId: number, iso: string, diaSemana: string): boolean {
+export function matriculaTemAulaEm(m: Matricula, turmaId: number, iso: string, diaSemana: string): boolean {
   if (m.status !== "ativa" || m.turma_id !== turmaId) return false;
   if (m.tipo === "mensal") {
     if (iso < m.data_inicio_efetiva) return false;
@@ -541,27 +541,15 @@ export function AgendaTurmasCalendario({
  * presença de cada um"). Cada check é um Checkin de origem "presumido" —
  * o backend confere de novo se esse aluno realmente tem aula nessa data
  * antes de marcar. */
-function PresencaLista({
-  turmaId,
-  data,
-  pessoas,
-  onCancelarAluno,
-}: {
-  turmaId: number;
-  data: Date;
-  pessoas: Pessoa[];
-  // Cancelar a aula de UM aluno específico, não a turma inteira (pedido
-  // do usuário, 2026-09-01: "o professor pode cancelar uma aula de um
-  // determinado aluno de última hora, precisa informar o motivo e opção
-  // de gerar crédito ou não") — só existe pra aluno matriculado; visitante
-  // de aula experimental não tem esse fluxo (nem crédito nem matrícula
-  // pra cancelar).
-  onCancelarAluno: (matriculaId: number, nome: string) => void;
-}) {
-  const iso = toISODate(data);
-  // Chave combinada (pedido do usuário, 2026-09-15: visitante experimental
-  // "quase um aluno") — matricula_id e solicitacao_experimental_id são
-  // FKs de tabelas diferentes, podem colidir no mesmo número.
+
+/** Presença de uma ocorrência (turma + data): quem já tem check-in
+ * confirmado e o alternar marcar/desmarcar — compartilhado entre a lista
+ * de presença da Agenda e o Início do professor (pedido do usuário,
+ * 2026-10-01). Chave combinada `tipo:id` (pedido do usuário, 2026-09-15:
+ * visitante experimental "quase um aluno") — matricula_id e
+ * solicitacao_experimental_id são FKs de tabelas diferentes, podem
+ * colidir no mesmo número. */
+export function usePresenca(turmaId: number, iso: string) {
   const chave = (p: Pessoa) => `${p.tipo}:${p.id}`;
   const [presentes, setPresentes] = useState<Set<string>>(new Set());
   const [carregado, setCarregado] = useState(false);
@@ -614,6 +602,29 @@ function PresencaLista({
       setAlterando(null);
     }
   }
+
+  return { presentes, carregado, alterando, alternar, chave };
+}
+
+function PresencaLista({
+  turmaId,
+  data,
+  pessoas,
+  onCancelarAluno,
+}: {
+  turmaId: number;
+  data: Date;
+  pessoas: Pessoa[];
+  // Cancelar a aula de UM aluno específico, não a turma inteira (pedido
+  // do usuário, 2026-09-01: "o professor pode cancelar uma aula de um
+  // determinado aluno de última hora, precisa informar o motivo e opção
+  // de gerar crédito ou não") — só existe pra aluno matriculado; visitante
+  // de aula experimental não tem esse fluxo (nem crédito nem matrícula
+  // pra cancelar).
+  onCancelarAluno: (matriculaId: number, nome: string) => void;
+}) {
+  const iso = toISODate(data);
+  const { presentes, carregado, alterando, alternar, chave } = usePresenca(turmaId, iso);
 
   if (pessoas.length === 0) {
     return (

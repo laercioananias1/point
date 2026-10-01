@@ -75,6 +75,7 @@ class SaldoAlunoOut(ORMModel):
     (pedido do usuário, 2026-10-01: Início do aluno mostrar quantos
     check-ins faltam). saldo = checkins - aulas; negativo = faltam."""
 
+    aluno_id: int
     point_id: int
     point_nome: str
     plataforma: str

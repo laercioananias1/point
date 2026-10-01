@@ -5586,3 +5586,362 @@ select.turmas-experimental {
     grid-template-columns: 1fr;
   }
 }
+
+/* Início do professor (kit de design, design/telas/AgendaProfessor.dc.html
+   — pedido do usuário, 2026-10-01). Cabeçalho reaproveita .aluno-hero. */
+.prof-hero-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.prof-hero-papel {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--limao);
+  color: var(--on-limao);
+}
+
+.aluno-hero .prof-hero-titulo {
+  font-size: 26px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.aluno-hero .prof-hero-titulo::first-letter {
+  text-transform: uppercase;
+}
+
+.prof-semana {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 560px;
+}
+
+.prof-dia {
+  min-height: 56px;
+  padding: 4px 0;
+  border-radius: 14px;
+  border: none;
+  background: var(--navy-tile);
+  color: var(--navy-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.prof-dia:hover:not(:disabled) {
+  background: var(--navy-tile);
+  filter: brightness(1.15);
+}
+
+.prof-dia.hoje {
+  box-shadow: inset 0 0 0 2px var(--limao);
+}
+
+.prof-dia.escolhido,
+.prof-dia.escolhido:hover:not(:disabled) {
+  background: var(--limao);
+  color: var(--on-limao);
+  filter: none;
+}
+
+.prof-dia-letra {
+  font-size: 11px;
+}
+
+.prof-dia-numero {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.prof-dia-ponto {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--limao);
+}
+
+.prof-dia.escolhido .prof-dia-ponto {
+  background: var(--on-limao);
+}
+
+.prof-dia-ponto.vazio {
+  background: transparent;
+}
+
+.prof-aulas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prof-aulas-titulo {
+  margin: 0;
+  padding: 0 4px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.prof-aula {
+  background: var(--surface);
+  border: 2px solid var(--surface);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.prof-aula.destaque {
+  border-color: var(--limao);
+}
+
+.prof-aula.cancelada {
+  opacity: 0.75;
+}
+
+.prof-aula-cabeca,
+.prof-aula-cabeca:hover:not(:disabled),
+.prof-aula-cabeca:disabled {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--ink);
+  text-align: left;
+  font-weight: 400;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.prof-aula-cabeca:disabled {
+  cursor: default;
+}
+
+.prof-aula-hora {
+  flex: none;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.prof-aula-horario {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.prof-aula-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.prof-aula-tag {
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.prof-aula-tag.lotada {
+  background: var(--limao);
+  color: var(--on-limao);
+}
+
+.prof-aula-tag.cancelada {
+  background: var(--risk-soft);
+  color: var(--risk-ink);
+}
+
+.prof-aula-vazio {
+  margin: 0;
+  padding: 0 14px 14px;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.prof-presenca {
+  padding: 0 14px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.prof-presenca-resumo {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  padding-bottom: 6px;
+}
+
+.prof-presenca-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.prof-presenca-botao,
+.prof-presenca-botao:hover:not(:disabled) {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 2px solid var(--borda);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.prof-presenca-botao.presente,
+.prof-presenca-botao.presente:hover:not(:disabled) {
+  background: var(--limao);
+  border-color: var(--limao);
+  color: var(--on-limao);
+}
+
+.prof-atalhos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.prof-atalho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.prof-atalho:hover {
+  color: var(--ink);
+  border-color: var(--borda);
+  background: var(--surface-sunk);
+}
+
+/* Turmas do professor (pedido do usuário, 2026-10-01) — tabela das Turmas
+   do admin sem a coluna Professor e com a ação de prolongar. */
+.alunos-linha.prof-turmas-grade {
+  grid-template-columns:
+    minmax(0, 1.8fr) minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.1fr)
+    minmax(0, 0.9fr);
+}
+
+.prof-turmas-point {
+  display: block;
+}
+
+.prof-turmas-acao {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.prof-turmas-acao button {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .alunos-linha.prof-turmas-grade {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .prof-turmas-grade > [data-rotulo="Aula experimental"] {
+    grid-column: auto;
+  }
+
+  .prof-turmas-acao {
+    align-self: end;
+    justify-content: flex-start;
+  }
+}
+
+/* Saldo de check-ins dos alunos no Início do professor (pedido do usuário,
+   2026-10-01) — design/telas/CheckinsProfessor.dc.html. */
+.prof-saldos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prof-saldos-dica {
+  margin: 0;
+  padding: 12px 14px;
+  border: 2px solid var(--limao);
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.prof-saldos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.prof-saldos-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.prof-saldos-numero {
+  flex: none;
+  min-width: 44px;
+  text-align: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--risk);
+  color: #FFFFFF;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.prof-saldo-pilula {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--risk-soft);
+  color: var(--risk-ink);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
