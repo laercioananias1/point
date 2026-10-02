@@ -364,20 +364,11 @@
     cursor: pointer;
   }
   .exp-hora.ativo { background: var(--limao); border-color: var(--navy); }
-  .exp-hora:disabled { background: #EDE6D8; border-color: #EDE6D8; color: #8A8272; text-decoration: line-through; cursor: not-allowed; }
+  .exp-hora.lotado { background: #EDE6D8; border-color: #EDE6D8; color: #8A8272; text-decoration: line-through; }
+  .exp-dia, .exp-hora { cursor: default; }
+  .exp-hora { display: flex; align-items: center; justify-content: center; }
+  .exp-continuar { display: flex; align-items: center; justify-content: center; padding: 18px; border-radius: 999px; background: var(--areia-borda); color: #5C5547; font-size: 17px; font-weight: 700; }
   .exp-dica { font-size: 12px; color: var(--texto-suave); }
-  .exp-resumo {
-    background: var(--creme);
-    border-radius: 18px;
-    padding: 16px;
-    display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
-    font-size: 15px;
-  }
-  .link-btn {
-    font-family: inherit; font-size: 14px; font-weight: 700;
-    background: none; border: none; color: var(--navy);
-    text-decoration: underline; cursor: pointer; min-height: 44px;
-  }
   .campo { display: flex; flex-direction: column; gap: 6px; }
   .campo label { font-size: 14px; font-weight: 700; }
   .campo input {
@@ -391,17 +382,6 @@
     width: 100%;
   }
   .campo input:focus { outline: 3px solid var(--limao); outline-offset: 1px; }
-  .exp-card .btn { width: 100%; padding: 18px; }
-  .exp-feito { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; padding: 12px 0; }
-  .exp-feito-icone {
-    width: 72px; height: 72px; border-radius: 50%;
-    background: var(--limao);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .exp-feito h3 { font-weight: 800; font-size: 30px; }
-  .exp-feito p { line-height: 1.5; color: var(--texto); }
-  .exp-feito .nota { background: var(--creme); text-align: left; font-size: 14px; }
-  .exp-feito .btn { width: auto; padding: 14px 24px; font-size: 15px; }
 
   /* ---- Como funciona ---- */
   .jogadas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; }
@@ -716,57 +696,37 @@
       </div>
     </div>
 
-    <!-- Demonstração interativa: nada é enviado daqui. -->
-    <div class="exp-card" id="exp">
+    <!-- Ilustração estática da tela de agendamento (pedido do usuário, 2026-10-02: "pode ser uma tela estática"). -->
+    <div class="exp-card" id="exp" aria-hidden="true">
       <div>
         <div class="conf-sub">Beach tennis · Iniciante · demonstração</div>
         <div class="exp-titulo">Agende sua aula experimental</div>
       </div>
 
-      <div class="exp-etapa" data-etapa="escolha">
+      <div class="exp-etapa">
         <div class="exp-grupo">
           <b>1. Escolha o dia</b>
-          <div class="exp-dias" id="exp-dias"></div>
+          <div class="exp-dias">
+            <span class="exp-dia ativo"><small>Seg</small><b>5</b></span>
+            <span class="exp-dia"><small>Ter</small><b>6</b></span>
+            <span class="exp-dia"><small>Qua</small><b>7</b></span>
+            <span class="exp-dia"><small>Qui</small><b>8</b></span>
+            <span class="exp-dia"><small>Sáb</small><b>10</b></span>
+          </div>
         </div>
         <div class="exp-grupo">
           <b>2. Escolha o horário</b>
-          <div class="exp-horas" id="exp-horas"></div>
+          <div class="exp-horas">
+            <span class="exp-hora">07:00</span>
+            <span class="exp-hora lotado">08:00</span>
+            <span class="exp-hora">18:00</span>
+            <span class="exp-hora lotado">19:00</span>
+            <span class="exp-hora">20:00</span>
+            <span class="exp-hora">21:00</span>
+          </div>
           <span class="exp-dica">Horários riscados já estão lotados.</span>
         </div>
-        <div class="exp-resumo" id="exp-resumo-escolha" hidden>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
-          <span class="exp-resumo-texto" style="flex: 1"></span>
-        </div>
-        <button type="button" class="btn btn-navy" id="exp-continuar" disabled>Continuar</button>
-      </div>
-
-      <form class="exp-etapa" data-etapa="dados" id="exp-form" hidden>
-        <div class="exp-resumo">
-          <span class="exp-resumo-texto"></span>
-          <button type="button" class="link-btn" id="exp-trocar">Trocar horário</button>
-        </div>
-        <b style="font-size: 14px">3. Seus dados</b>
-        <div class="campo">
-          <label for="exp-nome">Nome</label>
-          <input id="exp-nome" type="text" placeholder="Seu nome completo" autocomplete="name">
-        </div>
-        <div class="campo">
-          <label for="exp-whats">WhatsApp</label>
-          <input id="exp-whats" type="tel" placeholder="(31) 9 0000-0000" autocomplete="tel">
-          <span class="exp-dica">O professor vai confirmar a aula por este número.</span>
-        </div>
-        <button type="submit" class="btn btn-limao" id="exp-solicitar" disabled>Solicitar aula experimental</button>
-      </form>
-
-      <div class="exp-feito" data-etapa="feito" hidden>
-        <span class="exp-feito-icone"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-        <h3 id="exp-feito-titulo">Pedido enviado!</h3>
-        <p class="exp-resumo-texto"></p>
-        <div class="nota">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 22px"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
-          <span id="exp-feito-nota"></span>
-        </div>
-        <button type="button" class="btn btn-contorno" id="exp-outro">Solicitar outro horário</button>
+        <span class="exp-continuar">Continuar</span>
       </div>
     </div>
   </div>
@@ -963,80 +923,6 @@
       }
     });
   });
-
-  // Demonstração da aula experimental.
-  var dias = [
-    { wd: "Seg", n: "5", full: "segunda, 5/10", times: ["07:00", "08:00", "18:00", "19:00", "20:00", "21:00"], lotado: ["08:00", "19:00"] },
-    { wd: "Ter", n: "6", full: "terça, 6/10", times: ["06:30", "07:30", "17:00", "18:00", "19:30", "20:30"], lotado: ["18:00"] },
-    { wd: "Qua", n: "7", full: "quarta, 7/10", times: ["07:00", "08:00", "18:00", "19:00", "20:00", "21:00"], lotado: ["07:00", "20:00", "21:00"] },
-    { wd: "Qui", n: "8", full: "quinta, 8/10", times: ["06:30", "07:30", "17:00", "18:00", "19:30", "20:30"], lotado: [] },
-    { wd: "Sáb", n: "10", full: "sábado, 10/10", times: ["08:00", "09:00", "10:00", "11:00", "15:00", "16:00"], lotado: ["09:00", "10:00"] }
-  ];
-  var exp = document.getElementById("exp");
-  var elDias = document.getElementById("exp-dias");
-  var elHoras = document.getElementById("exp-horas");
-  var continuar = document.getElementById("exp-continuar");
-  var nome = document.getElementById("exp-nome");
-  var whats = document.getElementById("exp-whats");
-  var solicitar = document.getElementById("exp-solicitar");
-  var estado = { dia: 0, hora: null };
-
-  function resumo() {
-    var d = dias[estado.dia];
-    return estado.hora ? "Aula experimental: " + d.full + " às " + estado.hora + ", Quadra 1 · Prof. Ana" : "";
-  }
-  function etapa(nomeEtapa) {
-    exp.querySelectorAll("[data-etapa]").forEach(function (el) { el.hidden = el.dataset.etapa !== nomeEtapa; });
-    exp.querySelectorAll(".exp-resumo-texto").forEach(function (el) { el.textContent = resumo(); });
-  }
-  function desenhar() {
-    elDias.innerHTML = "";
-    dias.forEach(function (d, i) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "exp-dia" + (i === estado.dia ? " ativo" : "");
-      b.innerHTML = "<small>" + d.wd + "</small><b>" + d.n + "</b>";
-      b.addEventListener("click", function () { estado.dia = i; estado.hora = null; desenhar(); });
-      elDias.appendChild(b);
-    });
-    elHoras.innerHTML = "";
-    var d = dias[estado.dia];
-    d.times.forEach(function (t) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.textContent = t;
-      b.className = "exp-hora" + (t === estado.hora ? " ativo" : "");
-      b.disabled = d.lotado.indexOf(t) > -1;
-      b.addEventListener("click", function () { estado.hora = t; desenhar(); });
-      elHoras.appendChild(b);
-    });
-    continuar.disabled = !estado.hora;
-    document.getElementById("exp-resumo-escolha").hidden = !estado.hora;
-    exp.querySelectorAll(".exp-resumo-texto").forEach(function (el) { el.textContent = resumo(); });
-  }
-  function validar() { solicitar.disabled = !(nome.value.trim() && whats.value.trim()); }
-
-  continuar.addEventListener("click", function () { if (estado.hora) etapa("dados"); });
-  document.getElementById("exp-trocar").addEventListener("click", function () { etapa("escolha"); });
-  nome.addEventListener("input", validar);
-  whats.addEventListener("input", validar);
-  document.getElementById("exp-form").addEventListener("submit", function (e) {
-    e.preventDefault();
-    if (solicitar.disabled) return;
-    document.getElementById("exp-feito-titulo").textContent = "Pedido enviado, " + nome.value.trim().split(" ")[0] + "!";
-    document.getElementById("exp-feito-nota").textContent =
-      "Aguardando confirmação do professor. Você vai receber a resposta no WhatsApp " + whats.value.trim() + ".";
-    etapa("feito");
-  });
-  document.getElementById("exp-outro").addEventListener("click", function () {
-    estado.hora = null;
-    nome.value = "";
-    whats.value = "";
-    validar();
-    desenhar();
-    etapa("escolha");
-  });
-  desenhar();
 
   // "Bora pro ponto?": abre o WhatsApp de contato com a mensagem pronta.
   document.getElementById("form-acesso").addEventListener("submit", function (e) {
