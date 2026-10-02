@@ -663,3 +663,11 @@ export interface Notificacao {
   lida: boolean;
   created_at: string;
 }
+
+/** Lembrete automático de check-in do Point (pedido do usuário,
+ * 2026-10-02) — sai toda segunda e no dia 25 pra quem está devendo. */
+export interface LembreteCheckin {
+  ativo: boolean;
+  proximo_envio: string;
+  devendo: number;
+}

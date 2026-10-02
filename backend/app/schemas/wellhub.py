@@ -82,3 +82,16 @@ class SaldoAlunoOut(ORMModel):
     checkins: int
     aulas: int
     saldo: int
+
+
+class LembreteCheckinOut(ORMModel):
+    """Lembrete automático de check-in do Point (pedido do usuário,
+    2026-10-02)."""
+
+    ativo: bool
+    proximo_envio: date
+    devendo: int
+
+
+class LembreteCheckinIn(ORMModel):
+    ativo: bool

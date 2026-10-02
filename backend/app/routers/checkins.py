@@ -1,3 +1,4 @@
+import calendar
 from datetime import date, datetime, time
 from typing import Annotated
 
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import require_role
 from app.models.checkin import Checkin
-from app.models.enums import CheckinOrigem, CheckinStatus, Role, SolicitacaoExperimentalStatus
+from app.models.enums import CheckinOrigem, CheckinStatus, MatriculaStatus, Role, SolicitacaoExperimentalStatus
 from app.models.matricula import Matricula
 from app.models.solicitacao_experimental import SolicitacaoExperimental
 from app.models.turma import Turma
@@ -18,7 +19,9 @@ from app.schemas.checkin import (
     PresencaExperimentalMarcar,
     PresencaMarcar,
 )
+from app.schemas.wellhub import SaldoAlunoOut
 from app.services.aulas import matricula_tem_aula_em
+from app.services.saldo_checkins import PLATAFORMA_DO_MEIO, saldos_de_checkins
 
 router = APIRouter(prefix="/checkins", tags=["checkins"])
 
@@ -26,6 +29,40 @@ router = APIRouter(prefix="/checkins", tags=["checkins"])
 def _pode_gerenciar_turma(user: User, turma: Turma) -> bool:
     return (user.tem_role(Role.PROFESSOR) and turma.vinculo.professor_id == user.professor_id) or (
         user.tem_role(Role.ADMIN_POINT) and turma.vinculo.point_id == user.point_id
+    )
+
+
+@router.get("/turma/{turma_id}/saldos", response_model=list[SaldoAlunoOut])
+def saldos_de_checkin_da_turma(
+    turma_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.PROFESSOR, Role.ADMIN_POINT))],
+    data: date | None = None,
+) -> list[SaldoAlunoOut]:
+    """Saldo de check-ins do mês dos alunos de Wellhub/TotalPass da turma —
+    o aviso na hora da chamada (pedido do usuário, 2026-10-02). O saldo é
+    do aluno no Point inteiro, a mesma conta da tela de Checkins. `data` =
+    dia da aula (escolhe o mês); padrão hoje."""
+    turma = db.get(Turma, turma_id)
+    if turma is None:
+        raise HTTPException(404, "Turma não encontrada")
+    if not _pode_gerenciar_turma(user, turma):
+        raise HTTPException(403, "Sem acesso a essa turma")
+    aluno_ids = {
+        aluno_id
+        for (aluno_id,) in db.query(Matricula.aluno_id)
+        .filter(
+            Matricula.turma_id == turma_id,
+            Matricula.status == MatriculaStatus.ATIVA,
+            Matricula.fonte_pagamento.in_(list(PLATAFORMA_DO_MEIO)),
+        )
+        .all()
+    }
+    dia = data or date.today()
+    inicio = dia.replace(day=1)
+    fim = dia.replace(day=calendar.monthrange(dia.year, dia.month)[1])
+    return saldos_de_checkins(
+        db, aluno_ids=aluno_ids, inicio=inicio, fim=fim, point_ids={turma.vinculo.point_id}
     )
 
 

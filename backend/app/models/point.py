@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Integer, String, Text, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -106,6 +106,11 @@ class Point(TimestampMixin, Base):
     # em dias em relação ao vencimento (ex.: [-3, 0, 3]); nulo/vazio =
     # desligada. Ver app.services.cobrancas.ETAPAS_REGUA.
     regua_cobranca: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
+    # Lembrete automático de check-in (pedido do usuário, 2026-10-02) — aluno
+    # de Wellhub/TotalPass com saldo negativo no mês recebe WhatsApp/e-mail
+    # toda segunda e no dia 25. Desligado por padrão: o Point liga na tela
+    # de Checkins. Ver app.services.lembrete_checkin.
+    lembrete_checkin: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     # Logomarca do próprio Point (pedido do usuário, 2026-08-30: "coloque
     # também um ícone (logomarca do point)... precisa também ser mostrado
     # no canto esquerdo") — slot único (não é lista como fotos/banners),

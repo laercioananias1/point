@@ -248,3 +248,24 @@ def enviar_cobranca_whatsapp(
         variaveis_corpo=[nome, point_nome, descricao, valor, vencimento],
         point_id=point_id,
     )
+
+
+def enviar_lembrete_checkin_whatsapp(
+    *,
+    celular: str,
+    nome: str,
+    point_nome: str,
+    faltam: int,
+    plataforma: str,
+    point_id: int | None = None,
+) -> None:
+    """Lembrete de check-in pendente no mês (pedido do usuário, 2026-10-02)
+    — automático (services/lembrete_checkin.py) ou pelo botão da tela de
+    Checkins. `plataforma` já vem com o nome de exibição ("Wellhub")."""
+    template = get_settings().whatsapp_template_lembrete_checkin
+    _enviar_whatsapp(
+        celular=celular,
+        template=template,
+        variaveis_corpo=[nome, point_nome, str(faltam), plataforma],
+        point_id=point_id,
+    )

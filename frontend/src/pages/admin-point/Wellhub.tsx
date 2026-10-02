@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import type {
+  LembreteCheckin,
   PlataformaCheckin,
   WellhubCheckin,
   WellhubReconciliacao,
@@ -51,6 +52,12 @@ function quandoFoi(iso: string): string {
   return `${d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+/** "2026-10-05" -> "seg, 5/10". */
+function dataCurta(iso: string): string {
+  const d = new Date(iso + "T00:00");
+  return `${d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")}, ${d.getDate()}/${d.getMonth() + 1}`;
+}
+
 function plural(n: number, um: string, varios: string): string {
   return `${n} ${n === 1 ? um : varios}`;
 }
@@ -82,6 +89,44 @@ export default function AdminPointWellhub() {
   const [vinculando, setVinculando] = useState<PessoaSemVinculo | null>(null);
   const [formularioAberto, setFormularioAberto] = useState(false);
   const [versao, setVersao] = useState(0);
+  const [lembrete, setLembrete] = useState<LembreteCheckin | null>(null);
+  const [salvandoLembrete, setSalvandoLembrete] = useState(false);
+  const [lembrados, setLembrados] = useState<Set<number>>(new Set());
+  const [lembrando, setLembrando] = useState<number | null>(null);
+  const [erroLembrete, setErroLembrete] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .get<LembreteCheckin>("/wellhub/lembrete")
+      .then(setLembrete)
+      .catch(() => setLembrete(null));
+  }, [versao]);
+
+  async function alternarLembrete() {
+    if (!lembrete) return;
+    setSalvandoLembrete(true);
+    setErroLembrete(null);
+    try {
+      setLembrete(await api.patch<LembreteCheckin>("/wellhub/lembrete", { ativo: !lembrete.ativo }));
+    } catch (e) {
+      setErroLembrete(e instanceof ApiError ? e.message : "Não foi possível salvar o lembrete.");
+    } finally {
+      setSalvandoLembrete(false);
+    }
+  }
+
+  async function lembrarAgora(alunoId: number) {
+    setLembrando(alunoId);
+    setErroLembrete(null);
+    try {
+      await api.post(`/wellhub/lembrete/${alunoId}`, {});
+      setLembrados((atual) => new Set(atual).add(alunoId));
+    } catch (e) {
+      setErroLembrete(e instanceof ApiError ? e.message : "Não foi possível enviar o lembrete.");
+    } finally {
+      setLembrando(null);
+    }
+  }
 
   const carregar = useCallback(async () => {
     setErro(null);
@@ -228,7 +273,37 @@ export default function AdminPointWellhub() {
             de check-ins de cada aluno precisa ser igual ao total de aulas confirmadas pelo professor.
           </span>
         </div>
+        {lembrete && (
+          <div className="chk-lembrete">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={lembrete.ativo}
+              className={lembrete.ativo ? "cobr-etapa ligada" : "cobr-etapa"}
+              disabled={salvandoLembrete}
+              onClick={alternarLembrete}
+            >
+              <span>
+                <span className="cobr-etapa-titulo">Lembrete automático no WhatsApp</span>
+                <span className="cobr-etapa-descricao">
+                  Toda segunda e no dia 25, pra quem está com check-in faltando.
+                </span>
+              </span>
+              <span className="cobr-chave" aria-hidden="true">
+                <span />
+              </span>
+            </button>
+            <span className="chk-lembrete-nota">
+              {lembrete.ativo
+                ? lembrete.devendo === 0
+                  ? "Ninguém devendo agora."
+                  : `Próximo envio ${dataCurta(lembrete.proximo_envio)}, às 10h · ${plural(lembrete.devendo, "aluno devendo", "alunos devendo")} hoje.`
+                : "Desligado. Dá pra lembrar um aluno de cada vez pela lista."}
+            </span>
+          </div>
+        )}
       </div>
+      {erroLembrete && <p className="form-error">{erroLembrete}</p>}
 
       <div className="chk-corpo">
         <section className="alunos-card chk-tabela-card">
@@ -268,6 +343,10 @@ export default function AdminPointWellhub() {
                   linha={l}
                   nome={nomeDaLinha(l)}
                   onVincular={() => abrirVinculo(l)}
+                  podeLembrar={mesEmAndamento}
+                  lembrado={l.aluno_id !== null && lembrados.has(l.aluno_id)}
+                  lembrando={l.aluno_id !== null && lembrando === l.aluno_id}
+                  onLembrar={() => l.aluno_id !== null && lembrarAgora(l.aluno_id)}
                 />
               ))}
               {visiveis.length === 0 && (
@@ -315,10 +394,19 @@ function LinhaAluno({
   linha: l,
   nome,
   onVincular,
+  podeLembrar,
+  lembrado,
+  lembrando,
+  onLembrar,
 }: {
   linha: WellhubReconciliacaoLinha;
   nome: string;
   onVincular: () => void;
+  // Lembrete na hora (pedido do usuário, 2026-10-02) — só no mês corrente.
+  podeLembrar: boolean;
+  lembrado: boolean;
+  lembrando: boolean;
+  onLembrar: () => void;
 }) {
   const st = situacao(l);
   const cobertas = Math.min(l.aulas_no_mes, l.checkins_no_mes);
@@ -368,6 +456,11 @@ function LinhaAluno({
         {l.aluno_id === null && l.gympass_id !== null && (
           <button type="button" className="alunos-acao" onClick={onVincular}>
             Vincular aluno
+          </button>
+        )}
+        {podeLembrar && l.aluno_id !== null && l.saldo < 0 && (
+          <button type="button" className="alunos-acao" disabled={lembrando || lembrado} onClick={onLembrar}>
+            {lembrado ? "Lembrete enviado" : lembrando ? "Enviando..." : "Lembrar"}
           </button>
         )}
       </span>

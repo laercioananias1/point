@@ -286,3 +286,34 @@ def enviar_cobranca_email(
         html=html,
         point_id=point_id,
     )
+
+
+def enviar_lembrete_checkin_email(
+    *,
+    nome: str,
+    email: str,
+    point_nome: str,
+    faltam: int,
+    plataforma: str,
+    point_id: int | None = None,
+) -> None:
+    """Lembrete de check-in pendente no mês (pedido do usuário, 2026-10-02),
+    mesmo par WhatsApp + e-mail da cobrança."""
+    plural = "check-ins" if faltam > 1 else "check-in"
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2>Faltam check-ins no {plataforma} — {point_nome}</h2>
+      <p>Olá, {nome}!</p>
+      <p>
+        Neste mês você fez mais aulas no {point_nome} do que check-ins no {plataforma}:
+        <strong>{"faltam" if faltam > 1 else "falta"} {faltam} {plural}</strong>.
+      </p>
+      <p>O check-in pode ser feito em qualquer dia, pelo app do {plataforma}, até o fim do mês.</p>
+    </div>
+    """
+    _enviar(
+        email=email,
+        assunto=f"Faltam {faltam} {plural} no {plataforma}",
+        html=html,
+        point_id=point_id,
+    )

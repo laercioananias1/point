@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, ApiError } from "../api/client";
-import type { Checkin, Feriado, Matricula, SolicitacaoExperimental, TurmaResumo } from "../api/types";
+import type {
+  Checkin,
+  Feriado,
+  Matricula,
+  SaldoCheckinsAluno,
+  SolicitacaoExperimental,
+  TurmaResumo,
+} from "../api/types";
 import { CategoriaBadge } from "./CategoriaBadge";
 import { Icon } from "./Layout";
 import { diaSemanaDeData, inicioDaSemana, somarDias, toISODate } from "./Calendar";
@@ -138,7 +145,8 @@ function hexParaRgba(hex: string, alpha: number): string {
  * realidade o experimental é quase um aluno, ele só não tem uma senha
  * para entrar") — mesma lista/checklist de presença pros dois, só o
  * `tipo` decide qual endpoint marcar/desmarcar chama. */
-export type Pessoa = { id: number; nome: string; tipo: "matricula" | "experimental" };
+// `alunoId` só pra matrícula — é por ele que o saldo de check-ins casa.
+export type Pessoa = { id: number; nome: string; tipo: "matricula" | "experimental"; alunoId?: number };
 
 /** Essa matrícula tem mesmo aula nessa turma nessa data — espelha
  * app.services.aulas::matricula_tem_aula_em (pedido do usuário,
@@ -243,7 +251,7 @@ export function AgendaTurmasCalendario({
     return [
       ...matriculas
         .filter((m) => matriculaTemAulaEm(m, oc.turmaId, iso, diaSemana))
-        .map((m): Pessoa => ({ id: m.id, nome: m.aluno.nome, tipo: "matricula" })),
+        .map((m): Pessoa => ({ id: m.id, nome: m.aluno.nome, tipo: "matricula", alunoId: m.aluno_id })),
       ...solicitacoesExperimentais
         .filter((s) => s.turma.id === oc.turmaId && s.data === iso)
         .map((s): Pessoa => ({ id: s.id, nome: s.nome, tipo: "experimental" })),
@@ -630,6 +638,34 @@ export function usePresenca(turmaId: number, iso: string) {
   return { presentes, carregado, alterando, alternar, chave };
 }
 
+/** Check-ins que faltam no mês por aluno da turma (Wellhub/TotalPass) — o
+ * aviso na hora da chamada (pedido do usuário, 2026-10-02: o site promete
+ * "o professor vê o aviso na hora da chamada"). Só entra quem está
+ * devendo; falha na busca só esconde o aviso. */
+function useFaltamCheckins(turmaId: number, iso: string): Map<number, number> {
+  const [faltam, setFaltam] = useState<Map<number, number>>(new Map());
+
+  useEffect(() => {
+    let ativo = true;
+    api
+      .get<SaldoCheckinsAluno[]>(`/checkins/turma/${turmaId}/saldos?data=${iso}`)
+      .then((saldos) => {
+        if (!ativo) return;
+        const mapa = new Map<number, number>();
+        for (const s of saldos) {
+          if (s.saldo < 0) mapa.set(s.aluno_id, (mapa.get(s.aluno_id) ?? 0) - s.saldo);
+        }
+        setFaltam(mapa);
+      })
+      .catch(() => ativo && setFaltam(new Map()));
+    return () => {
+      ativo = false;
+    };
+  }, [turmaId, iso]);
+
+  return faltam;
+}
+
 /** Checklist de presença dos alunos esperados nessa ocorrência (pedido do
  * usuário, 2026-08-26: "mostrar também os alunos e um check pra marcar
  * presença de cada um"). Cada marcação é um Checkin de origem "presumido" —
@@ -639,11 +675,13 @@ function PresencaLista({
   pessoas,
   origemPorMatricula,
   presenca,
+  faltamCheckins,
   onCancelarAluno,
 }: {
   pessoas: Pessoa[];
   origemPorMatricula: Map<number, string>;
   presenca: ReturnType<typeof usePresenca>;
+  faltamCheckins: Map<number, number>;
   // Cancelar a aula de UM aluno específico, não a turma inteira (pedido
   // do usuário, 2026-09-01: "o professor pode cancelar uma aula de um
   // determinado aluno de última hora, precisa informar o motivo e opção
@@ -663,6 +701,7 @@ function PresencaLista({
       <span className="prof-aulas-titulo agenda-presenca-titulo">Presença · confirmada pelo professor</span>
       {pessoas.map((p) => {
         const presente = presentes.has(chave(p));
+        const faltam = p.alunoId !== undefined ? (faltamCheckins.get(p.alunoId) ?? 0) : 0;
         const iniciais = p.nome
           .split(" ")
           .filter(Boolean)
@@ -673,7 +712,14 @@ function PresencaLista({
           <div key={chave(p)} className="agenda-presenca-linha">
             <span className="agenda-presenca-avatar">{iniciais}</span>
             <span className="alunos-pessoa-texto agenda-presenca-pessoa">
-              <span className="alunos-nome">{p.nome}</span>
+              <span className="alunos-nome">
+                {p.nome}
+                {faltam > 0 && (
+                  <span className="prof-saldo-pilula">
+                    {faltam === 1 ? "falta 1 check-in" : `faltam ${faltam} check-ins`}
+                  </span>
+                )}
+              </span>
               <span className="alunos-sub">
                 {p.tipo === "experimental" ? "Aula experimental" : origemPorMatricula.get(p.id) ?? "Aluno"}
                 {p.tipo === "matricula" && (
@@ -1085,6 +1131,7 @@ function DetalheOcorrencia({
   onCancelarAluno: (matriculaId: number, nome: string) => void;
 }) {
   const presenca = usePresenca(ocorrencia.turmaId, toISODate(ocorrencia.data));
+  const faltamCheckins = useFaltamCheckins(ocorrencia.turmaId, toISODate(ocorrencia.data));
   const vagas = Math.max(0, ocorrencia.capacidade - pessoas.length);
   const quando = ocorrencia.data
     .toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
@@ -1126,6 +1173,7 @@ function DetalheOcorrencia({
         pessoas={pessoas}
         origemPorMatricula={origemPorMatricula}
         presenca={presenca}
+        faltamCheckins={faltamCheckins}
         onCancelarAluno={onCancelarAluno}
       />
 

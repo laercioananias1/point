@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.deps import require_role
 from app.models.aluno import Aluno
 from app.models.checkin import Checkin
-from app.models.enums import CheckinStatus, MatriculaStatus, PagamentoMeio, Role
+from app.models.enums import CheckinStatus, MatriculaStatus, Role
 from app.models.matricula import Matricula
 from app.models.point import Point
 from app.models.turma import Turma
@@ -21,12 +21,17 @@ from app.schemas.wellhub import (
     WellhubCheckinCreate,
     WellhubCheckinOut,
     CheckinVincular,
+    LembreteCheckinIn,
+    LembreteCheckinOut,
     SaldoAlunoOut,
     WellhubReconciliacaoLinha,
     WellhubReconciliacaoOut,
 )
 from app.services.totalpass import TotalPassError
 from app.services.totalpass import validar_checkin as validar_checkin_totalpass
+from app.services import lembrete_checkin
+from app.services.saldo_checkins import PLATAFORMA_DO_MEIO as _PLATAFORMA_DO_MEIO
+from app.services.saldo_checkins import saldos_de_checkins
 from app.services.wellhub import WellhubError, validar_checkin
 
 router = APIRouter(prefix="/wellhub", tags=["wellhub"])
@@ -235,7 +240,6 @@ def vincular_pessoa_a_aluno(payload: CheckinVincular, db: DB, admin: Admin) -> N
     db.commit()
 
 
-_PLATAFORMA_DO_MEIO = {PagamentoMeio.WELLHUB: "wellhub", PagamentoMeio.TOTALPASS: "totalpass"}
 
 
 @router.get("/reconciliacao", response_model=WellhubReconciliacaoOut)
@@ -331,89 +335,8 @@ def reconciliacao_do_mes(db: DB, admin: Admin, mes: str | None = None) -> Wellhu
 def _saldos_de_checkins(
     db: Session, *, aluno_ids: set[int], mes: str | None, point_ids: set[int] | None = None
 ) -> list[SaldoAlunoOut]:
-    """Mesma conta do acerto do mês do admin (só quantidade, sem casar data
-    de check-in com data de aula), por aluno + Point + plataforma. Inclui
-    matrícula ativa paga por benefício mesmo sem movimento no mês, pra o
-    saldo aparecer zerado desde o dia 1. `point_ids` recorta os Points
-    (professor só vê os Points onde dá aula)."""
-    if not aluno_ids:
-        return []
     inicio, fim = _intervalo_do_mes(mes)
-    inicio_dt = datetime.combine(inicio, datetime.min.time())
-    fim_dt = datetime.combine(fim, datetime.max.time())
-    beneficio = list(_PLATAFORMA_DO_MEIO)
-
-    q_checkins = db.query(
-        WellhubCheckin.aluno_id, WellhubCheckin.point_id, WellhubCheckin.plataforma, func.count(WellhubCheckin.id)
-    ).filter(
-        WellhubCheckin.aluno_id.in_(aluno_ids),
-        WellhubCheckin.data >= inicio,
-        WellhubCheckin.data <= fim,
-    )
-    q_aulas = (
-        db.query(Matricula.aluno_id, Vinculo.point_id, Matricula.fonte_pagamento, func.count(Checkin.id))
-        .join(Checkin, Checkin.matricula_id == Matricula.id)
-        .join(Turma, Matricula.turma_id == Turma.id)
-        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
-        .filter(
-            Matricula.aluno_id.in_(aluno_ids),
-            Matricula.fonte_pagamento.in_(beneficio),
-            Checkin.status == CheckinStatus.CONFIRMADO,
-            Checkin.data_hora >= inicio_dt,
-            Checkin.data_hora <= fim_dt,
-        )
-    )
-    q_ativas = (
-        db.query(Matricula.aluno_id, Vinculo.point_id, Matricula.fonte_pagamento)
-        .join(Turma, Matricula.turma_id == Turma.id)
-        .join(Vinculo, Turma.vinculo_id == Vinculo.id)
-        .filter(
-            Matricula.aluno_id.in_(aluno_ids),
-            Matricula.status == MatriculaStatus.ATIVA,
-            Matricula.fonte_pagamento.in_(beneficio),
-        )
-    )
-    if point_ids is not None:
-        q_checkins = q_checkins.filter(WellhubCheckin.point_id.in_(point_ids))
-        q_aulas = q_aulas.filter(Vinculo.point_id.in_(point_ids))
-        q_ativas = q_ativas.filter(Vinculo.point_id.in_(point_ids))
-
-    checkins = {
-        (aluno_id, point_id, plataforma): qtd
-        for aluno_id, point_id, plataforma, qtd in q_checkins.group_by(
-            WellhubCheckin.aluno_id, WellhubCheckin.point_id, WellhubCheckin.plataforma
-        ).all()
-    }
-    aulas = {
-        (aluno_id, point_id, _PLATAFORMA_DO_MEIO[fonte]): qtd
-        for aluno_id, point_id, fonte, qtd in q_aulas.group_by(
-            Matricula.aluno_id, Vinculo.point_id, Matricula.fonte_pagamento
-        ).all()
-    }
-    ativas = {
-        (aluno_id, point_id, _PLATAFORMA_DO_MEIO[fonte]) for aluno_id, point_id, fonte in q_ativas.distinct().all()
-    }
-
-    chaves = set(checkins) | set(aulas) | ativas
-    if not chaves:
-        return []
-    nomes = dict(db.query(Point.id, Point.nome).filter(Point.id.in_({p for _, p, _ in chaves})).all())
-    return sorted(
-        (
-            SaldoAlunoOut(
-                aluno_id=aluno_id,
-                point_id=point_id,
-                point_nome=nomes.get(point_id, ""),
-                plataforma=plataforma,
-                checkins=checkins.get(chave, 0),
-                aulas=aulas.get(chave, 0),
-                saldo=checkins.get(chave, 0) - aulas.get(chave, 0),
-            )
-            for chave in chaves
-            for aluno_id, point_id, plataforma in [chave]
-        ),
-        key=lambda s: (s.point_nome, s.plataforma, s.aluno_id),
-    )
+    return saldos_de_checkins(db, aluno_ids=aluno_ids, inicio=inicio, fim=fim, point_ids=point_ids)
 
 
 @router.get("/meu-saldo", response_model=list[SaldoAlunoOut])
@@ -459,3 +382,38 @@ def saldos_dos_alunos_do_professor(
         point_ids={point_id for _, point_id in linhas},
         mes=mes,
     )
+
+
+def _lembrete_out(db: Session, point: Point) -> LembreteCheckinOut:
+    hoje = date.today()
+    return LembreteCheckinOut(
+        ativo=point.lembrete_checkin,
+        proximo_envio=lembrete_checkin.proximo_dia_de_lembrete(hoje),
+        devendo=len(lembrete_checkin.devendo_checkin(db, point.id, hoje)),
+    )
+
+
+@router.get("/lembrete", response_model=LembreteCheckinOut)
+def ver_lembrete_checkin(db: DB, admin: Admin) -> LembreteCheckinOut:
+    """Lembrete automático de check-in do Point (pedido do usuário,
+    2026-10-02)."""
+    return _lembrete_out(db, db.get(Point, admin.point_id))
+
+
+@router.patch("/lembrete", response_model=LembreteCheckinOut)
+def salvar_lembrete_checkin(payload: LembreteCheckinIn, db: DB, admin: Admin) -> LembreteCheckinOut:
+    point = db.get(Point, admin.point_id)
+    point.lembrete_checkin = payload.ativo
+    db.commit()
+    return _lembrete_out(db, point)
+
+
+@router.post("/lembrete/{aluno_id}", status_code=204)
+def lembrar_aluno_agora(aluno_id: int, db: DB, admin: Admin) -> None:
+    """Botão "Lembrar" na linha do aluno — manda na hora, independente do
+    lembrete automático estar ligado. Só pra quem está devendo no mês."""
+    saldos = [s for s in lembrete_checkin.devendo_checkin(db, admin.point_id, date.today()) if s.aluno_id == aluno_id]
+    if not saldos:
+        raise HTTPException(409, "Esse aluno não está devendo check-in neste mês")
+    for saldo in saldos:
+        lembrete_checkin.enviar_lembrete(db, saldo)

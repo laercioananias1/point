@@ -23,6 +23,7 @@ from app.core.database import SessionLocal
 from app.services.aulas import gerar_aulas_do_mes_em_lote
 from app.services.caixa import gerar_lancamentos_fixos
 from app.services.cobrancas import gerar_mensalidades, rodar_regua
+from app.services.lembrete_checkin import rodar_lembretes as rodar_lembretes_checkin
 
 # print(), não logging — mesmo padrão já usado em app/services/email.py (o
 # projeto não configura handler de logging em lugar nenhum).
@@ -93,6 +94,21 @@ def _rodar_regua_de_cobranca() -> None:
         db.close()
 
 
+def _rodar_lembretes_de_checkin() -> None:
+    """Todo dia às 10:00 (pedido do usuário, 2026-10-02) — o serviço só
+    manda de fato na segunda e no dia 25."""
+    db = SessionLocal()
+    try:
+        total = rodar_lembretes_checkin(db)
+        print(f"[scheduler] lembrete de check-in: {total} enviado(s)")
+    except Exception:  # noqa: BLE001 — job de fundo não pode derrubar o processo
+        print("[scheduler] falha no lembrete de check-in:")
+        traceback.print_exc()
+        db.rollback()
+    finally:
+        db.close()
+
+
 def iniciar_scheduler() -> BackgroundScheduler:
     """Chamada uma vez, no startup da API (ver app/main.py)."""
     global _scheduler
@@ -132,6 +148,14 @@ def iniciar_scheduler() -> BackgroundScheduler:
         hour=9,
         minute=0,
         id="regua_cobranca_diaria",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _rodar_lembretes_de_checkin,
+        trigger="cron",
+        hour=10,
+        minute=0,
+        id="lembrete_checkin_diario",
         replace_existing=True,
     )
     scheduler.start()

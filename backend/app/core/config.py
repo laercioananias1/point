@@ -109,6 +109,10 @@ class Settings(BaseSettings):
     # Cobranças, botão de WhatsApp em cada linha) — só texto, sem botão.
     # Nome provisório até criar/aprovar na Meta (categoria Utility).
     whatsapp_template_cobranca: str = "lembrete_cobranca"
+    # Lembrete de check-in pendente (pedido do usuário, 2026-10-02) — corpo
+    # com {{1}} nome, {{2}} Point, {{3}} quantos faltam, {{4}} plataforma.
+    # Nome provisório até criar/aprovar na Meta (categoria Utility).
+    whatsapp_template_lembrete_checkin: str = "lembrete_checkin"
 
     # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
     # 2026-08-30: deploy em produção) — em dev é só o Vite local; em
