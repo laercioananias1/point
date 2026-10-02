@@ -36,6 +36,7 @@ from app.schemas.matricula import (
 from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario
 from app.services.feriados import eh_feriado
 from app.services.email import enviar_lembrete_mensalidade_email
+from app.services.carregamento import opcoes_matricula
 
 router = APIRouter(prefix="/matriculas", tags=["matriculas"])
 
@@ -146,6 +147,7 @@ def listar_matriculas_do_point(
         .join(Turma)
         .join(Vinculo)
         .filter(Vinculo.point_id == admin.point_id)
+        .options(*opcoes_matricula())
         .all()
     )
 

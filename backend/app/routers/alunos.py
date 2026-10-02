@@ -21,6 +21,7 @@ from app.schemas.aluno_categoria import AlunoCategoriaOut, AlunoCategoriaSet
 from app.schemas.assinatura import AssinaturaOut
 from app.schemas.credito import CreditoOut
 from app.schemas.matricula import MatriculaOut
+from app.services.carregamento import opcoes_matricula
 
 router = APIRouter(prefix="/alunos", tags=["alunos"])
 
@@ -90,7 +91,7 @@ def minhas_matriculas(
     """Agenda do aluno — em qualquer Point/professor (seção 2), independente
     de status, pra ele acompanhar tanto o que já está ativo quanto o que
     ainda está em análise."""
-    return db.query(Matricula).filter(Matricula.aluno_id == user.aluno_id).all()
+    return db.query(Matricula).filter(Matricula.aluno_id == user.aluno_id).options(*opcoes_matricula()).all()
 
 
 @router.get("/me/creditos", response_model=list[CreditoOut])

@@ -15,6 +15,7 @@ from app.models.vinculo import Vinculo
 from app.schemas.matricula import MatriculaOut
 from app.schemas.professor import ProfessorCreate, ProfessorOut
 from app.schemas.vinculo import VinculoOut
+from app.services.carregamento import opcoes_matricula
 
 router = APIRouter(prefix="/professores", tags=["professores"])
 
@@ -87,5 +88,6 @@ def minhas_matriculas(
         .join(Turma)
         .join(Vinculo)
         .filter(Vinculo.professor_id == user.professor_id)
+        .options(*opcoes_matricula())
         .all()
     )

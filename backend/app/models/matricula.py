@@ -96,7 +96,7 @@ class Matricula(TimestampMixin, Base):
         """Datas que ESSE aluno cancelou com antecedência (pedido do
         usuário, 2026-08-20) — pra MatriculaOut expor direto, e pro
         frontend somar com as exceções da Turma ao montar a agenda."""
-        return [e.data for e in self.excecoes_rel]
+        return sorted(e.data for e in self.excecoes_rel)
 
     @property
     def dias_semana(self) -> list[str]:

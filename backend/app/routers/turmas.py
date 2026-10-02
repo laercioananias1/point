@@ -42,6 +42,7 @@ from app.schemas.turma import (
 from app.services.aulas import DIAS_SEMANA
 from app.services.notificacoes import criar_notificacao
 from app.services.whatsapp import enviar_cancelamento_aula_whatsapp
+from app.services.carregamento import opcoes_turma
 
 router = APIRouter(tags=["turmas"])
 
@@ -455,6 +456,7 @@ def minhas_turmas(
         db.query(Turma)
         .join(Vinculo)
         .filter(Vinculo.professor_id == professor.professor_id)
+        .options(*opcoes_turma())
         .all()
     )
 
@@ -517,7 +519,7 @@ def buscar_turmas(
         query = query.filter(Vinculo.point_id == point_id)
     if professor_id:
         query = query.filter(Vinculo.professor_id == professor_id)
-    turmas = query.all()
+    turmas = query.options(*opcoes_turma()).all()
     if periodo_dia:
         horas_validas = PERIODO_DIA_HORAS[periodo_dia]
         turmas = [t for t in turmas if int(t.horario.split(":")[0]) in horas_validas]
@@ -542,4 +544,4 @@ def turmas_do_vinculo(
     vinculo = db.get(Vinculo, vinculo_id)
     if vinculo is None or vinculo.point_id != admin.point_id:
         raise HTTPException(404, "Vínculo não encontrado")
-    return db.query(Turma).filter(Turma.vinculo_id == vinculo_id).all()
+    return db.query(Turma).filter(Turma.vinculo_id == vinculo_id).options(*opcoes_turma()).all()
