@@ -29,6 +29,10 @@ class UserOut(ORMModel):
     # força maior) sem precisar de mais uma chamada.
     point_id: int | None = None
     foto: str | None = None
+    # Contato da própria conta, pro topo do Perfil (pedido do usuário,
+    # 2026-10-02: "onde eu vejo o email do adm do point").
+    email: str | None = None
+    celular: str | None = None
 
 
 class TokenResponse(ORMModel):

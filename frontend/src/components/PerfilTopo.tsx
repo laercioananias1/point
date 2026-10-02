@@ -3,13 +3,14 @@ import { api, ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "./Avatar";
 import { Icon } from "./Layout";
+import { formatarCelular } from "../lib/formato";
 
 /** Topo das telas de Perfil no layout do kit (pedido do usuário,
  * 2026-10-01: "dê uma restilizada agora na tela de perfil") — cartão
  * escuro com a foto grande, nome, papel e contato. A troca de foto
  * (pedido do usuário, 2026-09-21: "colocar para o usuário inserir uma
  * foto") mora aqui: botão de câmera sobre a foto e "Remover foto". */
-export function PerfilTopo({ papel, detalhes = [] }: { papel: string; detalhes?: (string | null | undefined)[] }) {
+export function PerfilTopo({ papel, detalhes }: { papel: string; detalhes?: (string | null | undefined)[] }) {
   const { user, atualizarUser } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const [enviando, setEnviando] = useState(false);
@@ -46,7 +47,11 @@ export function PerfilTopo({ papel, detalhes = [] }: { papel: string; detalhes?:
     }
   }
 
-  const linhas = detalhes.filter((d): d is string => Boolean(d));
+  // Sem detalhes próprios da tela, mostra o contato da conta (pedido do
+  // usuário, 2026-10-02: ver o e-mail do admin no perfil dele).
+  const linhas = (detalhes ?? [user.email, user.celular ? formatarCelular(user.celular) : null]).filter(
+    (d): d is string => Boolean(d),
+  );
 
   return (
     <section className="perfil-topo">

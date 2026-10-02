@@ -133,6 +133,19 @@ export default function DonoAppPoints() {
                       </div>
                     </div>
 
+                    {d && d.admins_lista.length > 0 && (
+                      <div className="points-admins">
+                        {d.admins_lista.map((a) => (
+                          <div key={a.email} className="points-admin">
+                            <span className="alunos-sub">Admin</span>
+                            <strong>{a.nome}</strong>
+                            <span className="points-admin-contato">{a.email}</span>
+                            <span className="points-admin-contato">{formatarCelular(a.celular)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="points-recebido">
                       <span>
                         <span className="alunos-sub">Recebido no mês</span>

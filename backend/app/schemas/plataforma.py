@@ -17,11 +17,20 @@ class PlataformaTotaisOut(ORMModel):
     experimentais_pendentes: int
 
 
+class PlataformaAdminOut(ORMModel):
+    nome: str
+    email: str
+    celular: str
+
+
 class PlataformaPointOut(ORMModel):
     id: int
     nome: str
     criado_em: str
     admins: int
+    # Quem administra (pedido do usuário, 2026-10-02: ver o e-mail do
+    # admin no cartão do Point).
+    admins_lista: list[PlataformaAdminOut] = []
     professores: int
     alunos: int
     turmas: int

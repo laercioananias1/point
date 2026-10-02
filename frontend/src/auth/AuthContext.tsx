@@ -22,6 +22,8 @@ export interface User {
   roles: Role[];
   point_id: number | null;
   foto: string | null;
+  email?: string | null;
+  celular?: string | null;
 }
 
 interface AuthContextValue {

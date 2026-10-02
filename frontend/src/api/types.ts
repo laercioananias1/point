@@ -465,6 +465,7 @@ export interface PlataformaPainel {
     nome: string;
     criado_em: string;
     admins: number;
+    admins_lista: { nome: string; email: string; celular: string }[];
     professores: number;
     alunos: number;
     turmas: number;

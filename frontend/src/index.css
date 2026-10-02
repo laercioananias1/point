@@ -9024,3 +9024,30 @@ input.cobr-busca-campo {
 .login-lado .auth-card .empty-state {
   font-size: 14px;
 }
+
+/* Admin no cartão do Point (pedido do usuário, 2026-10-02). */
+.points-admins {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.points-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-sunk);
+  min-width: 0;
+}
+
+.points-admin strong {
+  font-size: 14px;
+}
+
+.points-admin-contato {
+  font-size: 13px;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}

@@ -30,6 +30,7 @@ from app.models.user import User
 from app.models.vinculo import Vinculo
 from app.models.wellhub_checkin import WellhubCheckin
 from app.schemas.plataforma import (
+    PlataformaAdminOut,
     PlataformaIntegracaoOut,
     PlataformaPainelOut,
     PlataformaPointOut,
@@ -67,9 +68,13 @@ def painel_plataforma(
 
     # Admins por Point (um usuário admin_point aponta pro Point em point_id).
     admins: dict[int, int] = {}
-    for user in db.query(User).filter(User.point_id.isnot(None)).all():
+    admins_lista: dict[int, list[PlataformaAdminOut]] = {}
+    for user in db.query(User).filter(User.point_id.isnot(None)).order_by(User.nome).all():
         if user.tem_role(Role.ADMIN_POINT):
             admins[user.point_id] = admins.get(user.point_id, 0) + 1
+            admins_lista.setdefault(user.point_id, []).append(
+                PlataformaAdminOut(nome=user.nome, email=user.email, celular=user.celular)
+            )
 
     points = []
     alunos_plataforma: set[int] = set()
@@ -106,6 +111,7 @@ def painel_plataforma(
                 nome=point.nome,
                 criado_em=point.created_at.date().isoformat(),
                 admins=admins.get(point.id, 0),
+                admins_lista=admins_lista.get(point.id, []),
                 professores=professores,
                 alunos=len(alunos),
                 turmas=turmas,
