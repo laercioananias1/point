@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
-import { MarcaOPoint } from "../components/LogoMark";
+import { TelaEntrada } from "../components/TelaEntrada";
 
 /** Tela pública (sem login) que abre a partir do link do e-mail de
  * "Esqueci minha senha" (pedido do usuário, 2026-09-01). Não busca nada
@@ -48,47 +48,41 @@ export default function RedefinirSenha() {
   }
 
   return (
-    <div className="auth-screen">
-      <div>
-        <div className="auth-brand">
-          <MarcaOPoint />
-        </div>
+    <TelaEntrada>
+      {sucesso ? (
+        <p className="auth-card form-success">Senha alterada! Entrando...</p>
+      ) : (
+        <form className="auth-card" onSubmit={handleSubmit}>
+          <h1>Redefinir senha</h1>
+          <p className="auth-subtitle">Escolha uma senha nova pra sua conta.</p>
 
-        {sucesso ? (
-          <p className="auth-card form-success">Senha alterada! Entrando...</p>
-        ) : (
-          <form className="auth-card" onSubmit={handleSubmit}>
-            <h1>Redefinir senha</h1>
-            <p className="auth-subtitle">Escolha uma senha nova pra sua conta.</p>
+          <label htmlFor="senha-nova">Nova senha</label>
+          <input
+            id="senha-nova"
+            type="password"
+            value={senhaNova}
+            onChange={(e) => setSenhaNova(e.target.value)}
+            minLength={6}
+            required
+          />
 
-            <label htmlFor="senha-nova">Nova senha</label>
-            <input
-              id="senha-nova"
-              type="password"
-              value={senhaNova}
-              onChange={(e) => setSenhaNova(e.target.value)}
-              minLength={6}
-              required
-            />
+          <label htmlFor="confirmar">Confirmar nova senha</label>
+          <input
+            id="confirmar"
+            type="password"
+            value={confirmar}
+            onChange={(e) => setConfirmar(e.target.value)}
+            minLength={6}
+            required
+          />
 
-            <label htmlFor="confirmar">Confirmar nova senha</label>
-            <input
-              id="confirmar"
-              type="password"
-              value={confirmar}
-              onChange={(e) => setConfirmar(e.target.value)}
-              minLength={6}
-              required
-            />
+          {erro && <p className="auth-error">{erro}</p>}
 
-            {erro && <p className="auth-error">{erro}</p>}
-
-            <button type="submit" disabled={enviando}>
-              {enviando ? "Salvando..." : "Redefinir senha"}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+          <button type="submit" disabled={enviando}>
+            {enviando ? "Salvando..." : "Redefinir senha"}
+          </button>
+        </form>
+      )}
+    </TelaEntrada>
   );
 }

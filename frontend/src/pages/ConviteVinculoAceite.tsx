@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
 import { PointBrand } from "../components/PointBrand";
+import { TelaEntrada } from "../components/TelaEntrada";
 import type { ConviteVinculo } from "../api/types";
 
 /** Tela pública (sem login) que o professor abre a partir do link do
@@ -31,50 +32,46 @@ export default function ConviteVinculoAceite() {
   }, [token]);
 
   return (
-    <div className="auth-screen">
-      <div>
-        <PointBrand point={convite?.point} />
+    <TelaEntrada marca={<PointBrand point={convite?.point} />}>
+      {carregando && <p className="auth-card">Carregando convite...</p>}
 
-        {carregando && <p className="auth-card">Carregando convite...</p>}
+      {!carregando && (erroCarregar || !convite) && (
+        <p className="auth-card auth-error">{erroCarregar ?? "Convite não encontrado."}</p>
+      )}
 
-        {!carregando && (erroCarregar || !convite) && (
-          <p className="auth-card auth-error">{erroCarregar ?? "Convite não encontrado."}</p>
-        )}
+      {!carregando && convite && (
+        <>
+          <ResumoConvite convite={convite} />
 
-        {!carregando && convite && (
-          <>
-            <ResumoConvite convite={convite} />
-
-            {aceito ? (
-              <p className="auth-card form-success">Vínculo ativado! Redirecionando...</p>
-            ) : convite.status === "aceito" ? (
-              <p className="auth-card form-success">Esse convite já foi aceito.</p>
-            ) : convite.status === "cancelado" ? (
-              <p className="auth-card auth-error">Esse convite foi cancelado pelo Point.</p>
-            ) : convite.expirado ? (
-              <p className="auth-card auth-error">Esse convite expirou — peça um novo ao Point.</p>
-            ) : convite.professor_ja_cadastrado ? (
-              <AceitarComLogin
-                token={token!}
-                onAceito={() => {
-                  setAceito(true);
-                  setTimeout(() => navigate("/professor"), 1200);
-                }}
-              />
-            ) : (
-              <AceitarNovo
-                token={token!}
-                onAceito={(accessToken, user) => {
-                  loginComToken(accessToken, user);
-                  setAceito(true);
-                  setTimeout(() => navigate("/professor"), 1200);
-                }}
-              />
-            )}
-          </>
-        )}
-      </div>
-    </div>
+          {aceito ? (
+            <p className="auth-card form-success">Vínculo ativado! Redirecionando...</p>
+          ) : convite.status === "aceito" ? (
+            <p className="auth-card form-success">Esse convite já foi aceito.</p>
+          ) : convite.status === "cancelado" ? (
+            <p className="auth-card auth-error">Esse convite foi cancelado pelo Point.</p>
+          ) : convite.expirado ? (
+            <p className="auth-card auth-error">Esse convite expirou — peça um novo ao Point.</p>
+          ) : convite.professor_ja_cadastrado ? (
+            <AceitarComLogin
+              token={token!}
+              onAceito={() => {
+                setAceito(true);
+                setTimeout(() => navigate("/professor"), 1200);
+              }}
+            />
+          ) : (
+            <AceitarNovo
+              token={token!}
+              onAceito={(accessToken, user) => {
+                loginComToken(accessToken, user);
+                setAceito(true);
+                setTimeout(() => navigate("/professor"), 1200);
+              }}
+            />
+          )}
+        </>
+      )}
+    </TelaEntrada>
   );
 }
 

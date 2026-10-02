@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../api/client";
-import { MarcaOPoint } from "../components/LogoMark";
+import { TelaEntrada } from "../components/TelaEntrada";
 
 /** Pedir o link de redefinição de senha por e-mail (pedido do usuário,
  * 2026-09-01: "a troca de senha precisa ser por email" — substitui a tela
@@ -34,47 +34,41 @@ export default function EsqueciSenha() {
   }
 
   return (
-    <div className="auth-screen">
-      <div>
-        <div className="auth-brand">
-          <MarcaOPoint />
+    <TelaEntrada>
+      {enviado ? (
+        <div className="auth-card form-success">
+          <p>
+            Se <strong>{email}</strong> tiver uma conta, mandamos um e-mail com o link pra
+            redefinir a senha. O link vale por 1 hora.
+          </p>
         </div>
+      ) : (
+        <form className="auth-card" onSubmit={handleSubmit}>
+          <h1>Esqueci minha senha</h1>
+          <p className="auth-subtitle">
+            Digite o e-mail do seu cadastro — mandamos um link pra você escolher uma senha nova.
+          </p>
 
-        {enviado ? (
-          <div className="auth-card form-success">
-            <p>
-              Se <strong>{email}</strong> tiver uma conta, mandamos um e-mail com o link pra
-              redefinir a senha. O link vale por 1 hora.
-            </p>
-          </div>
-        ) : (
-          <form className="auth-card" onSubmit={handleSubmit}>
-            <h1>Esqueci minha senha</h1>
-            <p className="auth-subtitle">
-              Digite o e-mail do seu cadastro — mandamos um link pra você escolher uma senha nova.
-            </p>
+          <label htmlFor="email">E-mail</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-            <label htmlFor="email">E-mail</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          {erro && <p className="auth-error">{erro}</p>}
 
-            {erro && <p className="auth-error">{erro}</p>}
+          <button type="submit" disabled={enviando}>
+            {enviando ? "Enviando..." : "Enviar link"}
+          </button>
+        </form>
+      )}
 
-            <button type="submit" disabled={enviando}>
-              {enviando ? "Enviando..." : "Enviar link"}
-            </button>
-          </form>
-        )}
-
-        <p className="auth-subtitle" style={{ textAlign: "center", marginTop: 16 }}>
-          <Link to="/login">Voltar pro login</Link>
-        </p>
-      </div>
-    </div>
+      <p className="auth-subtitle" style={{ textAlign: "center", marginTop: 16 }}>
+        <Link to="/login">Voltar pro login</Link>
+      </p>
+    </TelaEntrada>
   );
 }

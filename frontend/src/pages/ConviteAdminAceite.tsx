@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth, type User } from "../auth/AuthContext";
 import { PointBrand } from "../components/PointBrand";
+import { TelaEntrada } from "../components/TelaEntrada";
 import type { ConviteAdmin } from "../api/types";
 
 /** Tela pública (sem login) que quem foi convidado abre a partir do link
@@ -32,50 +33,46 @@ export default function ConviteAdminAceite() {
   }, [token]);
 
   return (
-    <div className="auth-screen">
-      <div>
-        <PointBrand point={convite?.point} />
+    <TelaEntrada marca={<PointBrand point={convite?.point} />}>
+      {carregando && <p className="auth-card">Carregando convite...</p>}
 
-        {carregando && <p className="auth-card">Carregando convite...</p>}
+      {!carregando && (erroCarregar || !convite) && (
+        <p className="auth-card auth-error">{erroCarregar ?? "Convite não encontrado."}</p>
+      )}
 
-        {!carregando && (erroCarregar || !convite) && (
-          <p className="auth-card auth-error">{erroCarregar ?? "Convite não encontrado."}</p>
-        )}
+      {!carregando && convite && (
+        <>
+          <ResumoConvite convite={convite} />
 
-        {!carregando && convite && (
-          <>
-            <ResumoConvite convite={convite} />
-
-            {aceito ? (
-              <p className="auth-card form-success">Conta ativada! Redirecionando...</p>
-            ) : convite.status === "aceito" ? (
-              <p className="auth-card form-success">Esse convite já foi aceito.</p>
-            ) : convite.status === "cancelado" ? (
-              <p className="auth-card auth-error">Esse convite foi cancelado.</p>
-            ) : convite.expirado ? (
-              <p className="auth-card auth-error">Esse convite expirou — peça um novo.</p>
-            ) : convite.admin_ja_cadastrado ? (
-              <AceitarComLogin
-                token={token!}
-                onAceito={() => {
-                  setAceito(true);
-                  setTimeout(() => navigate("/admin-point"), 1200);
-                }}
-              />
-            ) : (
-              <AceitarNovo
-                token={token!}
-                onAceito={(accessToken, user) => {
-                  loginComToken(accessToken, user);
-                  setAceito(true);
-                  setTimeout(() => navigate("/admin-point"), 1200);
-                }}
-              />
-            )}
-          </>
-        )}
-      </div>
-    </div>
+          {aceito ? (
+            <p className="auth-card form-success">Conta ativada! Redirecionando...</p>
+          ) : convite.status === "aceito" ? (
+            <p className="auth-card form-success">Esse convite já foi aceito.</p>
+          ) : convite.status === "cancelado" ? (
+            <p className="auth-card auth-error">Esse convite foi cancelado.</p>
+          ) : convite.expirado ? (
+            <p className="auth-card auth-error">Esse convite expirou — peça um novo.</p>
+          ) : convite.admin_ja_cadastrado ? (
+            <AceitarComLogin
+              token={token!}
+              onAceito={() => {
+                setAceito(true);
+                setTimeout(() => navigate("/admin-point"), 1200);
+              }}
+            />
+          ) : (
+            <AceitarNovo
+              token={token!}
+              onAceito={(accessToken, user) => {
+                loginComToken(accessToken, user);
+                setAceito(true);
+                setTimeout(() => navigate("/admin-point"), 1200);
+              }}
+            />
+          )}
+        </>
+      )}
+    </TelaEntrada>
   );
 }
 

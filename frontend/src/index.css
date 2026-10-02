@@ -325,19 +325,6 @@ textarea:focus {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-/* Auth screen — the arrival gate, deliberately in navy before the sand-toned workspace */
-.auth-screen {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: var(--navy);
-  background-image: radial-gradient(circle at 20% 15%, rgba(212, 240, 74, 0.12), transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(63, 110, 134, 0.3), transparent 50%);
-  position: relative;
-}
-
 .auth-brand {
   display: flex;
   /* "baseline" desalinhava — um SVG não tem baseline de texto de verdade,
@@ -8695,4 +8682,345 @@ input.cobr-busca-campo {
 .chk-lembrete-nota {
   font-size: 12px;
   color: var(--navy-text-muted);
+}
+
+/* Login no visual do site novo (pedido do usuário, 2026-10-02). Painel
+   marinho com cores fixas da marca (não muda com o tema); o lado do
+   formulário segue o tema. */
+.login {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: var(--bg);
+}
+
+.login-painel {
+  position: relative;
+  overflow: hidden;
+  background: #0B2A3C;
+  color: #F6F1E7;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.login-painel-texto {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-bottom: 12vh;
+}
+
+.login-painel h2 {
+  margin: 0;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: clamp(48px, 5.5vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -2px;
+  color: #F6F1E7;
+}
+
+.login-painel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 16px;
+  color: #C9D6DD;
+}
+
+.login-painel li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.login-painel li svg {
+  color: #D4F04A;
+}
+
+.login-bola {
+  position: absolute;
+  width: 440px;
+  height: 440px;
+  border-radius: 50%;
+  background: #D4F04A;
+  right: -150px;
+  bottom: -170px;
+}
+
+.login-lado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.login-form h1 {
+  margin: 0;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 40px;
+  letter-spacing: -1px;
+}
+
+.login-sub {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+.login-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.login-campo-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.login-campo-topo a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.login-campo input {
+  width: 100%;
+  padding: 15px 18px;
+  font-size: 16px;
+  border-radius: 16px;
+  border: 2px solid var(--borda);
+  background: var(--surface);
+}
+
+.login-campo input:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--limao) 55%, transparent);
+}
+
+.login-senha {
+  position: relative;
+  display: block;
+}
+
+.login-senha input {
+  padding-right: 88px;
+}
+
+.login-mostrar,
+.login-mostrar:hover:not(:disabled) {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 8px 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-sunk);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login-entrar,
+.login-entrar:hover:not(:disabled) {
+  margin-top: 4px;
+  padding: 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--limao);
+  color: var(--on-limao);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.login-entrar:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.login-rodape {
+  margin: 4px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 899px) {
+  .login {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .login-painel {
+    padding: 24px 20px 28px;
+    gap: 28px;
+  }
+
+  .login-painel-texto {
+    margin-bottom: 0;
+  }
+
+  .login-painel h2 {
+    font-size: 40px;
+    letter-spacing: -1px;
+  }
+
+  .login-painel ul {
+    display: none;
+  }
+
+  .login-bola {
+    width: 200px;
+    height: 200px;
+    right: -60px;
+    bottom: -90px;
+  }
+
+  .login-lado {
+    align-items: flex-start;
+    padding: 28px 20px 40px;
+  }
+
+  .login-form h1 {
+    font-size: 32px;
+  }
+}
+
+/* Moldura comum das telas sem login (TelaEntrada): cartões e campos das
+   telas de senha e convite no mesmo padrão do login (2026-10-02). */
+.login-conteudo {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-marca {
+  position: relative;
+  z-index: 1;
+}
+
+.login-marca .auth-brand {
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.login-marca .auth-brand-name {
+  font-size: 26px;
+  color: #F6F1E7;
+}
+
+.login-marca .auth-brand-logo {
+  width: 36px;
+  height: 36px;
+}
+
+.login-marca .auth-brand-credit {
+  text-align: left;
+  margin: 6px 0 0;
+  color: #C9D6DD;
+}
+
+.login-lado .auth-card {
+  max-width: none;
+  border-radius: 24px;
+  box-shadow: none;
+  padding: 28px;
+  gap: 10px;
+  background: var(--surface);
+}
+
+.login-lado .auth-card h1 {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.login-lado .auth-card h2 {
+  margin: 0;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.login-lado .auth-subtitle {
+  margin-bottom: 8px;
+}
+
+.login-lado .auth-card label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.login-lado .auth-card input {
+  padding: 14px 16px;
+  font-size: 16px;
+  border-radius: 14px;
+  border: 2px solid var(--borda);
+}
+
+.login-lado .auth-card input:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--limao) 55%, transparent);
+}
+
+.login-lado .auth-card button[type="submit"],
+.login-lado .auth-card button[type="submit"]:hover:not(:disabled) {
+  margin-top: 8px;
+  padding: 15px;
+  border: none;
+  border-radius: 999px;
+  background: var(--limao);
+  color: var(--on-limao);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.login-lado .auth-card button[type="submit"]:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.login-lado .auth-card.form-success,
+.login-lado .auth-card.auth-error {
+  padding: 20px 24px;
+  font-weight: 600;
+}
+
+.login-lado > .login-conteudo > .auth-subtitle {
+  text-align: center;
+}
+
+.login-lado .auth-card p {
+  margin: 0;
+}
+
+.login-lado .auth-card .empty-state {
+  font-size: 14px;
 }
