@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Cobranca, CobrancaAluno, Point, ReguaCobranca, TurmaResumo } from "../../api/types";
+import type {
+  Cobranca,
+  CobrancaAluno,
+  PagamentoOnlineConfig,
+  Point,
+  ReguaCobranca,
+  TurmaResumo,
+} from "../../api/types";
 import { useConfirm } from "../../components/ConfirmModal";
 import { Icon, Layout } from "../../components/Layout";
 import { rotuloTurma } from "../../lib/dias";
@@ -46,6 +53,27 @@ function noFiltro(c: Cobranca, filtro: Filtro): boolean {
 export default function AdminPointCobrancas() {
   const { user } = useAuth();
   const { confirmar, modal: modalConfirmar } = useConfirm();
+  // Pagamento online (pedido do usuário, 2026-10-02): com o Point
+  // recebendo Pix pelo gateway, cada cobrança aberta tem link de pagamento.
+  const [pagamentoOnline, setPagamentoOnline] = useState(false);
+  const [copiadoId, setCopiadoId] = useState<number | null>(null);
+  useEffect(() => {
+    api
+      .get<PagamentoOnlineConfig>("/points/me/pagamento-online")
+      .then((c) => setPagamentoOnline(c.ativo))
+      .catch(() => setPagamentoOnline(false));
+  }, []);
+
+  async function copiarLink(c: Cobranca) {
+    const link = `${window.location.origin}/pagar/${c.pagamento_token}`;
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      window.prompt("Copie o link de pagamento:", link);
+    }
+    setCopiadoId(c.id);
+    window.setTimeout(() => setCopiadoId((atual) => (atual === c.id ? null : atual)), 2500);
+  }
 
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
   const [turmas, setTurmas] = useState<TurmaResumo[]>([]);
@@ -328,6 +356,7 @@ export default function AdminPointCobrancas() {
                         {c.status === "paga" ? (
                           <span className="status-pill status-good">
                             Paga{c.pago_em ? ` ${diaMes(c.pago_em)}` : ""}
+                            {c.pago_via === "pix" ? " · Pix" : ""}
                           </span>
                         ) : c.atrasada ? (
                           <span className="status-pill status-risk">Atrasada</span>
@@ -360,6 +389,17 @@ export default function AdminPointCobrancas() {
                               <Icon name={c.ultimo_lembrete_em ? "check" : "message"} size={14} />
                               {c.ultimo_lembrete_em ? `Lembrado ${diaMes(c.ultimo_lembrete_em)}` : "Lembrar"}
                             </button>
+                            {pagamentoOnline && (
+                              <button
+                                type="button"
+                                className={copiadoId === c.id ? "cobr-icone copiado" : "cobr-icone"}
+                                title={copiadoId === c.id ? "Link copiado!" : "Copiar link de pagamento Pix"}
+                                aria-label={`Copiar link de pagamento de ${c.aluno_nome}`}
+                                onClick={() => copiarLink(c)}
+                              >
+                                <Icon name={copiadoId === c.id ? "check" : "link"} size={15} />
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="cobr-icone"

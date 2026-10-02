@@ -27,6 +27,8 @@ from app.schemas.point import (
 )
 from app.services.uploads import TAMANHO_MAXIMO_BYTES, remover_imagem_point, salvar_imagem_point
 
+from app.schemas.pagamento_online import PagamentoOnlineConfigIn, PagamentoOnlineConfigOut  # noqa: E402
+
 router = APIRouter(prefix="/points", tags=["points"])
 
 
@@ -442,3 +444,69 @@ def atualizar_formas_pagamento(
 # pelo dono do app — virou convite por e-mail (pedido do usuário,
 # 2026-08-26: "não quero criar senha de admin, faça o mesmo padrão de
 # aluno e professor"). Ver app/routers/convites_admin.py.
+
+
+def _pagamento_online_out(point: Point) -> "PagamentoOnlineConfigOut":
+    from app.schemas.pagamento_online import PagamentoOnlineConfigOut
+    from app.services.gateways import GATEWAYS, gateway
+    from app.services.pix_cobranca import pagamento_online_ativo
+
+    gw = gateway(point.pagamento_gateway)
+    return PagamentoOnlineConfigOut(
+        gateway=point.pagamento_gateway,
+        gateway_rotulo=gw.rotulo if gw else None,
+        conta=point.pagamento_conta,
+        ativo=pagamento_online_ativo(point),
+        gateways_disponiveis=[{"nome": g.nome, "rotulo": g.rotulo} for g in GATEWAYS.values()],
+    )
+
+
+@router.get("/me/pagamento-online")
+def ver_pagamento_online(
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+):
+    """Pagamento online do Point (pedido do usuário, 2026-10-02) — nunca
+    devolve a credencial, só se está ligado e qual conta."""
+    return _pagamento_online_out(db.get(Point, admin.point_id))
+
+
+@router.put("/me/pagamento-online")
+def salvar_pagamento_online(
+    payload: PagamentoOnlineConfigIn,
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+):
+    """Liga o gateway com a credencial da conta do Point. Confere a
+    credencial no próprio gateway antes de salvar."""
+    from app.services.gateways import GatewayErro, gateway
+
+    gw = gateway(payload.gateway)
+    if gw is None:
+        raise HTTPException(422, "Gateway de pagamento não suportado")
+    credencial = payload.credencial.strip()
+    if not credencial:
+        raise HTTPException(422, "Informe a credencial")
+    try:
+        conta = gw.validar_credencial(credencial, point_id=admin.point_id)
+    except GatewayErro as erro:
+        raise HTTPException(422, str(erro)) from erro
+    point = db.get(Point, admin.point_id)
+    point.pagamento_gateway = gw.nome
+    point.pagamento_credencial = credencial
+    point.pagamento_conta = conta
+    db.commit()
+    return _pagamento_online_out(point)
+
+
+@router.delete("/me/pagamento-online")
+def desligar_pagamento_online(
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[User, Depends(require_role(Role.ADMIN_POINT))],
+):
+    point = db.get(Point, admin.point_id)
+    point.pagamento_gateway = None
+    point.pagamento_credencial = None
+    point.pagamento_conta = None
+    db.commit()
+    return _pagamento_online_out(point)

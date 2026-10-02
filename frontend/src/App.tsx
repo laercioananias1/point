@@ -60,6 +60,8 @@ import RedefinirSenha from "./pages/RedefinirSenha";
 import Notificacoes from "./pages/Notificacoes";
 import SolicitacoesExperimentais from "./pages/SolicitacoesExperimentais";
 import ExperimentalPublico from "./pages/ExperimentalPublico";
+import PagarCobranca from "./pages/PagarCobranca";
+import AlunoPagamentos from "./pages/aluno/Pagamentos";
 
 // Ordem de prioridade pra decidir a HOME inicial de quem tem mais de um
 // papel (pedido do usuário, 2026-08-26 — dono do Point que também é
@@ -92,6 +94,7 @@ export default function App() {
       <Route path="/convite-vinculo/:token" element={<ConviteVinculoAceite />} />
       <Route path="/convite-admin/:token" element={<ConviteAdminAceite />} />
       <Route path="/experimental/:link" element={<ExperimentalPublico />} />
+      <Route path="/pagar/:token" element={<PagarCobranca />} />
       <Route
         path="/"
         element={
@@ -447,6 +450,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AlunoInicio />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/aluno/pagamentos"
+        element={
+          <ProtectedRoute>
+            <AlunoPagamentos />
           </ProtectedRoute>
         }
       />

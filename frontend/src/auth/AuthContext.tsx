@@ -1,12 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   api,
+  avisarSaidaOutrasAbas,
   clearToken,
   clearTokenSuporteOriginal,
+  EVENTO_SESSAO_ENCERRADA,
+  encerrarSuporte,
   getToken,
   getTokenSuporteOriginal,
+  iniciarSuporte,
+  pedirSessaoDeOutraAba,
   setToken,
-  setTokenSuporteOriginal,
 } from "../api/client";
 
 export type Role = "super_admin" | "admin_point" | "professor" | "aluno";
@@ -34,7 +38,7 @@ interface AuthContextValue {
    * devem esperar isso terminar antes de redirecionar, senão mandam de
    * volta pro login à toa enquanto /auth/me ainda não respondeu. */
   initializing: boolean;
-  login: (email: string, senha: string) => Promise<void>;
+  login: (email: string, senha: string, lembrar?: boolean) => Promise<void>;
   /** Loga direto com um token já emitido pelo backend — usado depois de
    * aceitar um convite como aluno novo (pedido do usuário, 2026-08-20), pra
    * não precisar de uma segunda ida à tela de login. */
@@ -63,30 +67,58 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(getToken() !== null);
+  // Começa "inicializando" sempre: mesmo sem token nesta aba, outra aba
+  // aberta pode ter a sessão (ver pedirSessaoDeOutraAba).
+  const [initializing, setInitializing] = useState(true);
   const [estaComoSuporte, setEstaComoSuporte] = useState(getTokenSuporteOriginal() !== null);
 
-  // Recarregar a página mantém o token (localStorage), mas perde o `user`
-  // em memória — busca de novo no boot do app pra não voltar pro login à toa.
+  // Recarregar a página mantém o token (sessionStorage/localStorage), mas
+  // perde o `user` em memória — busca de novo no boot.
   useEffect(() => {
-    if (getToken()) {
+    let ativo = true;
+    pedirSessaoDeOutraAba().then((temSessao) => {
+      if (!ativo) return;
+      setEstaComoSuporte(getTokenSuporteOriginal() !== null);
+      if (!temSessao && !getToken()) {
+        setInitializing(false);
+        return;
+      }
       api
         .get<User>("/auth/me")
-        .then(setUser)
+        .then((me) => ativo && setUser(me))
         .catch(clearToken)
-        .finally(() => setInitializing(false));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        .finally(() => ativo && setInitializing(false));
+    });
+    return () => {
+      ativo = false;
+    };
   }, []);
 
-  async function login(email: string, senha: string) {
+  // "Sair" em outra aba (pedido do usuário, 2026-10-02): quem estava
+  // logado aqui vai pro login também.
+  useEffect(() => {
+    function encerrada() {
+      setUser((atual) => {
+        if (atual) window.location.assign("/login");
+        return null;
+      });
+      setEstaComoSuporte(false);
+    }
+    window.addEventListener(EVENTO_SESSAO_ENCERRADA, encerrada);
+    return () => window.removeEventListener(EVENTO_SESSAO_ENCERRADA, encerrada);
+  }, []);
+
+  async function login(email: string, senha: string, lembrar = false) {
     setLoading(true);
     try {
       const res = await api.post<{ access_token: string; user: User }>("/auth/login", {
         email,
         senha,
       });
-      setToken(res.access_token);
+      // Login novo encerra qualquer suporte que tivesse ficado nesta aba.
+      clearTokenSuporteOriginal();
+      setEstaComoSuporte(false);
+      setToken(res.access_token, lembrar);
       setUser(res.user);
     } finally {
       setLoading(false);
@@ -99,18 +131,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function entrarComoSuporte(token: string, novoUser: User) {
-    const atual = getToken();
-    if (atual) setTokenSuporteOriginal(atual);
-    setToken(token);
+    iniciarSuporte(token);
     setUser(novoUser);
     setEstaComoSuporte(true);
   }
 
   async function sairDoSuporte() {
-    const original = getTokenSuporteOriginal();
-    if (!original) return;
-    setToken(original);
-    clearTokenSuporteOriginal();
+    if (!encerrarSuporte()) return;
     setEstaComoSuporte(false);
     setLoading(true);
     try {
@@ -128,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function logout() {
     clearToken();
+    avisarSaidaOutrasAbas();
     // Sair de vez também encerra qualquer suporte em andamento (pedido do
     // usuário, 2026-08-30) — sem isso sobraria um token de suporte "órfão"
     // no localStorage, sem ninguém pra voltar pra ele.

@@ -337,6 +337,7 @@ def enviar_cobranca_email(
     valor: float,
     vencimento: str,
     point_id: int | None = None,
+    link_pagamento: str | None = None,
 ) -> None:
     """Lembrete de cobrança em aberto (pedido do usuário, 2026-09-20: tela
     de Cobranças) — cobrança pode ser avulsa (uniforme, evento...), então
@@ -348,6 +349,9 @@ def enviar_cobranca_email(
         corpo=_p(f"Olá, {escape(nome)}!")
         + _p(f"Ficou em aberto no {escape(point_nome)}: <strong>{escape(descricao)}</strong>.")
         + _destaques([("Valor", _reais(valor)), ("Vencimento", vencimento)]),
+        # Point com pagamento online (pedido do usuário, 2026-10-02): botão
+        # que abre o Pix da cobrança.
+        acao=("Pagar com Pix", link_pagamento) if link_pagamento else None,
         nota="Qualquer dúvida, fale com o seu Point.",
     )
     _enviar(

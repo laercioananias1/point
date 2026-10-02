@@ -111,6 +111,15 @@ class Point(TimestampMixin, Base):
     # toda segunda e no dia 25. Desligado por padrão: o Point liga na tela
     # de Checkins. Ver app.services.lembrete_checkin.
     lembrete_checkin: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    # Pagamento online do Point (pedido do usuário, 2026-10-02: Pix pelo
+    # app, dinheiro direto na conta da arena). Genérico por gateway — hoje
+    # só "mercadopago", amanhã outros (Asaas...): `pagamento_gateway` diz
+    # qual, `pagamento_credencial` é a chave/token da conta do Point lá
+    # (nunca volta pro frontend) e `pagamento_conta` é só o nome/e-mail da
+    # conta, pra tela mostrar qual está ligada. Ver app/services/gateways.
+    pagamento_gateway: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    pagamento_credencial: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    pagamento_conta: Mapped[str | None] = mapped_column(String(160), nullable=True)
     # Logomarca do próprio Point (pedido do usuário, 2026-08-30: "coloque
     # também um ícone (logomarca do point)... precisa também ser mostrado
     # no canto esquerdo") — slot único (não é lista como fotos/banners),

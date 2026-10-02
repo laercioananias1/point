@@ -1,5 +1,5 @@
 export type VinculoStatus = "pendente" | "ativo" | "inativo" | "recusado";
-export type MatriculaStatus = "em_analise" | "ativa" | "recusada" | "cancelada";
+export type MatriculaStatus = "em_analise" | "ativa" | "recusada" | "cancelada" | "aguardando_pagamento";
 export type MatriculaTipo = "avulsa" | "mensal";
 export type PagamentoMeio = "pix" | "dinheiro" | "wellhub" | "totalpass";
 export type PagamentoStatus = "pendente" | "confirmado" | "estornado";
@@ -281,6 +281,10 @@ export interface Cobranca {
   turma_ids: number[];
   // Último lembrete enviado (régua automática ou botão "Lembrar").
   ultimo_lembrete_em: string | null;
+  // Pagamento online (2026-10-02): código do link /pagar/<token> e "pix"
+  // quando o gateway deu a baixa.
+  pagamento_token: string;
+  pago_via: string | null;
 }
 
 /** Régua de cobrança do Point (pedido do usuário, 2026-10-01) — etapas
@@ -369,7 +373,7 @@ export interface WellhubReconciliacao {
   linhas: WellhubReconciliacaoLinha[];
 }
 
-export type IntegracaoNome = "whatsapp" | "email" | "wellhub" | "totalpass";
+export type IntegracaoNome = "whatsapp" | "email" | "wellhub" | "totalpass" | "mercadopago";
 
 export interface IntegracaoLog {
   id: number;
@@ -671,4 +675,51 @@ export interface LembreteCheckin {
   ativo: boolean;
   proximo_envio: string;
   devendo: number;
+}
+
+/** Página pública de pagamento /pagar/<token> (pedido do usuário,
+ * 2026-10-02: Pix pelo Mercado Pago). */
+export interface PagamentoPublico {
+  point_nome: string;
+  point_logo: string | null;
+  aluno_nome: string;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  status: CobrancaStatus;
+  atrasada: boolean;
+  pago_em: string | null;
+  pago_via: string | null;
+  pagamento_online: boolean;
+  gateway_rotulo: string | null;
+  pix_copia_cola: string | null;
+  pix_qr_base64: string | null;
+  pix_expira_em: string | null;
+  // Reserva de aula avulsa (2026-10-02): prazo pra pagar antes da vaga ser solta.
+  pagar_ate: string | null;
+  reserva: boolean;
+}
+
+/** Cobranças do aluno logado (tela Pagamentos). */
+export interface CobrancaDoAluno {
+  id: number;
+  point_nome: string;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  status: CobrancaStatus;
+  atrasada: boolean;
+  pago_em: string | null;
+  pago_via: string | null;
+  pagamento_token: string;
+  pagamento_online: boolean;
+}
+
+/** Pagamento online do Point (Integrações) — a credencial nunca volta. */
+export interface PagamentoOnlineConfig {
+  gateway: string | null;
+  gateway_rotulo: string | null;
+  conta: string | null;
+  ativo: boolean;
+  gateways_disponiveis: { nome: string; rotulo: string }[];
 }

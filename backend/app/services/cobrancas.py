@@ -118,6 +118,7 @@ def marcar_paga(db: Session, cobranca: Cobranca) -> None:
     cobranca.status = CobrancaStatus.PAGA
     cobranca.pago_em = date.today()
     registrar_entrada_cobranca(db, cobranca)
+    _confirmar_reserva_avulsa(db, cobranca)
 
     if cobranca.assinatura is None or cobranca.mes_referencia is None:
         return
@@ -150,6 +151,31 @@ def marcar_paga(db: Session, cobranca: Cobranca) -> None:
     if cobranca.mes_referencia == date.today().replace(day=1):
         for matricula in _matriculas_da_mensalidade(cobranca.assinatura):
             gerar_aulas_do_mes(db, matricula)
+
+
+def _confirmar_reserva_avulsa(db: Session, cobranca: Cobranca) -> None:
+    """Aula avulsa comprada com Pix (pedido do usuário, 2026-10-02): a
+    cobrança paga confirma a reserva e grava o Pagamento da avulsa."""
+    from app.models.enums import MatriculaStatus
+    from app.models.matricula import Matricula
+
+    if cobranca.matricula_id is None:
+        return
+    matricula = db.get(Matricula, cobranca.matricula_id)
+    if matricula is None:
+        return
+    if matricula.status == MatriculaStatus.AGUARDANDO_PAGAMENTO:
+        matricula.status = MatriculaStatus.ATIVA
+        matricula.reserva_expira_em = None
+    if not any(p.status == PagamentoStatus.CONFIRMADO for p in matricula.pagamentos):
+        db.add(
+            Pagamento(
+                matricula_id=matricula.id,
+                valor=cobranca.valor,
+                meio=PagamentoMeio.PIX,
+                status=PagamentoStatus.CONFIRMADO,
+            )
+        )
 
 
 def reabrir(db: Session, cobranca: Cobranca) -> None:
@@ -193,12 +219,17 @@ def enviar_lembrete(db: Session, cobranca: Cobranca, *, origem: str, etapa: int 
     registro fica, pra régua não tentar a mesma etapa de novo todo dia)."""
     from app.models.point import Point
     from app.services.email import enviar_cobranca_email
-    from app.services.whatsapp import enviar_cobranca_whatsapp
+    from app.services.pix_cobranca import link_pagamento, pagamento_online_ativo
+    from app.services.whatsapp import enviar_cobranca_pix_whatsapp, enviar_cobranca_whatsapp
 
     aluno = cobranca.aluno
-    point_nome = db.get(Point, cobranca.point_id).nome
+    point = db.get(Point, cobranca.point_id)
+    point_nome = point.nome
     vencimento = cobranca.vencimento.strftime("%d/%m")
-    enviar_cobranca_whatsapp(
+    # Point com pagamento online (pedido do usuário, 2026-10-02): o
+    # WhatsApp vai pelo modelo com botão de Pix e o e-mail ganha o botão.
+    online = pagamento_online_ativo(point)
+    dados_whatsapp = dict(
         celular=aluno.contato,
         nome=aluno.nome,
         point_nome=point_nome,
@@ -207,6 +238,10 @@ def enviar_lembrete(db: Session, cobranca: Cobranca, *, origem: str, etapa: int 
         vencimento=vencimento,
         point_id=cobranca.point_id,
     )
+    if online:
+        enviar_cobranca_pix_whatsapp(**dados_whatsapp, pagamento_token=cobranca.pagamento_token)
+    else:
+        enviar_cobranca_whatsapp(**dados_whatsapp)
     enviar_cobranca_email(
         nome=aluno.nome,
         email=aluno.email,
@@ -215,6 +250,7 @@ def enviar_lembrete(db: Session, cobranca: Cobranca, *, origem: str, etapa: int 
         valor=float(cobranca.valor),
         vencimento=vencimento,
         point_id=cobranca.point_id,
+        link_pagamento=link_pagamento(cobranca) if online else None,
     )
     db.add(CobrancaLembrete(cobranca_id=cobranca.id, etapa=etapa, origem=origem))
 
@@ -226,7 +262,11 @@ def cobrancas_da_regua_hoje(db: Session, point_id: int, etapas: set[int], hoje: 
         return []
     abertas = (
         db.query(Cobranca)
-        .filter(Cobranca.point_id == point_id, Cobranca.status == CobrancaStatus.ABERTA)
+        .filter(
+            Cobranca.point_id == point_id,
+            Cobranca.status == CobrancaStatus.ABERTA,
+            Cobranca.pagar_ate.is_(None),
+        )
         .all()
     )
     resultado = []

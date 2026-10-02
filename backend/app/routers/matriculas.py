@@ -33,7 +33,10 @@ from app.schemas.matricula import (
     PausarAgendaOut,
     PausarAgendaRequest,
 )
-from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario
+from app.services.aulas import DIAS_SEMANA, aluno_tem_conflito_horario, vagas_ocupadas_em
+from app.services.gateways import GatewayErro
+from app.services.pix_cobranca import pagamento_online_ativo
+from app.services.reserva_avulsa import reservar_com_pix
 from app.services.feriados import eh_feriado
 from app.services.email import enviar_lembrete_mensalidade_email
 from app.services.carregamento import opcoes_matricula
@@ -123,6 +126,11 @@ def solicitar_matricula(
         ):
             raise HTTPException(409, "Você já tem aula nesse horário nesse dia")
 
+        # Lotação (pedido do usuário, 2026-10-02: aula avulsa com Pix
+        # "segura a vaga") — reserva esperando Pix também conta.
+        if vagas_ocupadas_em(db, turma, data_aula) >= turma.capacidade:
+            raise HTTPException(409, "Essa aula está lotada — escolha outro horário")
+
     matricula = Matricula(
         aluno_id=aluno.aluno_id,
         turma_id=payload.turma_id,
@@ -132,6 +140,23 @@ def solicitar_matricula(
         data_avulsa=payload.data_aula if payload.tipo == MatriculaTipo.AVULSA else None,
     )
     db.add(matricula)
+
+    # Point recebendo Pix online (pedido do usuário, 2026-10-02): a avulsa
+    # fica reservada esperando o pagamento, com cobrança e Pix na hora.
+    if payload.tipo == MatriculaTipo.AVULSA and payload.fonte_pagamento == PagamentoMeio.PIX:
+        preco = float(turma.modalidade.preco_avulso or 0)
+        if preco > 0 and pagamento_online_ativo(turma.vinculo.point):
+            try:
+                reservar_com_pix(
+                    db,
+                    matricula,
+                    valor=preco,
+                    descricao=f"Aula avulsa — {turma.modalidade.nome} {payload.data_aula:%d/%m} {turma.horario}",
+                )
+            except GatewayErro as erro:
+                db.rollback()
+                raise HTTPException(502, str(erro)) from erro
+
     db.commit()
     db.refresh(matricula)
     return matricula

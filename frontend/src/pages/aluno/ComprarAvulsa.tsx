@@ -109,13 +109,19 @@ export default function AlunoComprarAvulsa() {
     setEnviando(true);
     setErro(null);
     try {
-      await api.post("/matriculas", {
+      const criada = await api.post<{ status: string; pagamento_token: string | null }>("/matriculas", {
         turma_id: escolhida.id,
         tipo: "avulsa",
         fonte_pagamento: "pix",
         data_aula: toISODate(diaAtual),
       });
-      navigate("/aluno/creditos");
+      // Point com Pix online (pedido do usuário, 2026-10-02): a vaga fica
+      // segura esperando o pagamento — vai direto pro QR Code.
+      if (criada.status === "aguardando_pagamento" && criada.pagamento_token) {
+        navigate(`/pagar/${criada.pagamento_token}`);
+      } else {
+        navigate("/aluno/creditos");
+      }
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Não foi possível comprar. Tente de novo.");
     } finally {

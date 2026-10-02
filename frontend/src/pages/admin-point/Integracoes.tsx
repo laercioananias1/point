@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-import type { Point } from "../../api/types";
+import type { PagamentoOnlineConfig, Point } from "../../api/types";
 import { CabecalhoPagina } from "../../components/CabecalhoPagina";
+import { PassoAPassoMercadoPago } from "../../components/PassoAPassoMercadoPago";
 import { Icon, Layout } from "../../components/Layout";
 
 /** Credenciais de benefício por Point (pedido do usuário, 2026-09-29:
@@ -46,6 +47,7 @@ export default function AdminPointIntegracoes() {
       {loading && <p className="empty-state">Carregando...</p>}
 
       {!loading && !erro && point && <IntegracoesForm point={point} onSalvo={(p) => setPoint(p)} />}
+      {!loading && !erro && point && <PagamentoOnlineCard />}
     </Layout>
   );
 }
@@ -151,5 +153,130 @@ function IntegracoesForm({ point, onSalvo }: { point: Point; onSalvo: (p: Point)
         </button>
       </div>
     </form>
+  );
+}
+
+/** Pagamento online do Point (pedido do usuário, 2026-10-02: Pix pelo
+ * Mercado Pago, dinheiro direto na conta da arena; "amanhã posso ter
+ * outros conectores, como Asaas"). A credencial nunca volta pra tela —
+ * só a conta ligada. */
+function PagamentoOnlineCard() {
+  const [config, setConfig] = useState<PagamentoOnlineConfig | null>(null);
+  const [editando, setEditando] = useState(false);
+  const [gateway, setGateway] = useState("mercadopago");
+  const [credencial, setCredencial] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .get<PagamentoOnlineConfig>("/points/me/pagamento-online")
+      .then((c) => {
+        setConfig(c);
+        if (c.gateway) setGateway(c.gateway);
+      })
+      .catch(() => setErro("Não foi possível carregar o pagamento online."));
+  }, []);
+
+  async function salvar(e: FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    setSalvando(true);
+    try {
+      setConfig(await api.put<PagamentoOnlineConfig>("/points/me/pagamento-online", { gateway, credencial }));
+      setCredencial("");
+      setEditando(false);
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : "Não foi possível salvar.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function desligar() {
+    setErro(null);
+    setSalvando(true);
+    try {
+      setConfig(await api.delete<PagamentoOnlineConfig>("/points/me/pagamento-online"));
+    } catch {
+      setErro("Não foi possível desligar.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (!config) return erro ? <p className="form-error">{erro}</p> : null;
+  const mostrarFormulario = editando || !config.ativo;
+
+  return (
+    <section className="alunos-card config-card pagonline-card">
+      <div className="inicio-exp-topo">
+        <span className="integ-marca mercadopago">$</span>
+        <span className={config.ativo ? "status-pill status-good" : "status-pill status-neutral"}>
+          {config.ativo ? "Recebendo pagamentos" : "Desligado"}
+        </span>
+      </div>
+      <h2 className="chk-secao-titulo">Pagamento online (Pix)</h2>
+      <p className="alunos-sub">
+        O aluno paga as cobranças com Pix pelo app ou pelo link do e-mail e do WhatsApp. O dinheiro cai direto na
+        conta do Point e a cobrança vira paga sozinha, com entrada no Caixa.
+      </p>
+
+      {config.ativo && !editando && (
+        <div className="pagonline-conta">
+          <span className="alunos-sub">Conta ligada · {config.gateway_rotulo}</span>
+          <strong>{config.conta}</strong>
+          <span className="pagonline-botoes">
+            <button type="button" className="secondary" disabled={salvando} onClick={() => setEditando(true)}>
+              Trocar credencial
+            </button>
+            <button type="button" className="alunos-acao" disabled={salvando} onClick={desligar}>
+              Desligar
+            </button>
+          </span>
+        </div>
+      )}
+
+      {mostrarFormulario && (
+        <form className="pagonline-form" onSubmit={salvar}>
+          <label className="config-campo">
+            Gateway
+            <select value={gateway} onChange={(e) => setGateway(e.target.value)}>
+              {config.gateways_disponiveis.map((g) => (
+                <option key={g.nome} value={g.nome}>
+                  {g.rotulo}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="config-campo">
+            Access Token de produção
+            <input
+              type="password"
+              value={credencial}
+              onChange={(e) => setCredencial(e.target.value)}
+              placeholder="APP_USR-..."
+              autoComplete="off"
+              required
+            />
+          </label>
+          <details className="pagonline-passos" open={!config.ativo}>
+            <summary>Não sabe onde pegar o token? Veja o passo a passo</summary>
+            <PassoAPassoMercadoPago />
+          </details>
+          <span className="config-salvar">
+            {editando && (
+              <button type="button" className="secondary" onClick={() => setEditando(false)}>
+                Cancelar
+              </button>
+            )}
+            <button type="submit" disabled={salvando}>
+              {salvando ? "Conferindo..." : "Ligar pagamento online"}
+            </button>
+          </span>
+        </form>
+      )}
+      {erro && <p className="form-error">{erro}</p>}
+    </section>
   );
 }

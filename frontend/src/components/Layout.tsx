@@ -166,6 +166,7 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
         { to: "/aluno", label: "Início", icon: "home", end: true },
         { to: "/aluno/agenda", label: "Agenda", icon: "calendar" },
         { to: "/aluno/creditos", label: "Créditos", icon: "ticket" },
+        { to: "/aluno/pagamentos", label: "Pagamentos", icon: "dollar" },
       ],
     },
   ],

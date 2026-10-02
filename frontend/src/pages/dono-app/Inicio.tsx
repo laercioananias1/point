@@ -11,6 +11,7 @@ const NOME_INTEGRACAO: Record<IntegracaoNome, string> = {
   email: "E-mail",
   wellhub: "Wellhub",
   totalpass: "TotalPass",
+  mercadopago: "Mercado Pago",
 };
 
 function saudacao(): string {

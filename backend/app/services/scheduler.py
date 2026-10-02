@@ -24,6 +24,7 @@ from app.services.aulas import gerar_aulas_do_mes_em_lote
 from app.services.caixa import gerar_lancamentos_fixos
 from app.services.cobrancas import gerar_mensalidades, rodar_regua
 from app.services.lembrete_checkin import rodar_lembretes as rodar_lembretes_checkin
+from app.services.reserva_avulsa import expirar_reservas
 
 # print(), não logging — mesmo padrão já usado em app/services/email.py (o
 # projeto não configura handler de logging em lugar nenhum).
@@ -109,6 +110,22 @@ def _rodar_lembretes_de_checkin() -> None:
         db.close()
 
 
+def _rodar_expiracao_de_reservas() -> None:
+    """A cada 2 minutos (pedido do usuário, 2026-10-02: aula avulsa com Pix
+    "segura a vaga por um tempo") — solta a vaga de quem não pagou."""
+    db = SessionLocal()
+    try:
+        total = expirar_reservas(db)
+        if total:
+            print(f"[scheduler] reservas avulsas vencidas: {total} cancelada(s)")
+    except Exception:  # noqa: BLE001 — job de fundo não pode derrubar o processo
+        print("[scheduler] falha ao expirar reservas:")
+        traceback.print_exc()
+        db.rollback()
+    finally:
+        db.close()
+
+
 def iniciar_scheduler() -> BackgroundScheduler:
     """Chamada uma vez, no startup da API (ver app/main.py)."""
     global _scheduler
@@ -156,6 +173,13 @@ def iniciar_scheduler() -> BackgroundScheduler:
         hour=10,
         minute=0,
         id="lembrete_checkin_diario",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _rodar_expiracao_de_reservas,
+        trigger="interval",
+        minutes=2,
+        id="expirar_reservas_avulsas",
         replace_existing=True,
     )
     scheduler.start()

@@ -1,5 +1,5 @@
 import calendar
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy.orm import Session, object_session
 
@@ -193,6 +193,19 @@ def vagas_ocupadas_em(db: Session, turma: Turma, data: date) -> int:
     from app.models.enums import SolicitacaoExperimentalStatus
 
     ocupadas = sum(1 for m in turma.matriculas if matricula_tem_aula_em(m, data))
+    # Aula avulsa reservada esperando o Pix (pedido do usuário, 2026-10-02:
+    # "segura a vaga por um tempo") também ocupa, enquanto a reserva vale.
+    from app.models.enums import MatriculaStatus
+
+    agora = datetime.now()
+    ocupadas += sum(
+        1
+        for m in turma.matriculas
+        if m.status == MatriculaStatus.AGUARDANDO_PAGAMENTO
+        and m.data_avulsa == data
+        and m.reserva_expira_em is not None
+        and m.reserva_expira_em > agora
+    )
     ocupadas += (
         db.query(SolicitacaoExperimental)
         .filter(

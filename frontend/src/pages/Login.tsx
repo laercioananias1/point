@@ -12,13 +12,16 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  // Desmarcado por padrão (pedido do usuário, 2026-10-02: fechou o
+  // navegador, desloga — por segurança).
+  const [lembrar, setLembrar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErro(null);
     try {
-      await login(email, senha);
+      await login(email, senha, lembrar);
       navigate("/");
     } catch {
       setErro("E-mail ou senha incorretos.");
@@ -66,6 +69,14 @@ export default function Login() {
             >
               {mostrarSenha ? "ocultar" : "mostrar"}
             </button>
+          </span>
+        </label>
+
+        <label className="login-lembrar">
+          <input type="checkbox" checked={lembrar} onChange={(e) => setLembrar(e.target.checked)} />
+          <span>
+            Manter conectado neste aparelho
+            <small>Só marque no seu próprio celular ou computador.</small>
           </span>
         </label>
 

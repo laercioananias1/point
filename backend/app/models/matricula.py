@@ -50,6 +50,8 @@ class Matricula(TimestampMixin, Base):
     # em vez de reaproveitar updated_at (que muda por qualquer edição).
     cancelado_por_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     cancelado_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Até quando a vaga fica segura esperando o Pix (só AGUARDANDO_PAGAMENTO).
+    reserva_expira_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     aluno: Mapped["Aluno"] = relationship(back_populates="matriculas")  # noqa: F821
     turma: Mapped["Turma"] = relationship(back_populates="matriculas")  # noqa: F821
@@ -183,6 +185,21 @@ class Matricula(TimestampMixin, Base):
             .first()
             is not None
         )
+
+    @property
+    def pagamento_token(self) -> str | None:
+        """Código do link /pagar da cobrança desta reserva — só enquanto
+        aguarda o Pix (pedido do usuário, 2026-10-02). Consulta só nesse
+        caso, pra não custar nada nas listas."""
+        if self.status != MatriculaStatus.AGUARDANDO_PAGAMENTO:
+            return None
+        sessao = object_session(self)
+        if sessao is None:
+            return None
+        from app.models.cobranca import Cobranca
+
+        linha = sessao.query(Cobranca.pagamento_token).filter(Cobranca.matricula_id == self.id).first()
+        return linha[0] if linha else None
 
     @property
     def data_inicio_efetiva(self) -> date:

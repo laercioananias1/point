@@ -269,3 +269,27 @@ def enviar_lembrete_checkin_whatsapp(
         variaveis_corpo=[nome, point_nome, str(faltam), plataforma],
         point_id=point_id,
     )
+
+
+def enviar_cobranca_pix_whatsapp(
+    *,
+    celular: str,
+    nome: str,
+    point_nome: str,
+    descricao: str,
+    valor: str,
+    vencimento: str,
+    pagamento_token: str,
+    point_id: int | None = None,
+) -> None:
+    """Cobrança com botão "Pagar com Pix" (pedido do usuário, 2026-10-02) —
+    mesmo corpo do lembrete_cobranca; o botão abre /pagar/<token> (a parte
+    fixa do link está aprovada no template, aqui vai só o código)."""
+    template = get_settings().whatsapp_template_cobranca_pix
+    _enviar_whatsapp(
+        celular=celular,
+        template=template,
+        variaveis_corpo=[nome, point_nome, descricao, valor, vencimento],
+        variavel_botao=pagamento_token,
+        point_id=point_id,
+    )

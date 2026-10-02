@@ -19,6 +19,7 @@ const ROTULO_INTEGRACAO: Record<IntegracaoNome, string> = {
   email: "E-mail",
   wellhub: "Wellhub",
   totalpass: "TotalPass",
+  mercadopago: "Mercado Pago",
 };
 
 /** O backend manda `criado_em` sem indicar timezone (é UTC "nu", sem

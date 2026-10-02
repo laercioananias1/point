@@ -33,6 +33,10 @@ class CobrancaOut(ORMModel):
     turma_ids: list[int]
     # Último lembrete mandado (régua ou botão) — a tela mostra "Lembrado".
     ultimo_lembrete_em: date | None
+    # Pagamento online (pedido do usuário, 2026-10-02): código do link
+    # /pagar/<token> e "pix" quando o gateway deu a baixa.
+    pagamento_token: str
+    pago_via: str | None = None
 
 
 class CobrancaAlunoOut(ORMModel):

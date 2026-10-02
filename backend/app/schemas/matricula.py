@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import Field
 
@@ -97,3 +97,7 @@ class MatriculaOut(ORMModel):
     # de um crédito reagendado) — pedido do usuário, 2026-09-01: ícones
     # diferentes no calendário do aluno. Sempre False pra mensal.
     e_reposicao: bool = False
+    # Aula avulsa esperando o Pix (2026-10-02): código do link /pagar e
+    # até quando a vaga fica segura.
+    pagamento_token: str | None = None
+    reserva_expira_em: datetime | None = None

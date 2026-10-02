@@ -1,5 +1,6 @@
 import { AjudaCallout, AjudaGlossario, AjudaPergunta } from "../../components/Ajuda";
 import { CabecalhoPagina } from "../../components/CabecalhoPagina";
+import { PassoAPassoMercadoPago } from "../../components/PassoAPassoMercadoPago";
 import { Layout } from "../../components/Layout";
 
 /** Ajuda do admin (pedido do usuário, 2026-09-01) — formato de perguntas
@@ -18,6 +19,7 @@ export default function AdminPointAjuda() {
         <a href="#ajuda-agenda-geral-turmas" className="ajuda-indice-item">Agenda geral (turmas)</a>
         <a href="#ajuda-agenda-de-um-aluno" className="ajuda-indice-item">Agenda de um aluno</a>
         <a href="#ajuda-caixa" className="ajuda-indice-item">Caixa</a>
+        <a href="#ajuda-pagamento-online-pix" className="ajuda-indice-item">Pagamento online (Pix)</a>
         <a href="#ajuda-sua-conta" className="ajuda-indice-item">Sua conta</a>
       </nav>
 
@@ -267,6 +269,41 @@ export default function AdminPointAjuda() {
               </li>
               <li>As cobranças marcadas como pagas já entram no caixa automaticamente.</li>
             </ul>
+          </AjudaPergunta>
+        </div>
+      </section>
+
+      <section className="ajuda-secao" id="ajuda-pagamento-online-pix">
+        <h2 className="chk-secao-titulo">Pagamento online (Pix)</h2>
+        <div className="card-list">
+          <AjudaPergunta icon="dollar" pergunta="Como ligar o Pix do Mercado Pago (pegar o token)?">
+            <PassoAPassoMercadoPago />
+          </AjudaPergunta>
+
+          <AjudaPergunta icon="chart" pergunta="Pra onde vai o dinheiro?">
+            <p>
+              Direto pra conta do Mercado Pago do seu Point — o OPoint não passa a mão no dinheiro. A
+              cobrança vira paga sozinha e entra no Caixa assim que o Pix cai.
+            </p>
+          </AjudaPergunta>
+
+          <AjudaPergunta icon="users" pergunta="Como o aluno paga?">
+            <ul>
+              <li>Pelo app: menu Pagamentos → "Pagar com Pix".</li>
+              <li>Pelo botão "Pagar com Pix" no e-mail e no WhatsApp de cobrança.</li>
+              <li>Ou você copia o link de pagamento na tela Cobranças (ícone de corrente) e manda pra ele.</li>
+              <li>
+                Na compra de aula avulsa, ele vai direto pro Pix e a vaga fica guardada por 30 minutos; sem
+                pagamento nesse prazo, a reserva é cancelada sozinha.
+              </li>
+            </ul>
+          </AjudaPergunta>
+
+          <AjudaPergunta icon="help" pergunta={'Apareceu "sem chave Pix cadastrada". O que fazer?'}>
+            <p>
+              A conta do Mercado Pago ligada não tem chave Pix. No app do Mercado Pago: Pix → Minhas chaves →
+              Cadastrar chave. Não precisa trocar o token no OPoint.
+            </p>
           </AjudaPergunta>
         </div>
       </section>

@@ -22,6 +22,7 @@ from app.schemas.assinatura import AssinaturaOut
 from app.schemas.credito import CreditoOut
 from app.schemas.matricula import MatriculaOut
 from app.services.carregamento import opcoes_matricula
+from app.schemas.pagamento_online import CobrancaDoAlunoOut
 
 router = APIRouter(prefix="/alunos", tags=["alunos"])
 
@@ -200,3 +201,47 @@ def definir_categoria_do_aluno(
     db.commit()
     db.refresh(novo)
     return novo
+
+
+@router.get("/me/cobrancas", response_model=list[CobrancaDoAlunoOut])
+def minhas_cobrancas(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(require_role(Role.ALUNO))],
+) -> list[CobrancaDoAlunoOut]:
+    """Cobranças do aluno logado, em qualquer Point (pedido do usuário,
+    2026-10-02: tela Pagamentos do aluno, pagar com Pix pelo app). Abertas
+    primeiro (as mais antigas no topo), depois as pagas mais recentes."""
+    from datetime import date
+
+    from app.models.cobranca import Cobranca
+    from app.models.enums import CobrancaStatus
+    from app.models.point import Point
+    from app.services.pix_cobranca import pagamento_online_ativo
+
+    if user.aluno_id is None:
+        return []
+    cobrancas = db.query(Cobranca).filter(Cobranca.aluno_id == user.aluno_id).all()
+    points = {p.id: p for p in db.query(Point).filter(Point.id.in_({c.point_id for c in cobrancas})).all()} if cobrancas else {}
+    hoje = date.today()
+    abertas = sorted((c for c in cobrancas if c.status == CobrancaStatus.ABERTA), key=lambda c: c.vencimento)
+    pagas = sorted(
+        (c for c in cobrancas if c.status == CobrancaStatus.PAGA),
+        key=lambda c: c.pago_em or c.vencimento,
+        reverse=True,
+    )[:12]
+    return [
+        CobrancaDoAlunoOut(
+            id=c.id,
+            point_nome=points[c.point_id].nome if c.point_id in points else "",
+            descricao=c.descricao,
+            valor=float(c.valor),
+            vencimento=c.vencimento,
+            status=c.status,
+            atrasada=c.status == CobrancaStatus.ABERTA and c.vencimento < hoje,
+            pago_em=c.pago_em,
+            pago_via=c.pago_via,
+            pagamento_token=c.pagamento_token,
+            pagamento_online=pagamento_online_ativo(points.get(c.point_id)),
+        )
+        for c in abertas + pagas
+    ]

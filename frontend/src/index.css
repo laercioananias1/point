@@ -9087,3 +9087,335 @@ input.cobr-busca-campo {
   padding: 8px 14px;
   font-size: 13px;
 }
+
+/* Pagamento online (pedido do usuário, 2026-10-02): página /pagar,
+   tela Pagamentos do aluno e cartão em Integrações. */
+.pagar-resumo h1 {
+  margin: 2px 0 6px;
+}
+
+.pagar-numeros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pagar-numeros span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface-sunk);
+}
+
+.pagar-numeros small {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.pagar-numeros strong {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.pagar-pilula {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.pagar-pix {
+  align-items: stretch;
+}
+
+.pagar-qr {
+  align-self: center;
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 14px;
+  background: #fff;
+  padding: 8px;
+  border: 1px solid var(--line);
+}
+
+.pagar-instrucao {
+  text-align: center;
+  line-height: 1.5;
+}
+
+.pagar-codigo {
+  width: 100%;
+  resize: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-all;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--borda);
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.pagar-aguardando {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pagar-ponto {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--limao);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--limao) 70%, transparent);
+  animation: pagar-pulso 1.6s ease-out infinite;
+}
+
+@keyframes pagar-pulso {
+  to {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pagar-ponto {
+    animation: none;
+  }
+}
+
+.pagar-validade {
+  font-size: 12px;
+}
+
+.pagar-pago {
+  align-items: center;
+  text-align: center;
+}
+
+.pagar-pago-icone {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--limao);
+  color: var(--on-limao);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagar-voltar {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pag-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pag-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.pag-total {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.pag-lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.pag-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.pag-valor {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.pag-acoes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 599px) {
+  .pag-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .pag-acoes {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+.integ-marca.mercadopago {
+  background: #E5F6FD;
+  color: #0A77B5;
+}
+
+.pagonline-card {
+  margin-top: 20px;
+}
+
+.pagonline-conta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-sunk);
+}
+
+.pagonline-botoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.pagonline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pagonline-ajuda {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cobr-icone.copiado {
+  color: var(--good);
+}
+
+/* Prazo da reserva de aula avulsa com Pix (2026-10-02). */
+.pagar-reserva {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pagar-reserva svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+/* Passo a passo do token do Mercado Pago (2026-10-02). */
+.pagonline-passos {
+  border-radius: 14px;
+  background: var(--surface-sunk);
+  padding: 12px 16px;
+}
+
+.pagonline-passos summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pagonline-passos[open] summary {
+  margin-bottom: 10px;
+}
+
+.mp-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.mp-passos p {
+  margin: 0;
+}
+
+.mp-passos ol {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mp-passos a {
+  color: var(--ink);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.mp-passos code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.mp-passos-dica {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--warn-soft);
+  font-size: 13px;
+}
+
+/* "Manter conectado neste aparelho" (2026-10-02). */
+.login-lembrar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-lembrar input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--ink);
+  flex: 0 0 auto;
+}
+
+.login-lembrar span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.login-lembrar small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-muted);
+}

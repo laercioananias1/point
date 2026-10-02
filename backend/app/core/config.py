@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     resend_from: str = "OPoint <onboarding@resend.dev>"
     frontend_url: str = "http://localhost:5173"
 
+    # Pagamento online (pedido do usuário, 2026-10-02: Pix pelo Mercado
+    # Pago). `api_public_url` é o endereço público da API (ex.:
+    # https://app.opoint.com.br/api) — vira o notification_url do webhook;
+    # vazio (dev, sem endereço público) = sem webhook, a tela de pagamento
+    # confere o status consultando o gateway.
+    api_public_url: str = ""
+    mercadopago_base_url: str = "https://api.mercadopago.com"
+
     # Integração TotalPass (pedido do usuário, 2026-08-25: "quero fazer
     # integração com totalpass... aceitar os checkins"). partner_api_key é
     # da plataforma inteira — conseguido com o time de parceiros da
@@ -113,6 +121,12 @@ class Settings(BaseSettings):
     # com {{1}} nome, {{2}} Point, {{3}} quantos faltam, {{4}} plataforma.
     # Nome provisório até criar/aprovar na Meta (categoria Utility).
     whatsapp_template_lembrete_checkin: str = "lembrete_checkin"
+    # Cobrança com botão "Pagar com Pix" (pedido do usuário, 2026-10-02) —
+    # mesmo corpo do lembrete_cobranca ({{1}} nome, {{2}} Point, {{3}}
+    # descrição, {{4}} valor, {{5}} vencimento) + botão de URL dinâmica com
+    # a parte fixa https://app.opoint.com.br/pagar/ e o sufixo = código do
+    # pagamento. Usado quando o Point tem pagamento online ligado.
+    whatsapp_template_cobranca_pix: str = "cobranca_pix"
 
     # Origens liberadas pro CORS, separadas por vírgula (pedido do usuário,
     # 2026-08-30: deploy em produção) — em dev é só o Vite local; em

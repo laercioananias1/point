@@ -40,6 +40,11 @@ class MatriculaTipo(str, enum.Enum):
 class MatriculaStatus(str, enum.Enum):
     EM_ANALISE = "em_analise"
     ATIVA = "ativa"
+    # Aula avulsa comprada com Pix online, esperando o pagamento (pedido do
+    # usuário, 2026-10-02: "segura a vaga por um tempo") — ocupa a vaga
+    # até Matricula.reserva_expira_em; pagou vira ATIVA, venceu vira
+    # CANCELADA (ver app/services/reserva_avulsa.py).
+    AGUARDANDO_PAGAMENTO = "aguardando_pagamento"
     RECUSADA = "recusada"
     CANCELADA = "cancelada"
 

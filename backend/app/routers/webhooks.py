@@ -138,3 +138,56 @@ async def webhook_wellhub(
         telefone=usuario.get("phone_number") or None,
     )
     return {"status": "registrado"}
+
+
+@router.post("/mercadopago", status_code=200)
+async def webhook_mercadopago(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    point_id: int | None = None,
+) -> dict[str, str]:
+    """Aviso de pagamento do Mercado Pago (pedido do usuário, 2026-10-02:
+    Pix pelo app). O notification_url de cada Pix já leva o `point_id`
+    (ver services/pix_cobranca.py). Não confia no corpo do aviso: pega só o
+    id do pagamento e consulta o MP com a credencial do próprio Point — é
+    essa resposta que diz se foi pago e de qual cobrança
+    (external_reference "cobranca:<id>"). Sempre 200, pro MP não ficar
+    reentregando um aviso que não tem o que fazer."""
+    from app.models.cobranca import Cobranca
+    from app.services.gateways import GatewayErro, gateway
+    from app.services.pix_cobranca import aplicar_pagamento
+
+    params = request.query_params
+    try:
+        corpo = await request.json()
+    except ValueError:
+        corpo = {}
+    tipo = (corpo.get("type") if isinstance(corpo, dict) else None) or params.get("type") or params.get("topic")
+    dados = corpo.get("data") if isinstance(corpo, dict) else None
+    pagamento_id = (dados or {}).get("id") or params.get("data.id") or params.get("id")
+    if tipo != "payment" or not pagamento_id or point_id is None:
+        return {"status": "ignorado"}
+
+    point = db.get(Point, point_id)
+    gw = gateway("mercadopago")
+    if point is None or point.pagamento_gateway != "mercadopago" or not point.pagamento_credencial:
+        return {"status": "ignorado"}
+    try:
+        pagamento = gw.consultar(point.pagamento_credencial, str(pagamento_id), point_id=point.id)
+    except GatewayErro:
+        return {"status": "erro_ao_consultar"}
+
+    referencia = pagamento.referencia or ""
+    if not referencia.startswith("cobranca:"):
+        return {"status": "ignorado"}
+    try:
+        cobranca_id = int(referencia.split(":", 1)[1])
+    except ValueError:
+        return {"status": "ignorado"}
+    cobranca = db.get(Cobranca, cobranca_id)
+    if cobranca is None or cobranca.point_id != point.id:
+        return {"status": "ignorado"}
+    if aplicar_pagamento(db, cobranca, pagamento):
+        db.commit()
+        return {"status": "pago"}
+    return {"status": "sem_mudanca"}
