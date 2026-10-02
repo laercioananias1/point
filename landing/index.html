@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>OPoint · Sua arena no ponto</title>
-<meta name="description" content="Agenda das quadras, chamada pelo professor, cobrança no WhatsApp e conferência dos check-ins do Wellhub. O OPoint mostra quem está devendo check-in antes do mês fechar." />
+<meta name="description" content="Agenda das quadras, chamada pelo professor, cobrança no WhatsApp com Pix pelo Mercado Pago e conferência dos check-ins do Wellhub. O OPoint mostra quem está devendo check-in antes do mês fechar." />
 <meta name="theme-color" content="#0B2A3C" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -319,6 +319,93 @@
     font-size: 13px; line-height: 1.45;
   }
 
+
+  /* ---- Pix (Mercado Pago) ---- */
+  .pix-secao { background: var(--limao); }
+  .pix-secao .lead { color: var(--navy); }
+  .pix-secao .passo-n { background: var(--navy); color: var(--limao); }
+  .pix-secao .passo > div > span { color: var(--texto); }
+  .pix-demo { flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .pix-whats {
+    align-self: flex-start;
+    width: min(360px, 100%);
+    background: #EFE7DC;
+    border-radius: 22px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 18px 40px rgba(11, 42, 60, 0.18);
+  }
+  .pix-whats-topo { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .pix-whats-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--navy); color: var(--limao);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .pix-balao {
+    background: var(--branco);
+    border-radius: 4px 16px 16px 16px;
+    padding: 12px 14px 8px;
+    font-size: 14px;
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pix-balao-botao {
+    border-top: 1px solid #E4E4E4;
+    padding-top: 8px;
+    text-align: center;
+    font-weight: 700;
+    color: #0A77B5;
+  }
+  .pix-tela {
+    align-self: flex-end;
+    width: min(440px, 100%);
+    background: var(--branco);
+    border-radius: 26px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 30px 60px rgba(11, 42, 60, 0.22);
+  }
+  .pix-tela-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .pix-valor { font-family: var(--titulo); font-weight: 800; font-size: 30px; }
+  .pix-pago {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--limao); color: var(--navy);
+    font-size: 13px; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px;
+  }
+  .pix-tela-corpo { display: flex; gap: 16px; align-items: center; }
+  .pix-qr { flex: 0 0 132px; width: 132px; height: 132px; border-radius: 12px; border: 1px solid var(--areia-linha); padding: 6px; background: #fff; }
+  .pix-copia { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .pix-copia code {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--creme);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pix-copiar {
+    align-self: flex-start;
+    background: var(--navy); color: var(--creme);
+    font-size: 13px; font-weight: 700;
+    padding: 9px 16px; border-radius: 999px;
+  }
+  .pix-nota { background: var(--creme); }
+  @media (max-width: 640px) {
+    .pix-tela-corpo { flex-direction: column; align-items: stretch; }
+    .pix-qr { align-self: center; }
+    .pix-tela { padding: 18px; }
+  }
+
   /* ---- Aula experimental ---- */
   .experimental { background: var(--areia); }
   .experimental .lista-check { font-size: 16px; }
@@ -526,6 +613,7 @@
   <nav aria-label="Seções">
     <a class="so-desktop" href="#recursos">Recursos</a>
     <a class="so-desktop" href="#checkins">Check-ins</a>
+    <a class="so-desktop" href="#pix">Pix</a>
     <a class="so-desktop" href="#visoes">Para quem</a>
     <a class="so-desktop" href="#planos">Planos</a>
     <a class="so-desktop" href="#duvidas">Dúvidas</a>
@@ -539,7 +627,7 @@
   <div class="hero-texto">
     <span class="selo">Beach tennis · Vôlei · Futevôlei</span>
     <h1>Sua arena<br>no ponto.</h1>
-    <p class="hero-lead">Agenda das quadras, chamada pelo professor, cobrança no WhatsApp e, principalmente, a conferência dos check-ins do Wellhub: o OPoint mostra quem está devendo check-in antes do mês fechar. TotalPass chegando em breve.</p>
+    <p class="hero-lead">Agenda das quadras, chamada pelo professor, cobrança no WhatsApp com Pix pelo Mercado Pago e, principalmente, a conferência dos check-ins do Wellhub: o OPoint mostra quem está devendo check-in antes do mês fechar. TotalPass chegando em breve.</p>
     <div class="hero-acoes">
       <a class="btn btn-limao" href="#comecar">Quero conhecer o OPoint</a>
       <a class="btn btn-contorno" href="#como-funciona">Ver como funciona</a>
@@ -602,7 +690,7 @@
     <span>Check-ins conciliados</span><span class="ponto">●</span>
     <span>Wellhub</span><span class="ponto">●</span>
     <span>TotalPass <span class="em-breve">em breve</span></span><span class="ponto">●</span>
-    <span>Cobrança</span><span class="ponto">●</span>
+    <span>Pix</span><span class="ponto">●</span>
     <span>Multi-arena</span>
   </div>
 </section>
@@ -631,8 +719,8 @@
       </article>
       <article class="recurso">
         <span class="recurso-icone"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg></span>
-        <h3>Cobrança no WhatsApp</h3>
-        <p>Régua automática antes e depois do vencimento, e baixa do pagamento em um toque.</p>
+        <h3>Cobrança com Pix</h3>
+        <p>Régua automática no WhatsApp e no e-mail com botão de pagar. O aluno paga com Pix pelo Mercado Pago, o dinheiro cai na conta da arena e a baixa é automática.</p>
       </article>
       <article class="recurso">
         <span class="recurso-icone"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5"/></svg></span>
@@ -678,6 +766,52 @@
       <div class="nota">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 20px"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
         <span>Quem está com saldo negativo recebe um lembrete no WhatsApp, e o professor vê o aviso na hora da chamada.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pix" class="secao pix-secao">
+  <div class="wrap duas-colunas">
+    <div class="coluna-texto">
+      <span class="selo">Pix · Mercado Pago</span>
+      <h2 class="h2">Mensalidade paga no Pix, baixa no caixa sozinha.</h2>
+      <p class="lead">O aluno recebe a cobrança no WhatsApp e no e-mail, toca em "Pagar com Pix" e paga em segundos. O dinheiro cai direto na conta Mercado Pago da arena, e o OPoint dá baixa na hora — sem conferir extrato, sem comprovante no grupo.</p>
+      <div class="passos">
+        <div class="passo"><span class="passo-n">1</span><div><b>A cobrança sai sozinha</b><span>A mensalidade é gerada todo mês e a régua lembra o aluno antes e depois do vencimento, com o botão de pagar.</span></div></div>
+        <div class="passo"><span class="passo-n">2</span><div><b>O aluno paga com Pix</b><span>QR Code ou copia e cola, pelo app ou pelo link da mensagem. Vale também pra aula avulsa: a vaga fica guardada enquanto ele paga.</span></div></div>
+        <div class="passo"><span class="passo-n">3</span><div><b>Pago, conferido e no caixa</b><span>O Mercado Pago confirma, a cobrança vira paga e a entrada aparece no caixa do dia. Ninguém precisa marcar nada.</span></div></div>
+      </div>
+    </div>
+
+    <div class="pix-demo" aria-hidden="true">
+      <div class="pix-whats">
+        <div class="pix-whats-topo"><span class="pix-whats-avatar">AS</span><b>Arena Sol</b></div>
+        <div class="pix-balao">
+          <p>Olá, Camila! Sua mensalidade de outubro, de <b>R$ 250,00</b>, vence dia 10/10.</p>
+          <span class="pix-balao-botao">Pagar com Pix</span>
+        </div>
+      </div>
+      <div class="pix-tela">
+        <div class="pix-tela-topo">
+          <div>
+            <div class="conf-sub">Mensalidade outubro</div>
+            <div class="pix-valor">R$ 250,00</div>
+          </div>
+          <span class="pix-pago"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Pago</span>
+        </div>
+        <div class="pix-tela-corpo">
+          <svg class="pix-qr" viewBox="-1 -1 27 27" aria-hidden="true" shape-rendering="crispEdges"><rect x="-1" y="-1" width="27" height="27" fill="#fff"/><g fill="#0B2A3C"><rect x="0" y="0" width="1" height="1"/><rect x="0" y="1" width="1" height="1"/><rect x="0" y="2" width="1" height="1"/><rect x="0" y="3" width="1" height="1"/><rect x="0" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="0" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="0" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="3" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="0" width="1" height="1"/><rect x="6" y="1" width="1" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="18" y="0" width="1" height="1"/><rect x="18" y="1" width="1" height="1"/><rect x="18" y="2" width="1" height="1"/><rect x="18" y="3" width="1" height="1"/><rect x="18" y="4" width="1" height="1"/><rect x="18" y="5" width="1" height="1"/><rect x="18" y="6" width="1" height="1"/><rect x="19" y="0" width="1" height="1"/><rect x="19" y="6" width="1" height="1"/><rect x="20" y="0" width="1" height="1"/><rect x="20" y="2" width="1" height="1"/><rect x="20" y="3" width="1" height="1"/><rect x="20" y="4" width="1" height="1"/><rect x="20" y="6" width="1" height="1"/><rect x="21" y="0" width="1" height="1"/><rect x="21" y="2" width="1" height="1"/><rect x="21" y="3" width="1" height="1"/><rect x="21" y="4" width="1" height="1"/><rect x="21" y="6" width="1" height="1"/><rect x="22" y="0" width="1" height="1"/><rect x="22" y="2" width="1" height="1"/><rect x="22" y="3" width="1" height="1"/><rect x="22" y="4" width="1" height="1"/><rect x="22" y="6" width="1" height="1"/><rect x="23" y="0" width="1" height="1"/><rect x="23" y="6" width="1" height="1"/><rect x="24" y="0" width="1" height="1"/><rect x="24" y="1" width="1" height="1"/><rect x="24" y="2" width="1" height="1"/><rect x="24" y="3" width="1" height="1"/><rect x="24" y="4" width="1" height="1"/><rect x="24" y="5" width="1" height="1"/><rect x="24" y="6" width="1" height="1"/><rect x="0" y="18" width="1" height="1"/><rect x="0" y="19" width="1" height="1"/><rect x="0" y="20" width="1" height="1"/><rect x="0" y="21" width="1" height="1"/><rect x="0" y="22" width="1" height="1"/><rect x="0" y="23" width="1" height="1"/><rect x="0" y="24" width="1" height="1"/><rect x="1" y="18" width="1" height="1"/><rect x="1" y="24" width="1" height="1"/><rect x="2" y="18" width="1" height="1"/><rect x="2" y="20" width="1" height="1"/><rect x="2" y="21" width="1" height="1"/><rect x="2" y="22" width="1" height="1"/><rect x="2" y="24" width="1" height="1"/><rect x="3" y="18" width="1" height="1"/><rect x="3" y="20" width="1" height="1"/><rect x="3" y="21" width="1" height="1"/><rect x="3" y="22" width="1" height="1"/><rect x="3" y="24" width="1" height="1"/><rect x="4" y="18" width="1" height="1"/><rect x="4" y="20" width="1" height="1"/><rect x="4" y="21" width="1" height="1"/><rect x="4" y="22" width="1" height="1"/><rect x="4" y="24" width="1" height="1"/><rect x="5" y="18" width="1" height="1"/><rect x="5" y="24" width="1" height="1"/><rect x="6" y="18" width="1" height="1"/><rect x="6" y="19" width="1" height="1"/><rect x="6" y="20" width="1" height="1"/><rect x="6" y="21" width="1" height="1"/><rect x="6" y="22" width="1" height="1"/><rect x="6" y="23" width="1" height="1"/><rect x="6" y="24" width="1" height="1"/><rect x="8" y="0" width="1" height="1"/><rect x="11" y="0" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/><rect x="9" y="1" width="1" height="1"/><rect x="10" y="1" width="1" height="1"/><rect x="11" y="1" width="1" height="1"/><rect x="14" y="1" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="11" y="2" width="1" height="1"/><rect x="13" y="2" width="1" height="1"/><rect x="14" y="2" width="1" height="1"/><rect x="15" y="2" width="1" height="1"/><rect x="16" y="2" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="15" y="3" width="1" height="1"/><rect x="16" y="3" width="1" height="1"/><rect x="12" y="4" width="1" height="1"/><rect x="13" y="4" width="1" height="1"/><rect x="14" y="4" width="1" height="1"/><rect x="15" y="4" width="1" height="1"/><rect x="8" y="5" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="13" y="5" width="1" height="1"/><rect x="14" y="5" width="1" height="1"/><rect x="16" y="5" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="13" y="6" width="1" height="1"/><rect x="14" y="6" width="1" height="1"/><rect x="15" y="6" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="10" y="7" width="1" height="1"/><rect x="11" y="7" width="1" height="1"/><rect x="12" y="7" width="1" height="1"/><rect x="14" y="7" width="1" height="1"/><rect x="16" y="7" width="1" height="1"/><rect x="0" y="8" width="1" height="1"/><rect x="2" y="8" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="6" y="8" width="1" height="1"/><rect x="7" y="8" width="1" height="1"/><rect x="10" y="8" width="1" height="1"/><rect x="12" y="8" width="1" height="1"/><rect x="13" y="8" width="1" height="1"/><rect x="16" y="8" width="1" height="1"/><rect x="18" y="8" width="1" height="1"/><rect x="19" y="8" width="1" height="1"/><rect x="21" y="8" width="1" height="1"/><rect x="22" y="8" width="1" height="1"/><rect x="23" y="8" width="1" height="1"/><rect x="24" y="8" width="1" height="1"/><rect x="1" y="9" width="1" height="1"/><rect x="3" y="9" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="13" y="9" width="1" height="1"/><rect x="14" y="9" width="1" height="1"/><rect x="17" y="9" width="1" height="1"/><rect x="21" y="9" width="1" height="1"/><rect x="22" y="9" width="1" height="1"/><rect x="23" y="9" width="1" height="1"/><rect x="0" y="10" width="1" height="1"/><rect x="2" y="10" width="1" height="1"/><rect x="5" y="10" width="1" height="1"/><rect x="6" y="10" width="1" height="1"/><rect x="8" y="10" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/><rect x="13" y="10" width="1" height="1"/><rect x="15" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="17" y="10" width="1" height="1"/><rect x="18" y="10" width="1" height="1"/><rect x="19" y="10" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="21" y="10" width="1" height="1"/><rect x="23" y="10" width="1" height="1"/><rect x="24" y="10" width="1" height="1"/><rect x="5" y="11" width="1" height="1"/><rect x="6" y="11" width="1" height="1"/><rect x="7" y="11" width="1" height="1"/><rect x="11" y="11" width="1" height="1"/><rect x="15" y="11" width="1" height="1"/><rect x="17" y="11" width="1" height="1"/><rect x="0" y="12" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="9" y="12" width="1" height="1"/><rect x="12" y="12" width="1" height="1"/><rect x="17" y="12" width="1" height="1"/><rect x="20" y="12" width="1" height="1"/><rect x="22" y="12" width="1" height="1"/><rect x="24" y="12" width="1" height="1"/><rect x="2" y="13" width="1" height="1"/><rect x="7" y="13" width="1" height="1"/><rect x="8" y="13" width="1" height="1"/><rect x="9" y="13" width="1" height="1"/><rect x="11" y="13" width="1" height="1"/><rect x="12" y="13" width="1" height="1"/><rect x="15" y="13" width="1" height="1"/><rect x="17" y="13" width="1" height="1"/><rect x="19" y="13" width="1" height="1"/><rect x="20" y="13" width="1" height="1"/><rect x="24" y="13" width="1" height="1"/><rect x="1" y="14" width="1" height="1"/><rect x="2" y="14" width="1" height="1"/><rect x="8" y="14" width="1" height="1"/><rect x="9" y="14" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="11" y="14" width="1" height="1"/><rect x="12" y="14" width="1" height="1"/><rect x="13" y="14" width="1" height="1"/><rect x="16" y="14" width="1" height="1"/><rect x="19" y="14" width="1" height="1"/><rect x="20" y="14" width="1" height="1"/><rect x="21" y="14" width="1" height="1"/><rect x="23" y="14" width="1" height="1"/><rect x="1" y="15" width="1" height="1"/><rect x="3" y="15" width="1" height="1"/><rect x="4" y="15" width="1" height="1"/><rect x="5" y="15" width="1" height="1"/><rect x="6" y="15" width="1" height="1"/><rect x="8" y="15" width="1" height="1"/><rect x="9" y="15" width="1" height="1"/><rect x="10" y="15" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="18" y="15" width="1" height="1"/><rect x="20" y="15" width="1" height="1"/><rect x="21" y="15" width="1" height="1"/><rect x="24" y="15" width="1" height="1"/><rect x="0" y="16" width="1" height="1"/><rect x="1" y="16" width="1" height="1"/><rect x="6" y="16" width="1" height="1"/><rect x="9" y="16" width="1" height="1"/><rect x="12" y="16" width="1" height="1"/><rect x="13" y="16" width="1" height="1"/><rect x="16" y="16" width="1" height="1"/><rect x="21" y="16" width="1" height="1"/><rect x="23" y="16" width="1" height="1"/><rect x="11" y="17" width="1" height="1"/><rect x="17" y="17" width="1" height="1"/><rect x="20" y="17" width="1" height="1"/><rect x="21" y="17" width="1" height="1"/><rect x="22" y="17" width="1" height="1"/><rect x="9" y="18" width="1" height="1"/><rect x="11" y="18" width="1" height="1"/><rect x="13" y="18" width="1" height="1"/><rect x="14" y="18" width="1" height="1"/><rect x="16" y="18" width="1" height="1"/><rect x="17" y="18" width="1" height="1"/><rect x="8" y="19" width="1" height="1"/><rect x="9" y="19" width="1" height="1"/><rect x="11" y="19" width="1" height="1"/><rect x="17" y="19" width="1" height="1"/><rect x="18" y="19" width="1" height="1"/><rect x="21" y="19" width="1" height="1"/><rect x="9" y="20" width="1" height="1"/><rect x="13" y="20" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="21" y="20" width="1" height="1"/><rect x="23" y="20" width="1" height="1"/><rect x="9" y="21" width="1" height="1"/><rect x="11" y="21" width="1" height="1"/><rect x="12" y="21" width="1" height="1"/><rect x="16" y="21" width="1" height="1"/><rect x="17" y="21" width="1" height="1"/><rect x="20" y="21" width="1" height="1"/><rect x="22" y="21" width="1" height="1"/><rect x="23" y="21" width="1" height="1"/><rect x="24" y="21" width="1" height="1"/><rect x="9" y="22" width="1" height="1"/><rect x="10" y="22" width="1" height="1"/><rect x="12" y="22" width="1" height="1"/><rect x="14" y="22" width="1" height="1"/><rect x="16" y="22" width="1" height="1"/><rect x="17" y="22" width="1" height="1"/><rect x="19" y="22" width="1" height="1"/><rect x="20" y="22" width="1" height="1"/><rect x="21" y="22" width="1" height="1"/><rect x="23" y="22" width="1" height="1"/><rect x="24" y="22" width="1" height="1"/><rect x="14" y="23" width="1" height="1"/><rect x="18" y="23" width="1" height="1"/><rect x="19" y="23" width="1" height="1"/><rect x="21" y="23" width="1" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="8" y="24" width="1" height="1"/><rect x="10" y="24" width="1" height="1"/><rect x="11" y="24" width="1" height="1"/><rect x="13" y="24" width="1" height="1"/><rect x="15" y="24" width="1" height="1"/><rect x="16" y="24" width="1" height="1"/><rect x="18" y="24" width="1" height="1"/><rect x="19" y="24" width="1" height="1"/><rect x="23" y="24" width="1" height="1"/></g></svg>
+          <div class="pix-copia">
+            <span class="conf-sub">Pix copia e cola</span>
+            <code>00020126580014br.gov.bcb.pix0136…</code>
+            <span class="pix-copiar">Copiar código</span>
+          </div>
+        </div>
+        <div class="nota pix-nota">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: 0 0 20px"><path d="M3 7h18v13H3zM3 7l3-4h12l3 4M12 11v5M9.5 13.5h5"/></svg>
+          <span>Entrada de R$ 250,00 lançada no caixa · Camila Duarte</span>
+        </div>
       </div>
     </div>
   </div>
@@ -773,6 +907,7 @@
           <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Vê quantas aulas fez e quantos check-ins faltam no mês</span>
           <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Recebe lembrete para não esquecer o check-in</span>
           <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Agenda a aula experimental sem precisar ligar</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Paga mensalidade e aula avulsa com Pix, direto no app</span>
         </div>
       </article>
       <article class="visao escura">
@@ -791,7 +926,7 @@
         <div class="lista-check">
           <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Ocupação das quadras hora a hora, com as turmas de cada uma</span>
           <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Conferência de check-ins com fechamento mensal</span>
-          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Cobrança com régua automática no WhatsApp e controle do caixa</span>
+          <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Cobrança com Pix (Mercado Pago) e régua automática no WhatsApp, com baixa sozinha no caixa</span>
           <span><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B2A3C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Relatórios de ocupação, receita e professores</span>
         </div>
       </article>
@@ -822,7 +957,7 @@
           <span class="pilula">Mais escolhido</span>
         </div>
         <div class="plano-preco">Sob consulta</div>
-        <p>Várias quadras e professores, conferência de check-ins Wellhub (TotalPass em breve), cobrança automática no WhatsApp e controle do caixa.</p>
+        <p>Várias quadras e professores, conferência de check-ins Wellhub (TotalPass em breve), cobrança automática no WhatsApp, recebimento por Pix pelo Mercado Pago e controle do caixa.</p>
         <a class="btn btn-limao" href="#comecar">Falar com a gente</a>
       </div>
     </div>
@@ -854,6 +989,10 @@
     <div class="faq-item">
       <button type="button" aria-expanded="false"><span>O OPoint funciona com o TotalPass?</span><span class="faq-sinal" aria-hidden="true">+</span></button>
       <p hidden>A integração com o TotalPass está chegando. Hoje o OPoint já recebe e confere os check-ins do Wellhub.</p>
+    </div>
+    <div class="faq-item">
+      <button type="button" aria-expanded="false"><span>Como a arena recebe os pagamentos?</span><span class="faq-sinal" aria-hidden="true">+</span></button>
+      <p hidden>Pelo Pix, com o Mercado Pago da própria arena. O aluno paga a mensalidade ou a aula avulsa pelo app ou pelo link que chega no e-mail e no WhatsApp; o dinheiro cai direto na conta da arena e a cobrança é baixada sozinha, já entrando no caixa.</p>
     </div>
   </div>
 </section>

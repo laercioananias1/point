@@ -4230,8 +4230,14 @@ select.turmas-experimental {
 
 .alunos-linha.chk-grade {
   grid-template-columns:
-    minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 2.1fr) minmax(0, 0.6fr) minmax(0, 0.7fr)
+    minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.8fr) minmax(0, 0.6fr) minmax(0, 0.95fr)
     minmax(0, 1.2fr);
+}
+
+/* Títulos das colunas numa linha só ("CHECK-INS" quebrava — pedido do
+   usuário, 2026-10-02). */
+.alunos-cabecalho.chk-grade > span {
+  white-space: nowrap;
 }
 
 .chk-grade .status-pill {
