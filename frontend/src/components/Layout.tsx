@@ -93,6 +93,7 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
       itens: [
         { to: "/admin-point", label: "Início", icon: "home", end: true },
         { to: "/admin-point/agenda", label: "Agenda", icon: "calendar" },
+        { to: "/admin-point/wellhub", label: "Checkins", icon: "check-circle" },
       ],
     },
     {
@@ -119,9 +120,8 @@ const SIDEBAR: Record<string, GrupoMenu[]> = {
       itens: [
         { to: "/admin-point/cobrancas", label: "Cobranças", icon: "dollar" },
         { to: "/admin-point/caixa", label: "Caixa", icon: "chart" },
-        { to: "/admin-point/relatorios", label: "Relatórios", icon: "list" },
-        { to: "/admin-point/wellhub", label: "Checkins", icon: "check-circle" },
         { to: "/admin-point/configuracoes/planos", label: "Planos", icon: "ticket" },
+        { to: "/admin-point/relatorios", label: "Relatórios", icon: "list" },
       ],
     },
     {
