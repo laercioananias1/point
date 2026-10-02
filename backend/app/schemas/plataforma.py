@@ -18,6 +18,7 @@ class PlataformaTotaisOut(ORMModel):
 
 
 class PlataformaAdminOut(ORMModel):
+    id: int
     nome: str
     email: str
     celular: str
@@ -50,3 +51,13 @@ class PlataformaPainelOut(ORMModel):
     totais: PlataformaTotaisOut
     points: list[PlataformaPointOut]
     integracoes: list[PlataformaIntegracaoOut]
+
+
+class PlataformaAdminEditar(ORMModel):
+    """Dono do app corrigindo o cadastro do admin de um Point (pedido do
+    usuário, 2026-10-02: "adm do sistema precisa ter permissão de alterar
+    dados de cada point — nome, email, telefone")."""
+
+    nome: str
+    email: str
+    celular: str

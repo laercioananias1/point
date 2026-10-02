@@ -136,12 +136,7 @@ export default function DonoAppPoints() {
                     {d && d.admins_lista.length > 0 && (
                       <div className="points-admins">
                         {d.admins_lista.map((a) => (
-                          <div key={a.email} className="points-admin">
-                            <span className="alunos-sub">Admin</span>
-                            <strong>{a.nome}</strong>
-                            <span className="points-admin-contato">{a.email}</span>
-                            <span className="points-admin-contato">{formatarCelular(a.celular)}</span>
-                          </div>
+                          <AdminDoPoint key={a.id} admin={a} onSalvo={carregar} />
                         ))}
                       </div>
                     )}
@@ -327,5 +322,94 @@ function ConviteAdminPendenteRow({
         </button>
       </span>
     </li>
+  );
+}
+
+/** Admin no cartão do Point, com edição de nome/e-mail/celular pelo dono
+ * do app (pedido do usuário, 2026-10-02). */
+function AdminDoPoint({
+  admin,
+  onSalvo,
+}: {
+  admin: { id: number; nome: string; email: string; celular: string };
+  onSalvo: () => void;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [nome, setNome] = useState(admin.nome);
+  const [email, setEmail] = useState(admin.email);
+  const [celular, setCelular] = useState(formatarCelular(admin.celular));
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  function abrir() {
+    setNome(admin.nome);
+    setEmail(admin.email);
+    setCelular(formatarCelular(admin.celular));
+    setErro(null);
+    setEditando(true);
+  }
+
+  async function salvar(e: FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    setSalvando(true);
+    try {
+      await api.patch(`/plataforma/admins/${admin.id}`, { nome, email, celular });
+      setEditando(false);
+      onSalvo();
+    } catch (err) {
+      setErro(err instanceof ApiError ? err.message : "Não foi possível salvar.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  if (!editando) {
+    return (
+      <div className="points-admin">
+        <span className="points-admin-topo">
+          <span className="alunos-sub">Admin</span>
+          <button type="button" className="alunos-acao" onClick={abrir}>
+            editar
+          </button>
+        </span>
+        <strong>{admin.nome}</strong>
+        <span className="points-admin-contato">{admin.email}</span>
+        <span className="points-admin-contato">{formatarCelular(admin.celular)}</span>
+      </div>
+    );
+  }
+
+  return (
+    <form className="points-admin points-admin-form" onSubmit={salvar}>
+      <span className="alunos-sub">Editar admin</span>
+      <label>
+        Nome
+        <input value={nome} onChange={(e) => setNome(e.target.value)} required />
+      </label>
+      <label>
+        E-mail
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </label>
+      <label>
+        Celular
+        <input
+          type="tel"
+          value={celular}
+          onChange={(e) => setCelular(formatarCelular(e.target.value))}
+          placeholder="(11) 91234-5678"
+          required
+        />
+      </label>
+      {erro && <p className="form-error">{erro}</p>}
+      <span className="points-admin-botoes">
+        <button type="button" className="secondary" disabled={salvando} onClick={() => setEditando(false)}>
+          Cancelar
+        </button>
+        <button type="submit" disabled={salvando}>
+          {salvando ? "Salvando..." : "Salvar"}
+        </button>
+      </span>
+    </form>
   );
 }

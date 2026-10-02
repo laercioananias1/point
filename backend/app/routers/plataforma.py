@@ -7,7 +7,9 @@ exceção ao isolamento entre Points (seção 3.1) — só SUPER_ADMIN."""
 from datetime import date, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+import re
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -30,6 +32,7 @@ from app.models.user import User
 from app.models.vinculo import Vinculo
 from app.models.wellhub_checkin import WellhubCheckin
 from app.schemas.plataforma import (
+    PlataformaAdminEditar,
     PlataformaAdminOut,
     PlataformaIntegracaoOut,
     PlataformaPainelOut,
@@ -73,7 +76,7 @@ def painel_plataforma(
         if user.tem_role(Role.ADMIN_POINT):
             admins[user.point_id] = admins.get(user.point_id, 0) + 1
             admins_lista.setdefault(user.point_id, []).append(
-                PlataformaAdminOut(nome=user.nome, email=user.email, celular=user.celular)
+                PlataformaAdminOut(id=user.id, nome=user.nome, email=user.email, celular=user.celular)
             )
 
     points = []
@@ -185,3 +188,46 @@ def painel_plataforma(
         points=sorted(points, key=lambda p: (-p.recebido_mes, p.nome)),
         integracoes=integracoes,
     )
+
+
+@router.patch("/admins/{user_id}", response_model=PlataformaAdminOut)
+def editar_admin_do_point(
+    user_id: int,
+    payload: PlataformaAdminEditar,
+    db: Annotated[Session, Depends(get_db)],
+    _dono: Annotated[User, Depends(require_role(Role.SUPER_ADMIN))],
+) -> PlataformaAdminOut:
+    """Nome, e-mail e celular do admin de um Point, pelo dono do app
+    (pedido do usuário, 2026-10-02). Se a mesma conta também é professor
+    ou aluno, o cadastro ligado acompanha — é a mesma pessoa."""
+    from app.models.aluno import Aluno
+    from app.models.professor import Professor
+
+    user = db.get(User, user_id)
+    if user is None or not user.tem_role(Role.ADMIN_POINT):
+        raise HTTPException(404, "Admin não encontrado")
+
+    nome = payload.nome.strip()
+    email = payload.email.strip().lower()
+    celular = payload.celular.strip()
+    if len(nome) < 2:
+        raise HTTPException(422, "Informe o nome")
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise HTTPException(422, "E-mail inválido")
+    if len(re.sub(r"\D", "", celular)) < 10:
+        raise HTTPException(422, "Celular inválido — informe com DDD")
+    outro = db.query(User).filter(User.email == email, User.id != user.id).first()
+    if outro is not None:
+        raise HTTPException(409, "Esse e-mail já é de outra conta")
+
+    user.nome, user.email, user.celular = nome, email, celular
+    if user.professor_id is not None:
+        professor = db.get(Professor, user.professor_id)
+        if professor is not None:
+            professor.nome, professor.email, professor.contato = nome, email, celular
+    if user.aluno_id is not None:
+        aluno = db.get(Aluno, user.aluno_id)
+        if aluno is not None:
+            aluno.nome, aluno.email, aluno.contato = nome, email, celular
+    db.commit()
+    return PlataformaAdminOut(id=user.id, nome=user.nome, email=user.email, celular=user.celular)

@@ -9051,3 +9051,39 @@ input.cobr-busca-campo {
   color: var(--ink-muted);
   overflow-wrap: anywhere;
 }
+
+.points-admin-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.points-admin-form {
+  gap: 8px;
+}
+
+.points-admin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.points-admin-form input {
+  padding: 8px 10px;
+  font-size: 14px;
+  background: var(--surface);
+}
+
+.points-admin-botoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.points-admin-botoes button {
+  padding: 8px 14px;
+  font-size: 13px;
+}
