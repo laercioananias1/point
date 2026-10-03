@@ -6,10 +6,11 @@ no mesmo servidor compartilhado com outros serviços do TaskHero (era
 `point.taskhero.com.br` até o rebrand pra OPoint, 2026-09).
 
 **Importante sobre o nginx desse servidor**: quem expõe as portas 80/443 pra
-internet **não** é um nginx tradicional em `/etc/nginx` do host — é o nginx
-que já roda **dentro de outro container** (`adsops-frontend-1`, de um
-projeto não relacionado que chegou primeiro nessas portas). Ver seção 4 pra
-como isso funciona na prática.
+internet **não** é um nginx tradicional em `/etc/nginx` do host — é o
+**proxy compartilhado** (container `proxy-compartilhado`, pasta
+`TaskHero/proxy-compartilhado`), que atende o OPoint e o ads-ops e guarda
+os certificados. Até 2026-10 isso era o nginx de dentro do ads-ops
+(`adsops-frontend-1`). Ver seção 4.
 
 ## 0. Servidor compartilhado com pouca RAM — configure swap primeiro
 
@@ -81,7 +82,7 @@ troque a sua própria (dono do app) assim que logar.
 O script é idempotente — rodar de novo não duplica nem quebra nada, só pula
 quem já existe.
 
-## 4. DNS + nginx (rodando dentro do container `adsops-frontend-1`)
+## 4. DNS + nginx (proxy compartilhado `proxy-compartilhado`)
 
 Pedido do usuário, 2026-09-09: `opoint.com.br`/`www.opoint.com.br` passam a
 ser o **site institucional** (serviço `landing`, novo — ver seção 2, porta
@@ -102,19 +103,15 @@ app.opoint.com.br` (e os outros dois) deve devolver o IP do servidor.
 
 ### 4.2 e 4.3 Nginx: configs versionadas em `deploy/nginx/`
 
-O nginx que atende 80/443 roda dentro de `adsops-frontend-1` (projeto
-ads-ops). As configs do OPoint ficam neste repo, em `deploy/nginx/`
-(`opoint-app.conf` e `opoint-site.conf`), e o `docker-compose.prod.yml` do
-ads-ops:
+O nginx que atende 80/443 é o proxy compartilhado (pasta
+`TaskHero/proxy-compartilhado`, com README próprio). As configs do OPoint
+ficam neste repo, em `deploy/nginx/` (`opoint-app.conf` e
+`opoint-site.conf`), e o `docker-compose.yml` do proxy:
 
-- monta essa pasta em `/etc/nginx/sites-extra` (o `nginx.conf` dele faz
-  `include /etc/nginx/sites-extra/*.conf`) — por isso o OPoint precisa
-  estar clonado em `../point` ao lado do ads-ops (`~/taskhero/point`);
-- liga o container à rede `point_default`, pra alcançar
+- monta essa pasta em `/etc/nginx/sites/opoint` — por isso o OPoint
+  precisa estar clonado ao lado do proxy (`~/taskhero/point`);
+- entra na rede `point_default`, pra alcançar
   `point-web-1`/`point-api-1`/`point-landing-1` pelo nome.
-
-Antes isso era feito à mão (`docker network connect` + arquivos criados
-dentro do container), e se perdia sempre que o container era recriado.
 
 As configs resolvem o IP dos containers a cada requisição (`resolver
 127.0.0.11` + variável no `proxy_pass`): um deploy que recrie os containers
@@ -125,7 +122,7 @@ Depois de mudar algo em `deploy/nginx/`:
 
 ```bash
 cd ~/taskhero/point && git pull
-docker exec adsops-frontend-1 nginx -t && docker exec adsops-frontend-1 nginx -s reload
+docker exec proxy-compartilhado nginx -t && docker exec proxy-compartilhado nginx -s reload
 ```
 
 Os blocos 443 só funcionam depois que o certificado existir (próximo
@@ -133,26 +130,20 @@ passo) — num servidor novo, `nginx -t` reclama até lá.
 
 ### 4.4 Emitir os certificados (Let's Encrypt / certbot)
 
-O host não tem `certbot` instalado — roda um container avulso, reaproveitando
-os volumes de certbot que o `adsops-frontend-1` já usa (`_data` é o caminho
-real por trás dos volumes nomeados; confirme com
-`docker volume inspect adsops_certbot_www adsops_certbot_conf`). Um
-certificado com `opoint.com.br` + `www.opoint.com.br` juntos (SAN), outro
-separado pra `app.opoint.com.br`:
+O host não tem `certbot` instalado — usa o serviço `certbot` do proxy
+compartilhado (mesmos volumes que o nginx lê). Um certificado com
+`opoint.com.br` + `www.opoint.com.br` juntos (SAN), outro separado pra
+`app.opoint.com.br`:
 
 ```bash
-docker run --rm \
-  -v adsops_certbot_www:/var/www/certbot \
-  -v adsops_certbot_conf:/etc/letsencrypt \
-  certbot/certbot certonly --webroot -w /var/www/certbot \
+cd ~/taskhero/proxy-compartilhado
+docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
   -d opoint.com.br -d www.opoint.com.br
-
-docker run --rm \
-  -v adsops_certbot_www:/var/www/certbot \
-  -v adsops_certbot_conf:/etc/letsencrypt \
-  certbot/certbot certonly --webroot -w /var/www/certbot \
+docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
   -d app.opoint.com.br
 ```
+
+A renovação é automática pelo `renovar_certificados.sh` do proxy (cron).
 
 Se já existia certificado só de `opoint.com.br` (do domínio único de
 antes) e ele já cobre `www`, o primeiro comando acima só expande esse
@@ -163,8 +154,8 @@ Depois, recarregue o nginx pra ele pegar os certificados novos e os
 server blocks:
 
 ```bash
-docker exec adsops-frontend-1 nginx -t
-docker exec adsops-frontend-1 nginx -s reload
+docker exec proxy-compartilhado nginx -t
+docker exec proxy-compartilhado nginx -s reload
 ```
 
 Teste: `curl -I https://opoint.com.br` deve responder 200 (site
