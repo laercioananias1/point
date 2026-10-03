@@ -126,11 +126,40 @@ def _rodar_expiracao_de_reservas() -> None:
         db.close()
 
 
-def iniciar_scheduler() -> BackgroundScheduler:
-    """Chamada uma vez, no startup da API (ver app/main.py)."""
+# Cadeado entre processos (pedido do usuário, 2026-10-02: produção roda
+# `uvicorn --workers 2`, e cada worker subia o próprio agendador — régua de
+# cobrança e lembrete de check-in saíam em dobro). Só o worker que pega o
+# lock de arquivo roda os jobs; o arquivo fica aberto enquanto o processo
+# vive, e o lock se solta sozinho se ele morrer.
+_ARQUIVO_LOCK = "/tmp/opoint-scheduler.lock"
+_lock = None
+
+
+def _pegar_lock() -> bool:
+    global _lock
+    try:
+        import fcntl
+    except ImportError:  # Windows (testes fora do container): sem disputa
+        return True
+    arquivo = open(_ARQUIVO_LOCK, "w")  # noqa: SIM115 — fica aberto de propósito
+    try:
+        fcntl.flock(arquivo, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        arquivo.close()
+        return False
+    _lock = arquivo
+    return True
+
+
+def iniciar_scheduler() -> BackgroundScheduler | None:
+    """Chamada no startup de cada worker da API (ver app/main.py) — só um
+    deles fica com o agendador."""
     global _scheduler
     if _scheduler is not None:
         return _scheduler
+    if not _pegar_lock():
+        print("[scheduler] outro worker já roda o agendador — este fica sem")
+        return None
 
     scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
     # 04:00 — de madrugada, fora do horário de uso do app.
